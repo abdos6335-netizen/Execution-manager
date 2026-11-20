@@ -310,17 +310,19 @@ test('input fields are tinted one shade lighter from each actual card color, not
 
 test('Android PWA cache version is bumped for the new mobile card styles', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v8"'));
+  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v9"'));
 });
 
 test('appearance preferences expose WeeklyPlanner-style controls and persist line spacing', () => {
   const html = fs.readFileSync(new URL('../index.html', 'file://' + __filename), 'utf8');
   const app = fs.readFileSync(new URL('../app.js', 'file://' + __filename), 'utf8');
   const css = fs.readFileSync(new URL('../styles.css', 'file://' + __filename), 'utf8');
-  for (const id of ['appearanceMode','appearanceAccent','appearanceBackground','appearanceTextAuto','appearanceText','appearanceFont','appearanceScale','appearanceSaturation','appearanceSurface','appearanceGlass','appearanceBlur','appearanceIconStyle','appearanceLineHeight','appearanceHeading','appearanceSubheading','appearanceItem','appearanceMotionStyle','appearanceMotionSpeed','appearanceDoneColor']) {
+  for (const id of ['appearanceMode','appearanceAccent','appearanceBackground','appearanceText','appearanceFont','appearanceScale','appearanceSaturation','appearanceSurface','appearanceGlass','appearanceBlur','appearanceIconStyle','appearanceLineHeight','appearanceHeading','appearanceSubheading','appearanceItem','appearanceMotionStyle','appearanceMotionSpeed','appearanceDoneColor']) {
     assert.ok(html.includes('id="' + id + '"'), 'missing appearance control: ' + id);
   }
   assert.ok(app.includes("lineHeight:1.4"));
+  assert.ok(app.includes("['#ffffff','#333333','#000000']"));
+  assert.doesNotMatch(html, /appearanceTextAuto/);
   assert.ok(app.includes("'--line-height':String(Math.min(1.8,Math.max(1.2,Number(a.lineHeight)||1.4)))"));
   assert.ok(css.includes('body{line-height:var(--line-height,1.4)}'));
   assert.ok(html.includes('id="workspaceSettingsButton"'));
@@ -328,7 +330,7 @@ test('appearance preferences expose WeeklyPlanner-style controls and persist lin
 });
 test('Android PWA cache is refreshed for expanded appearance settings', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v8"'));
+  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v9"'));
 });
 
 test('workspace settings shortcut remains visible in the full-width six-card layout', () => {
@@ -337,4 +339,42 @@ test('workspace settings shortcut remains visible in the full-width six-card lay
   assert.ok(html.includes('id="workspaceSettingsButton"'));
   assert.ok(css.includes('#projectSheets .sheets-intro{display:flex!important'));
   assert.ok(html.includes('id="settingsBackToSheets"'));
+});
+
+test('item ledger totals include both direct expenses and item payments exactly once', () => {
+  const app = createApp();
+  const state = app.getState();
+  state.items = [{ id: 'i1', projectId: 'p1', name: 'دهانات', materialsAmount: 500, laborAmount: 700 }];
+  state.expenses = [
+    { id: 'e1', projectId: 'p1', itemId: 'i1', item: 'دهانات', type: 'materials', amount: 120, date: '2026-11-20' },
+    { id: 'e2', projectId: 'p1', itemId: 'i1', item: 'دهانات', type: 'labor', amount: 80, date: '2026-11-20' }
+  ];
+  state.payments = [
+    { id: 'p1', projectId: 'p1', itemId: 'i1', type: 'materials', amount: 30 },
+    { id: 'p2', projectId: 'p1', itemId: 'i1', type: 'labor', amount: 40 }
+  ];
+  assert.equal(app.paidForItem('i1', 'materials'), 150);
+  assert.equal(app.paidForItem('i1', 'labor'), 120);
+  assert.equal(app.paidForItem('i1'), 270);
+  assert.equal(app.itemMovements('i1').length, 4);
+});
+test('duplicate movement guard catches the same real movement across both ledgers but allows a different date', () => {
+  const app = createApp();
+  const state = app.getState();
+  state.contractors = [{ id: 'c1', projectId: 'p1', name: 'محمد النقاش', aliases: ['محمد'] }];
+  state.items = [{ id: 'i1', projectId: 'p1', name: 'دهانات' }];
+  state.expenses = [{ id: 'e1', projectId: 'p1', itemId: 'i1', type: 'labor', amount: 300, date: '2026-11-20', payeeId: 'c1', payee: 'محمد النقاش' }];
+  assert.equal(app.findDuplicateMovement({ itemId: 'i1', type: 'labor', amount: 300, date: '2026-11-20', personId: 'c1' }).id, 'e1');
+  assert.equal(app.findDuplicateMovement({ itemId: 'i1', type: 'labor', amount: 300, date: '2026-11-21', personId: 'c1' }), null);
+});
+test('contractor account includes direct and payment movements linked to the contractor', () => {
+  const app = createApp();
+  const state = app.getState();
+  state.contractors = [{ id: 'c1', projectId: 'p1', name: 'محمد النقاش' }];
+  state.items = [{ id: 'i1', projectId: 'p1', name: 'دهانات', laborContractorId: 'c1', laborAmount: 900 }];
+  state.expenses = [{ id: 'e1', projectId: 'p1', itemId: 'i1', payeeId: 'c1', payee: 'محمد النقاش', type: 'labor', amount: 100 }];
+  state.payments = [{ id: 'p1', projectId: 'p1', itemId: 'i1', contractorId: 'c1', type: 'labor', amount: 200 }];
+  const totals = app.contractorTotals(state.contractors[0]);
+  assert.equal(totals.paid, 300);
+  assert.equal(totals.items.length, 1);
 });
