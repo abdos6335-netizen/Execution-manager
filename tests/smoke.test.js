@@ -81,7 +81,7 @@ test('quick entry classifies a materials purchase before the generic word "paid"
   const app = createApp();
   app.elements.get('quickText').value = 'دفعت ٨٥٠٠ جنيه لشراء خامات للبوابة';
   app.parseQuickText();
-  assert.equal(app.elements.get('quickKind').value, 'materials');
+  assert.equal(app.elements.get('quickKind').value, 'purchase_invoice');
   assert.equal(Number(app.elements.get('quickAmount').value), 8500);
 });
 
