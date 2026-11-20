@@ -47,7 +47,7 @@ function createApp(initialStorage = {}) {
   vm.runInContext(source + `
     globalThis.__appTest = {
       getState: () => state, normalizeState, parseQuickText,
-      contractorTotals, answerReportQuestion, today, spentForProject,
+      contractorTotals, answerReportQuestion, today, spentForProject, SHEET_PALETTES,
       itemCard, itemMovements, paidForItem, findDuplicateMovement, save, elements: null, storage: null,
       failStorageWrites(value) { globalThis.__failWrites(value); }
     };
@@ -410,4 +410,30 @@ test('cancelled duplicate direct expense does not create an orphan contractor ac
   const createAt = source.indexOf('if(createPayee){matchedPayee=');
   const duplicateGuardAt = source.indexOf('if(!confirmNoDuplicateMovement', source.indexOf("$('expenseForm').onsubmit"));
   assert.ok(createAt > duplicateGuardAt);
+});
+
+
+test('all card palettes use muted colors with readable dark text and a lightness progression', () => {
+  const app = createApp();
+  const palettes = app.SHEET_PALETTES;
+  assert.equal(Object.keys(palettes).length, 10);
+  for (const [name, colors] of Object.entries(palettes)) {
+    assert.equal(colors.length, 6, name + ' must contain six card colors');
+    const luminance = colors.map(hex => {
+      const rgb = hex.match(/[0-9a-f]{2}/gi).map(v => parseInt(v, 16) / 255);
+      const linear = rgb.map(v => v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4);
+      const [r, g, b] = linear;
+      return .2126 * r + .7152 * g + .0722 * b;
+    });
+    for (let i = 0; i < colors.length; i++) {
+      const rgb = colors[i].match(/[0-9a-f]{2}/gi).map(v => parseInt(v, 16) / 255);
+      const max = Math.max(...rgb), min = Math.min(...rgb);
+      const lightness = (max + min) / 2;
+      const saturation = max === min ? 0 : (max - min) / (1 - Math.abs(2 * lightness - 1));
+      assert.ok(saturation <= .22, name + ' color ' + (i + 1) + ' is too saturated');
+      const contrast = (luminance[i] + .05) / (.033 + .05);
+      assert.ok(contrast >= 4.5, name + ' color ' + (i + 1) + ' is too dark for #333 text');
+      if (i) assert.ok(luminance[i] > luminance[i - 1], name + ' must brighten from card to card');
+    }
+  }
 });
