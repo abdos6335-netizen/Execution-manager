@@ -280,7 +280,7 @@ test('each card palette derives readable foreground text for light and dark colo
   assert.ok(app.includes('function contrastInk(hex)'));
   assert.ok(app.includes('SHEET_PALETTES='));
   assert.ok(app.includes("root.style.setProperty('--sheet-'+(i+1)+'-color',color)"));
-  assert.ok(app.includes("root.style.setProperty('--sheet-'+(i+1)+'-ink',contrastInk(color))"));
+  assert.ok(app.includes("root.style.setProperty('--sheet-'+(i+1)+'-ink',textColor)"));
   assert.ok(app.includes("l>.179?'#17191c':'#ffffff'"));
 });
 
