@@ -6,7 +6,7 @@
 <title>وَثيق | إدارة تنفيذ التشطيبات</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap"><link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<div class="app-shell">
+<div class="app-shell" id="appShell">
 <aside class="sidebar">
   <div class="brand"><div class="brand-mark">و</div><div><strong>وَثيق</strong><small>إدارة تنفيذ التشطيبات</small></div></div>
   <div class="project-switch"><label for="projectSelect">المشروع الحالي</label><select id="projectSelect"></select></div>
@@ -23,9 +23,20 @@
   <div class="sidebar-foot"><span class="status-dot"></span>نسخة مستقلة · حفظ محلي</div>
 </aside>
 <div class="main-wrap">
-<header class="topbar"><div><span class="eyebrow">EXECUTION WORKSPACE</span><strong id="topProjectName">المشروع الحالي</strong></div><button id="addProject" class="btn btn-primary">＋ مشروع جديد</button></header>
+<header class="topbar"><div><span class="eyebrow">وَثيق · مساحة العمل</span><strong id="topProjectName">المشروع الحالي</strong></div><div class="topbar-actions"><button type="button" id="backToSheets" class="btn btn-light">← الشيتات</button><button id="addProject" class="btn btn-primary">＋ مشروع جديد</button></div></header>
 <main>
-<section id="quick" class="page">
+<section id="projectHome" class="page hub-page">
+ <div class="hub-heading"><span class="eyebrow">WATHIQ WORKSPACE</span><h1>مشاريعك</h1><p>اختر مشروعاً للانتقال إلى مساحة العمل الخاصة به.</p></div>
+ <div id="projectCards" class="project-cards"></div>
+ <button id="hubAddProject" class="btn btn-primary hub-add">＋ إضافة مشروع جديد</button>
+</section>
+<section id="projectSheets" class="page hidden hub-page">
+ <button type="button" id="backToProjects" class="back-link">← كل المشاريع</button>
+ <div class="project-cover"><span class="eyebrow">YOUR PROJECT SPACE</span><h1 id="hubProjectTitle">اسم المشروع</h1><p id="hubProjectMeta">مساحة تنفيذ المشروع</p></div>
+ <div class="sheets-intro"><span class="eyebrow">PROJECT SHEETS</span><p>اضغط على الشيت لتكبيره، ثم اضغط مرة أخرى لفتحه.</p></div>
+ <div id="projectSheetGrid" class="project-sheet-grid"></div>
+</section>
+<section id="quick" class="page hidden">
  <div class="page-head"><div><span class="eyebrow">QUICK ENTRY</span><h1>تسجيل حركة</h1><p>سجل أي مصروف أو دفعة أو تحصيل من مكان واحد.</p></div></div>
  <div class="surface quick-entry"><label class="quick-label" for="quickText">اكتب الحركة بطريقتك</label><textarea id="quickText" rows="2" placeholder="مثال: دفعت ٣٠٠٠ جنيه لمحمد النقاش أجرة دهانات البوابة"></textarea><div class="quick-tools"><button type="button" id="voiceEntry" class="btn btn-light">🎙 تسجيل صوتي</button><label class="btn btn-light file-btn">📷 قراءة فاتورة<input id="receiptImage" type="file" accept="image/*" capture="environment"></label><span id="voiceStatus" class="muted">اكتب الحركة أو استخدم الصوت أو صوّر الفاتورة، ثم راجع البيانات قبل الحفظ.</span></div><div id="receiptStatus" class="muted" aria-live="polite"></div>
  <form id="quickForm" class="form-grid"><label>نوع الحركة<select id="quickKind"><option value="materials">شراء خامات / مصروف</option><option value="labor">دفعة أجرة / صنايعي</option><option value="other">مصروف عام</option><option value="collection">تحصيل من العميل</option></select></label><label>المبلغ بالجنيه<input id="quickAmount" type="number" min="0.01" step=".01" required></label><label>بند التنفيذ<input id="quickItem" list="quickItems" placeholder="مثال: دهانات البوابة"><datalist id="quickItems"></datalist></label><label>الشخص / المورد<input id="quickPerson" list="quickPeople" placeholder="اسم الصنايعي أو المورد"><datalist id="quickPeople"></datalist></label><label>التاريخ<input id="quickDate" type="date" required></label><label class="span-2">تفاصيل إضافية<input id="quickNote" placeholder="الكمية، الخامات، طريقة الدفع أو أي ملاحظة"></label><div class="form-actions"><button class="btn btn-primary">مراجعة وتسجيل الحركة</button><button type="button" id="clearQuickForm" class="btn btn-light">مسح</button></div></form></div>
@@ -96,7 +107,7 @@
    <label>الخط العربي<select id="appearanceFont"><option value="ibm">IBM Plex Sans Arabic</option><option value="alexandria">Alexandria</option><option value="readex">Readex Pro</option><option value="noto">Noto Sans Arabic</option><option value="almarai">Almarai</option><option value="cairo">Cairo</option><option value="tajawal">Tajawal</option><option value="system">System</option></select></label>
    <label>حجم الخط <output id="appearanceScaleValue">100%</output><input id="appearanceScale" type="range" min="90" max="115" step="5" value="100"></label>
   </div>
-  <div class="palette-row"><span>ألوان جاهزة</span><button type="button" data-palette="glass" style="--swatch:#302e32">رمادي هادئ</button><button type="button" data-palette="sage" style="--swatch:#3f5a4a">أخضر</button><button type="button" data-palette="sand" style="--swatch:#6b5a43">رملي</button><button type="button" data-palette="slate" style="--swatch:#38465c">أزرق رمادي</button><button type="button" data-palette="rose" style="--swatch:#7a3b4f">وردي</button></div>
+  <div class="theme-gallery"><div class="theme-gallery-head"><strong>مجموعات الألوان</strong><small>كل مجموعة تغيّر ألوان الشيتات والواجهة معاً</small></div><div class="theme-options"><button type="button" class="theme-option" data-theme="sage"><span class="theme-swatch" style="background:linear-gradient(110deg,#294438,#73916f,#d2d2c4)"></span><strong>غابة</strong></button><button type="button" class="theme-option" data-theme="sunset"><span class="theme-swatch" style="background:linear-gradient(110deg,#b94d31,#ed8b45,#f5d78c)"></span><strong>مشمش</strong></button><button type="button" class="theme-option" data-theme="earth"><span class="theme-swatch" style="background:linear-gradient(110deg,#594332,#a77a54,#e6d4b8)"></span><strong>تراب</strong></button><button type="button" class="theme-option" data-theme="ocean"><span class="theme-swatch" style="background:linear-gradient(110deg,#244b5b,#5e9aa0,#d4e4df)"></span><strong>محيط</strong></button><button type="button" class="theme-option" data-theme="berry"><span class="theme-swatch" style="background:linear-gradient(110deg,#653b55,#a96d83,#ead5d9)"></span><strong>توت</strong></button><button type="button" class="theme-option" data-theme="slate"><span class="theme-swatch" style="background:linear-gradient(110deg,#394653,#8795a2,#e0e4e5)"></span><strong>حجر</strong></button></div></div>
  </section>
  <form id="settingsForm" class="surface form-grid"><label>اسم المشروع<input id="projectName" required></label><label>نسبة الربح المحجوزة %<input id="profitRate" type="number" min="0" max="100" step=".1" required></label><div class="form-actions"><button class="btn btn-primary">حفظ الإعدادات</button></div></form>
  <div class="surface"><h2>نسخة احتياطية</h2><p class="muted">احفظ نسخة من بياناتك أو استعد نسخة سابقة على هذا الجهاز.</p><div class="inline-actions"><button id="exportData" class="btn btn-light">تصدير نسخة احتياطية</button><label class="btn btn-light file-btn">استيراد نسخة<input id="importData" type="file" accept="application/json"></label></div></div>
