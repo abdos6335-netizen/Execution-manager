@@ -286,7 +286,7 @@ test('each card palette derives readable foreground text for light and dark colo
 test('expanded card content and nested surfaces stay on the card color family', () => {
   const css = fs.readFileSync(new URL('../styles.css', 'file://' + __filename), 'utf8');
   for (let i = 1; i <= 6; i++) {
-    assert.match(css, new RegExp('nth-child\\(' + i + '\\)\\{--sheet-ink:var\\(--sheet-' + i + '-ink\\)\\}'));
+    assert.match(css, new RegExp('nth-child\\(' + i + '\\)\\{--sheet-ink:var\\(--sheet-' + i + '-ink\\);--sheet-bg:var\\(--sheet-' + i + '-color\\)\\}'));
   }
   assert.match(css, /\.sheet-inline-content\{background:transparent!important/);
   assert.ok(css.includes('background:color-mix(in srgb,var(--sheet-bg) 87%,white 13%)!important'));
