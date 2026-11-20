@@ -378,3 +378,20 @@ body{line-height:var(--line-height,1.4)}
 
 /* Keep every visible workspace text element within the selected monochrome text palette. */
 .sheet-inline-page *,.project-sheet-trigger *{color:var(--sheet-ink)!important}
+
+
+/* Daily site diary and separated accounting ledgers */
+.advanced-ledger{margin-top:18px;display:grid;gap:10px}
+.advanced-ledger-group{padding-top:12px;border-top:1px solid var(--line)}
+.advanced-ledger-group h3{margin:0 0 8px;font-size:1rem}
+.ledger-row-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.ledger-row-actions button{font-size:.78rem}
+.site-log-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:start;padding:12px 0;border-bottom:1px solid var(--line)}
+.site-log-row strong{display:block}
+.site-log-row small{display:block;color:var(--muted);margin-top:4px}
+.site-log-meta{display:flex;gap:7px;flex-wrap:wrap;margin-top:5px}
+.site-log-meta span{font-size:.78rem;opacity:.8}
+#quickInvoiceWrap:not(.hidden){display:flex;flex-direction:column;gap:6px}
+#siteLogForm{margin-bottom:14px}
+#siteLogList:empty,#advancedLedger:empty{display:none}
+@media(max-width:600px){.site-log-row{grid-template-columns:1fr}.ledger-row-actions{justify-content:flex-start}}
