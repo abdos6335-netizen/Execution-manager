@@ -45,7 +45,7 @@
 </section>
 <section id="items" class="page hidden">
  <div class="page-head"><div><span class="eyebrow">SCOPE & AGREEMENTS</span><h1>بنود التنفيذ</h1><p>سجل كل بند واتفاق المونة والأجرة بشكل مستقل.</p></div><button class="btn btn-primary" id="newItemBtn">＋ إضافة بند</button></div>
- <div id="itemsList" class="record-grid"></div>
+ <div class="record-search"><input id="itemsSearch" type="search" placeholder="ابحث عن بند أو اسم بديل أو تصنيف"></div><div id="itemsList" class="record-grid"></div>
  <div id="itemEditor" class="surface hidden"><div class="surface-head"><h2 id="itemFormTitle">إضافة بند جديد</h2><button class="icon-btn" type="button" data-close="itemEditor">✕</button></div>
  <form id="itemForm" class="form-grid">
   <input type="hidden" id="itemId">
@@ -68,7 +68,7 @@
 </section>
 <section id="contractors" class="page hidden">
  <div class="page-head"><div><span class="eyebrow">PEOPLE & LEDGERS</span><h1>المقاولون والصنايعية</h1><p>ملف مستقل ومستحقات واضحة لكل مقاول أو صنايعي.</p></div><button id="newContractorBtn" class="btn btn-primary">＋ إضافة مقاول</button></div>
- <div id="contractorsList" class="record-grid"></div>
+ <div class="record-search"><input id="contractorsSearch" type="search" placeholder="ابحث عن مقاول أو صنايعي أو اسم بديل"></div><div id="contractorsList" class="record-grid"></div>
  <div id="contractorEditor" class="surface hidden"><div class="surface-head"><h2 id="contractorFormTitle">إضافة مقاول أو صنايعي</h2><button class="icon-btn" type="button" data-close="contractorEditor">✕</button></div><form id="contractorForm" class="form-grid"><input type="hidden" id="contractorId"><label>الاسم<input id="contractorName" required></label><label>أسماء بديلة / طريقة كتابة الاسم<input id="contractorAliases" placeholder="مثال: محمد النقاش، محمد عبدو"></label><label>رقم الهاتف<input id="contractorPhone" inputmode="tel"></label><label>التخصص<input id="contractorTrade" placeholder="محارة، كهرباء، سباكة..."></label><label>ملاحظات<textarea id="contractorNotes" rows="2"></textarea></label><div class="form-actions"><button class="btn btn-primary">حفظ</button><button type="button" class="btn btn-light" data-close="contractorEditor">إلغاء</button></div></form></div>
  <div id="contractorDetail" class="surface hidden"></div>
 </section>
