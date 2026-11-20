@@ -270,3 +270,72 @@ main{display:block;width:100%;max-width:none;margin:0;padding:0;min-height:100dv
  #projectSheets .project-sheet.expanded .project-sheet-trigger{height:clamp(92px,13vh,116px)}
  #projectSheets .sheet-inline-content{padding:12px 9px calc(18px + env(safe-area-inset-bottom))}
 }
+
+
+/* Card-first color system: every expanded section inherits its card palette. */
+.project-sheet:nth-child(1){--sheet-ink:var(--sheet-1-ink)}
+.project-sheet:nth-child(2){--sheet-ink:var(--sheet-2-ink)}
+.project-sheet:nth-child(3){--sheet-ink:var(--sheet-3-ink)}
+.project-sheet:nth-child(4){--sheet-ink:var(--sheet-4-ink)}
+.project-sheet:nth-child(5){--sheet-ink:var(--sheet-5-ink)}
+.project-sheet:nth-child(6){--sheet-ink:var(--sheet-6-ink)}
+.project-sheet,.project-sheet-trigger,.sheet-inline-content{color:var(--sheet-ink)}
+.sheet-inline-content{background:transparent!important;box-shadow:none!important}
+.sheet-inline-page{color:var(--sheet-ink)}
+.sheet-inline-page>.page-head h1,
+.sheet-inline-page>.page-head p,
+.sheet-inline-page>.page-head .eyebrow,
+.sheet-inline-page .surface h2,
+.sheet-inline-page .surface h3,
+.sheet-inline-page .contextual-report h2,
+.sheet-inline-page .contextual-report h3,
+.sheet-inline-page .form-grid label,
+.sheet-inline-page .quick-label,
+.sheet-inline-page .muted,
+.sheet-inline-page .summary-row span,
+.sheet-inline-page .activity-row small,
+.sheet-inline-page .table-row small,
+.sheet-inline-page .metric span,
+.sheet-inline-page .metric small,
+.sheet-inline-page .record-card h3,
+.sheet-inline-page .record-card .muted,
+.sheet-inline-page .split-stats small,
+.sheet-inline-page .card-foot,
+.sheet-inline-page .hint,
+.sheet-inline-page .empty,
+.sheet-inline-page .report-answer,
+.sheet-inline-page p,
+.sheet-inline-page label,
+.sheet-inline-page th,
+.sheet-inline-page td{color:var(--sheet-ink)!important}
+.sheet-inline-page>.surface,
+.sheet-inline-page>.contextual-report,
+.sheet-inline-page .surface,
+.sheet-inline-page .metric,
+.sheet-inline-page .record-card,
+.sheet-inline-page .surface-inset,
+.sheet-inline-page .table-wrap,
+.sheet-inline-page .table-row,
+.sheet-inline-page .summary-row,
+.sheet-inline-page .activity-row,
+.sheet-inline-page .split-stats>div,
+.sheet-inline-page .empty,
+.sheet-inline-page .pill{background:color-mix(in srgb,var(--sheet-ink) 5%,transparent)!important;color:var(--sheet-ink);border-color:color-mix(in srgb,var(--sheet-ink) 18%,transparent)!important;box-shadow:none}
+.sheet-inline-page .form-grid input,
+.sheet-inline-page .form-grid select,
+.sheet-inline-page .form-grid textarea,
+.sheet-inline-page input:not([type=file]),
+.sheet-inline-page select,
+.sheet-inline-page textarea,
+.sheet-inline-page .quick-tools input,
+.sheet-inline-page .record-search input,
+.sheet-inline-page .quick-entry>textarea{background:color-mix(in srgb,var(--sheet-ink) 13%,white)!important;color:var(--sheet-ink)!important;border:1px solid color-mix(in srgb,var(--sheet-ink) 24%,transparent)!important;box-shadow:none}
+.sheet-inline-page input::placeholder,
+.sheet-inline-page textarea::placeholder{color:color-mix(in srgb,var(--sheet-ink) 58%,transparent)!important;opacity:1}
+.sheet-inline-page input:focus,
+.sheet-inline-page select:focus,
+.sheet-inline-page textarea:focus{outline:2px solid color-mix(in srgb,var(--sheet-ink) 38%,transparent);outline-offset:1px}
+.sheet-inline-page .btn-light,
+.sheet-inline-page .icon-btn{background:color-mix(in srgb,var(--sheet-ink) 10%,transparent);color:var(--sheet-ink);border-color:color-mix(in srgb,var(--sheet-ink) 22%,transparent)}
+.sheet-inline-page .pill{color:var(--sheet-ink)}
+.sheet-inline-page .positive,.sheet-inline-page .negative{color:var(--sheet-ink)!important}
