@@ -11,10 +11,11 @@ function createApp(initialStorage = {}) {
     value: '', innerHTML: '', textContent: '', dataset: {},
     style: { setProperty() {} },
     classList: { add() {}, remove() {}, toggle() {}, contains() { return false; } },
-    addEventListener() {}, querySelector() { return makeElement(); },
+    addEventListener() {}, setAttribute() {}, querySelector() { return makeElement(); },
     querySelectorAll() { return []; }, scrollIntoView() {}, reset() {}, click() {}
   });
   const document = {
+    body: { dataset: {} },
     getElementById(id) {
       if (!elements.has(id)) elements.set(id, makeElement());
       return elements.get(id);
@@ -220,4 +221,21 @@ test('save() keeps the app working when localStorage rejects the write', () => {
   app.getState().collections.push({ id: 'c1', project: 'p1', amount: 100, rate: 10, reserved: 10, date: '2026-01-01' });
   assert.doesNotThrow(() => app.save());
   assert.equal(app.getState().collections.length, 1);
+});
+
+test('project sections expand progressively inside the same stacked cards', () => {
+  const fs = require('node:fs');
+  const html = fs.readFileSync(new URL('../index.html', 'file://' + __filename), 'utf8');
+  const css = fs.readFileSync(new URL('../styles.css', 'file://' + __filename), 'utf8');
+  assert.match(source, /if\(selectedSheet===page\)\{expandInlineSheet\(page\)\}/);
+  assert.match(source, /host\.appendChild\(target\)/);
+  assert.match(source, /function restoreInlineSheet\(\)/);
+  assert.doesNotMatch(source, /if\(selectedSheet===page\)\{[^}]*setPage/);
+  for (const id of ['dashboard', 'quick', 'items', 'contractors', 'collections', 'expenses']) {
+    assert.match(html, new RegExp('id="' + id + '"'));
+  }
+  assert.doesNotMatch(html, /id="sheetModal"/);
+  assert.match(css, /\.sheet-inline-content/);
+  assert.match(css, /@media\(max-width:720px\)/);
+  assert.match(css, /@keyframes sheetAura/);
 });
