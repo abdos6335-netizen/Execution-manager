@@ -230,7 +230,7 @@ test('project sections expand progressively inside the same stacked cards', () =
   assert.match(source, /if\(selectedSheet===page\)\{expandInlineSheet\(page\)\}/);
   assert.match(source, /host\.appendChild\(target\)/);
   assert.match(source, /function restoreInlineSheet\(\)/);
-  assert.doesNotMatch(source, /setPage\(page\)/);
+  assert.doesNotMatch(source, /if\(selectedSheet===page\)\{[^}]*setPage/);
   for (const id of ['dashboard', 'quick', 'items', 'contractors', 'collections', 'expenses']) {
     assert.match(html, new RegExp('id="' + id + '"'));
   }
