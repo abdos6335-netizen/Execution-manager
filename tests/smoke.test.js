@@ -277,30 +277,30 @@ test('expanded inline content keeps the exact outer project-card color', () => {
 
 test('each card palette derives readable foreground text for light and dark colors', () => {
   const app = fs.readFileSync(new URL('../app.js', 'file://' + __filename), 'utf8');
-  assert.match(app, /function contrastInk\(hex\)/);
+  assert.match(app, /function contrastInk\\(hex\\)/);
   assert.match(app, /SHEET_PALETTES=/);
-  assert.match(app, /sheetPalette\.forEach\(\(color,i\)=>root\.style\.setProperty\('--sheet-'\+\(i\+1\)\+'-ink',contrastInk\(color\)\)\)/);
-  assert.match(app, /l>\.179\?'#17191c':'#ffffff'/);
+  assert.ok(app.includes("root.style.setProperty('--sheet-'+(i+1)+'-color',color)"));
+  assert.ok(app.includes("root.style.setProperty('--sheet-'+(i+1)+'-ink',contrastInk(color))"));
+  assert.match(app, /l>\\.179\\?'#17191c':'#ffffff'/);
 });
 
 test('expanded card content and nested surfaces stay on the card color family', () => {
   const css = fs.readFileSync(new URL('../styles.css', 'file://' + __filename), 'utf8');
   for (let i = 1; i <= 6; i++) {
-    assert.match(css, new RegExp('nth-child\\(' + i + '\\)\\{--sheet-ink:var\\(--sheet-' + i + '-ink\\);--sheet-bg:var\\(--sheet-' + i + '-color\\)\\}'));
+    assert.ok(css.includes(`.project-sheet:nth-child(${i}){--sheet-ink:var(--sheet-${i}-ink);--sheet-bg:var(--sheet-${i}-color)}`));
   }
-  assert.match(css, /\.sheet-inline-content\{background:transparent!important/);
+  assert.match(css, /\\.sheet-inline-content\\{background:transparent!important/);
   assert.ok(css.includes('background:color-mix(in srgb,var(--sheet-bg) 87%,white 13%)!important'));
-  assert.match(css, /\.sheet-inline-page \.form-grid input[\s\S]*color:var\(--sheet-ink\)!important/);
-  assert.match(css, /\.sheet-inline-page>\.surface[\s\S]*background:color-mix\(in srgb,var\(--sheet-ink\) 5%,transparent\)/);
+  assert.match(css, /\\.sheet-inline-page \\.form-grid input[\\s\\S]*color:var\\(--sheet-ink\\)!important/);
+  assert.match(css, /\\.sheet-inline-page>\\.surface[\\s\\S]*background:color-mix\\(in srgb,var\\(--sheet-ink\\) 5%,transparent\\)/);
 });
-
 
 test('input fields are tinted one shade lighter from each actual card color, not from the foreground ink', () => {
   const app = fs.readFileSync(new URL('../app.js', 'file://' + __filename), 'utf8');
   const css = fs.readFileSync(new URL('../styles.css', 'file://' + __filename), 'utf8');
-  assert.match(app, /'--sheet-'\+\(i\+1\)\+'-color',color/);
+  assert.ok(app.includes("root.style.setProperty('--sheet-'+(i+1)+'-color',color)"));
   for (let i = 1; i <= 6; i++) {
-    assert.match(css, new RegExp('nth-child\\(' + i + '\\)\\{--sheet-ink:var\\(--sheet-' + i + '-ink\\);--sheet-bg:var\\(--sheet-' + i + '-color\\)\\}'));
+    assert.ok(css.includes(`.project-sheet:nth-child(${i}){--sheet-ink:var(--sheet-${i}-ink);--sheet-bg:var(--sheet-${i}-color)}`));
   }
   assert.ok(css.includes('background:color-mix(in srgb,var(--sheet-bg) 87%,white 13%)!important'));
   assert.ok(!css.includes('background:color-mix(in srgb,var(--sheet-ink) 13%,white)!important'));
