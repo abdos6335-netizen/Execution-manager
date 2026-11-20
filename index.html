@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#171a22"><link rel="manifest" href="manifest.webmanifest">
+<title>Execution Manager</title><link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="top"><div><strong>Execution Manager</strong><small>إدارة حسابات تنفيذ التشطيبات</small></div><select id="projectSelect" aria-label="المشروع"></select></header>
+<nav><button data-page="dashboard" class="active">الرئيسية</button><button data-page="collections">التحصيل</button><button data-page="expenses">المصروفات</button><button data-page="settings">إعدادات المشروع</button></nav>
+<main>
+<section id="dashboard" class="page"><div class="heading"><h1>لوحة التحكم</h1><button id="addProject">+ مشروع جديد</button></div>
+<div class="cards"><article><span>إجمالي التحصيل</span><b id="totalCollected">0 ج.م</b></article><article><span>الربح المحجوز</span><b id="reservedProfit">0 ج.م</b></article><article><span>مصروفات التنفيذ</span><b id="totalExpenses">0 ج.م</b></article><article><span>المتاح للتنفيذ</span><b id="available">0 ج.م</b></article></div>
+<div class="panel"><h2>ملخص المشروع</h2><p id="summary">أضف تحصيلاً أو مصروفاً لبدء متابعة المشروع.</p></div></section>
+<section id="collections" class="page hidden"><h1>تحصيلات العميل</h1><form id="collectionForm" class="panel form"><label>المبلغ<input type="number" min="0.01" step="0.01" id="collectionAmount" required></label><label>التاريخ<input type="date" id="collectionDate" required></label><label>ملاحظات<input id="collectionNote" placeholder="اختياري"></label><button>تسجيل التحصيل</button></form><div id="collectionList" class="list"></div></section>
+<section id="expenses" class="page hidden"><h1>مصروفات المشروع</h1><form id="expenseForm" class="panel form"><label>بند التنفيذ<input id="expenseItem" required placeholder="مثال: محارة"></label><label>نوع المصروف<select id="expenseType"><option>مصنعية</option><option>خامات</option><option>أخرى</option></select></label><label>المبلغ<input type="number" min="0.01" step="0.01" id="expenseAmount" required></label><label>المستلم / المورد<input id="expensePayee"></label><label>التاريخ<input type="date" id="expenseDate" required></label><label>وصف<input id="expenseNote"></label><button>تسجيل المصروف</button></form><div id="expenseList" class="list"></div></section>
+<section id="settings" class="page hidden"><h1>إعدادات المشروع</h1><form id="settingsForm" class="panel form"><label>اسم المشروع<input id="projectName" required></label><label>نسبة الربح المحجوزة %<input id="profitRate" type="number" min="0" max="100" step=".1" required></label><button>حفظ الإعدادات</button></form><p class="hint">يتم حفظ نسبة الربح مع كل تحصيل وقت تسجيله. تغيير النسبة يؤثر على التحصيلات الجديدة فقط.</p></section>
+</main><footer>البيانات محفوظة محلياً على هذا الجهاز — صدّر نسخة احتياطية بانتظام.</footer><script src="app.js"></script></body></html>
