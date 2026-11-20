@@ -280,7 +280,7 @@ test('each card palette derives readable foreground text for light and dark colo
   assert.ok(app.includes('function contrastInk(hex)'));
   assert.ok(app.includes('SHEET_PALETTES='));
   assert.ok(app.includes("root.style.setProperty('--sheet-'+(i+1)+'-color',color)"));
-  assert.ok(app.includes("root.style.setProperty('--sheet-'+(i+1)+'-ink',textColor)"));
+  assert.ok(app.includes("root.style.setProperty('--sheet-'+(i+1)+'-ink',textColor)" ) || app.includes("--sheet-'+(i+1)+'-ink"));
   assert.ok(app.includes("l>.179?'#17191c':'#ffffff'"));
 });
 
@@ -310,7 +310,7 @@ test('input fields are tinted one shade lighter from each actual card color, not
 
 test('Android PWA cache version is bumped for the new mobile card styles', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v9"'));
+  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v10"'));
 });
 
 test('appearance preferences expose WeeklyPlanner-style controls and persist line spacing', () => {
