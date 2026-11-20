@@ -387,3 +387,15 @@ test('legacy item-name-only direct expenses remain visible in the item ledger', 
   assert.equal(app.paidForItem('i1', 'materials'), 75);
   assert.equal(app.itemMovements('i1').length, 1);
 });
+
+test('item ledger totals are isolated to the active project', () => {
+  const app = createApp();
+  const state = app.getState();
+  state.projects.push({ id: 'p2', name: 'مشروع آخر', rate: 10 });
+  state.items = [{ id: 'i1', projectId: 'p1', name: 'دهانات' }];
+  state.expenses = [
+    { id: 'e1', projectId: 'p1', itemId: 'i1', type: 'materials', amount: 50 },
+    { id: 'e2', projectId: 'p2', itemId: 'i1', type: 'materials', amount: 900 }
+  ];
+  assert.equal(app.paidForItem('i1', 'materials'), 50);
+});
