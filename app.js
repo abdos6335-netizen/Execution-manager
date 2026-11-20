@@ -293,8 +293,8 @@ function answerReportQuestion(){
   const d=directFor(person,item),p=paymentFor(person,item),inv=invoiceFor(person,item),lab=earnedFor(person,item),cost=sum(d)+sum(p.filter(x=>!x.purpose||x.purpose==='legacy'))+sum(inv)+sum(lab),cash=sum(d)+sum(p);
   $('reportAnswer').textContent='حساب '+person.name+' في بند '+item.name+': تكلفة مسجلة '+money(cost)+'، خروج نقدي '+money(cash)+'، فواتير مشتريات '+money(sum(inv))+'، أجرة معتمدة '+money(sum(lab))+'.';
  }else if(person){
-  const d=directFor(person,null),p=paymentFor(person,null),inv=invoiceFor(person,null),lab=earnedFor(person,null),s=supplierLedgerTotals(person.id),l=laborTotalsForContractor(person.id);
-  $('reportAnswer').textContent='حساب '+person.name+': فواتير المورد '+money(sum(inv))+'، المسدد عليها '+money(s.linkedPaid)+'، المتبقي '+money(s.outstanding)+'؛ أجرة معتمدة '+money(sum(lab))+'، مدفوع أجرة / سُلف '+money(l.paid)+'، صافي الأجرة '+money(l.balance)+'؛ مصروفات مباشرة '+money(sum(d))+'، دفعات نقدية '+money(sum(p))+'.';
+  const d=directFor(person,null),p=paymentFor(person,null),inv=invoiceFor(person,null),lab=earnedFor(person,null),invoiceIds=new Set(inv.map(x=>x.id)),linkedPaid=sum(p.filter(x=>invoiceIds.has(x.invoiceId))),laborPayments=p.filter(x=>x.type==='labor'&&x.purpose!=='supplier_invoice_payment'),laborPaid=sum(laborPayments),advances=sum(laborPayments.filter(x=>x.purpose==='advance'));
+  $('reportAnswer').textContent='حساب '+person.name+': فواتير المورد '+money(sum(inv))+'، المسدد عليها '+money(linkedPaid)+'، المتبقي '+money(sum(inv)-linkedPaid)+'؛ أجرة معتمدة '+money(sum(lab))+'، مدفوع أجرة / سُلف '+money(laborPaid)+'، صافي الأجرة '+money(sum(lab)-laborPaid)+' (منها سُلف '+money(advances)+')؛ مصروفات مباشرة '+money(sum(d))+'، دفعات نقدية '+money(sum(p))+'.';
  }else if(item){
   const d=directFor(null,item),p=paymentFor(null,item),inv=invoiceFor(null,item),lab=earnedFor(null,item),cost=sum(d)+sum(p.filter(x=>!x.purpose||x.purpose==='legacy'))+sum(inv)+sum(lab);
   $('reportAnswer').textContent='تكلفة بند '+item.name+' = '+money(cost)+'؛ فواتير مشتريات '+money(sum(inv))+'، أجرة معتمدة '+money(sum(lab))+'، مصروفات مباشرة '+money(sum(d))+'، دفعات قديمة '+money(sum(p.filter(x=>!x.purpose||x.purpose==='legacy')))+'.';
@@ -489,7 +489,7 @@ function validateDailyLog(data){
  const parsed=new Date(Number(parts[1]),Number(parts[2])-1,Number(parts[3]));
  if(parsed.getFullYear()!==Number(parts[1])||parsed.getMonth()!==Number(parts[2])-1||parsed.getDate()!==Number(parts[3]))return {ok:false,reason:'التاريخ غير صحيح'};
  if(!String(data.note||'').trim())return {ok:false,reason:'اكتب تفاصيل التدوينة'};
- if(data.quantity!==''&&data.quantity!=null&&(!Number.isFinite(Number(data.quantity))||Number(data.quantity)<=0))return {ok:false,reason:'الكمية يجب أن تكون أكبر من صفر'};
+ if(data.quantity!==''&&data.quantity!=null&&Number(data.quantity)!==0&&(!Number.isFinite(Number(data.quantity))||Number(data.quantity)<=0))return {ok:false,reason:'الكمية يجب أن تكون أكبر من صفر'};
  return {ok:true};
 }
 function renderAdvancedLedger(){
