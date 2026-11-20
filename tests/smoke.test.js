@@ -221,3 +221,20 @@ test('save() keeps the app working when localStorage rejects the write', () => {
   assert.doesNotThrow(() => app.save());
   assert.equal(app.getState().collections.length, 1);
 });
+
+test('project sections expand progressively inside the same stacked cards', () => {
+  const fs = require('node:fs');
+  const html = fs.readFileSync(new URL('../index.html', 'file://' + __filename), 'utf8');
+  const css = fs.readFileSync(new URL('../styles.css', 'file://' + __filename), 'utf8');
+  assert.match(source, /if\(selectedSheet===page\)\{expandInlineSheet\(page\)\}/);
+  assert.match(source, /host\.appendChild\(target\)/);
+  assert.match(source, /function restoreInlineSheet\(\)/);
+  assert.doesNotMatch(source, /setPage\(page\)/);
+  for (const id of ['dashboard', 'quick', 'items', 'contractors', 'collections', 'expenses']) {
+    assert.match(html, new RegExp('id="' + id + '"'));
+  }
+  assert.doesNotMatch(html, /id="sheetModal"/);
+  assert.match(css, /\.sheet-inline-content/);
+  assert.match(css, /@media\(max-width:720px\)/);
+  assert.match(css, /@keyframes sheetAura/);
+});
