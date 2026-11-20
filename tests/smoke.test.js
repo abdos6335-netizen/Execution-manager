@@ -194,7 +194,7 @@ test('quick entry understands taa marbuta spellings and prefers explicit labor w
   set('دفعت ٢٠٠٠ جنيه أجرة تركيب سيراميك');
   assert.equal(app.elements.get('quickKind').value, 'labor');
   set('اشتريت مونة بـ ١٥٠٠');
-  assert.equal(app.elements.get('quickKind').value, 'materials');
+  assert.equal(app.elements.get('quickKind').value, 'purchase_invoice');
   assert.equal(Number(app.elements.get('quickAmount').value), 1500);
   set('دفعت مصنعية ٧٠٠');
   assert.equal(app.elements.get('quickKind').value, 'labor');
@@ -330,7 +330,7 @@ test('appearance preferences expose WeeklyPlanner-style controls and persist lin
 });
 test('Android PWA cache is refreshed for expanded appearance settings', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v10"'));
+  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v11"'));
 });
 
 test('workspace settings shortcut remains visible in the full-width six-card layout', () => {
