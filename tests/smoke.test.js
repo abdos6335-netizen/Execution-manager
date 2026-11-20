@@ -265,3 +265,11 @@ test('workspace supports browser history and edge swipe back at one level per ge
   assert.match(source, /pushWorkspaceHistory\('expanded',page\)/);
   assert.match(source, /pushWorkspaceHistory\('selected',page\)/);
 });
+
+
+test('expanded inline content keeps the exact outer project-card color', () => {
+  const css = fs.readFileSync(new URL('../styles.css', 'file://' + __filename), 'utf8');
+  assert.match(css, /\.sheet-inline-content\{background:transparent;color:inherit/);
+  assert.match(css, /background:transparent;box-shadow:none\}/);
+  assert.doesNotMatch(css, /\.sheet-inline-content\{[^}]*background:var\(--canvas\)/);
+});
