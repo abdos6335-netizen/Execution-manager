@@ -239,3 +239,13 @@ test('project sections expand progressively inside the same stacked cards', () =
   assert.match(css, /@media\(max-width:720px\)/);
   assert.match(css, /@keyframes sheetAura/);
 });
+
+test('workspace cards compress vertically and keep section content inside the expanded card on desktop and mobile', () => {
+  const css = fs.readFileSync(new URL('../styles.css', 'file://' + __filename), 'utf8');
+  assert.match(css, /\.project-sheet-grid\.has-selection \.project-sheet:not\(\.selected\) \.project-sheet-trigger\{height:58px/);
+  assert.match(css, /\.project-sheet-grid\.has-expanded \.project-sheet:not\(\.expanded\) \.project-sheet-trigger\{height:48px/);
+  assert.match(css, /\.sheet-inline-content\{max-height:none;overflow:visible/);
+  assert.match(css, /env\(safe-area-inset-bottom\)/);
+  assert.match(css, /@media\(min-width:721px\)/);
+  assert.match(css, /@media\(max-width:720px\)/);
+});
