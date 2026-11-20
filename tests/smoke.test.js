@@ -11,10 +11,11 @@ function createApp(initialStorage = {}) {
     value: '', innerHTML: '', textContent: '', dataset: {},
     style: { setProperty() {} },
     classList: { add() {}, remove() {}, toggle() {}, contains() { return false; } },
-    addEventListener() {}, querySelector() { return makeElement(); },
+    addEventListener() {}, setAttribute() {}, querySelector() { return makeElement(); },
     querySelectorAll() { return []; }, scrollIntoView() {}, reset() {}, click() {}
   });
   const document = {
+    body: { dataset: {} },
     getElementById(id) {
       if (!elements.has(id)) elements.set(id, makeElement());
       return elements.get(id);
