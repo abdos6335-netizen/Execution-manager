@@ -11,6 +11,7 @@
   "theme_color": "#e3e3e4",
   "lang": "ar",
   "dir": "rtl",
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "./icons/wathiq.svg",
