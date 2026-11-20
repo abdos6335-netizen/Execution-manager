@@ -155,7 +155,7 @@ body[data-hub="home"] .mobile-nav,body[data-hub="sheets"] .mobile-nav{display:no
 .project-sheet.expanded .project-sheet-trigger{min-height:112px;padding:20px 25px}
 .project-sheet.expanded .sheet-arrow{transform:rotate(180deg)}
 .project-sheet-grid.has-expanded .project-sheet:not(.expanded){transform:scale(.965);opacity:.58;filter:saturate(.65)}
-.sheet-inline-content{background:var(--canvas);color:var(--ink);border-radius:0 0 20px 20px;padding:clamp(12px,2vw,25px);max-height:min(72vh,850px);overflow:auto;overscroll-behavior:contain;animation:inlineSheetReveal .38s cubic-bezier(.2,.8,.2,1);box-shadow:inset 0 1px 0 #ffffff60}
+.sheet-inline-content{background:transparent;color:inherit;border-radius:0 0 20px 20px;padding:clamp(12px,2vw,25px);max-height:min(72vh,850px);overflow:auto;overscroll-behavior:contain;animation:inlineSheetReveal .38s cubic-bezier(.2,.8,.2,1);box-shadow:inset 0 1px 0 #ffffff60}
 @keyframes inlineSheetReveal{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 .sheet-inline-page{display:block!important;max-width:100%;padding:0!important;margin:0!important;min-height:0!important}
 .sheet-inline-page>.page-head{margin-bottom:18px}.sheet-inline-page>.surface,.sheet-inline-page>.contextual-report{background:var(--paper);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);margin-bottom:13px}
@@ -188,7 +188,7 @@ body[data-hub="home"] .mobile-nav,body[data-hub="sheets"] .mobile-nav{display:no
 .project-sheet.expanded .project-sheet-trigger{height:clamp(116px,13vw,146px);min-height:0;padding:20px 28px}
 .project-sheet.expanded .sheet-hint{opacity:.9;max-height:24px}
 .project-sheet-grid.has-selection:before,.project-sheet-grid.has-selection:after{opacity:.34}
-.sheet-inline-content{max-height:none;overflow:visible;overscroll-behavior:auto;padding:clamp(14px,2.4vw,30px);border-radius:0 0 22px 22px;background:var(--canvas);box-shadow:inset 0 1px 0 #ffffff70}
+.sheet-inline-content{max-height:none;overflow:visible;overscroll-behavior:auto;padding:clamp(14px,2.4vw,30px);border-radius:0 0 22px 22px;background:transparent;box-shadow:none}
 .sheet-inline-page{width:100%;max-width:100%;padding:0!important;margin:0!important;min-height:0!important}
 .sheet-inline-page>.page-head{padding:0 2px 17px;margin:0 0 14px;border-bottom:1px solid var(--line)}
 .sheet-inline-page>.page-head .eyebrow{font-size:9px;letter-spacing:1.2px}
