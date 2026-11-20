@@ -123,3 +123,6 @@ body{font-family:var(--app-font,Inter,"IBM Plex Sans Arabic",sans-serif)}
 [data-theme="berry"]{--sheet-1:#4b2d43;--sheet-2:#70445f;--sheet-3:#a36b83;--sheet-4:#c99aa5;--sheet-5:#e7cbd0;--sheet-6:#f6e9e8}
 [data-theme="slate"]{--sheet-1:#303b49;--sheet-2:#4c5c6b;--sheet-3:#748795;--sheet-4:#a6b4b9;--sheet-5:#d0d9d8;--sheet-6:#eef0ec}
 @media(max-width:720px){.hub-page{padding:32px 16px 40px}.hub-heading h1{font-size:48px}.project-cards{grid-template-columns:1fr}.project-tile{min-height:170px}.sheets-intro{display:block}.sheets-intro p{line-height:1.8}.project-sheet{min-height:86px;padding:16px 18px}.project-sheet.selected{min-height:145px}.theme-options{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.topbar-actions{display:flex;align-items:center;gap:9px}
+.app-shell[data-hub="home"] .main-wrap,.app-shell[data-hub="sheets"] .main-wrap{min-height:100vh}
