@@ -307,3 +307,8 @@ test('input fields are tinted one shade lighter from each actual card color, not
 });
 
 // Mobile card input tint regression coverage.
+
+test('Android PWA cache version is bumped for the new mobile card styles', () => {
+  const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
+  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v7"'));
+});
