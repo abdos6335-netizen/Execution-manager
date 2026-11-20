@@ -447,7 +447,7 @@ normalizeState=function(raw){
  const n=normalizeStateBeforeLedgers(raw);
  n.purchases=(Array.isArray(raw?.purchases)?raw.purchases:[]).filter(x=>x&&typeof x==='object').map(x=>({...x,id:x.id||uid('inv'),projectId:x.projectId||x.project||n.current,itemId:x.itemId||'',item:x.item||'',supplierId:x.supplierId||'',supplier:x.supplier||'',amount:Number(x.amount)||0,date:x.date||'',note:x.note||''}));
  n.laborEntries=(Array.isArray(raw?.laborEntries)?raw.laborEntries:[]).filter(x=>x&&typeof x==='object').map(x=>({...x,id:x.id||uid('earned'),projectId:x.projectId||x.project||n.current,itemId:x.itemId||'',contractorId:x.contractorId||'',amount:Number(x.amount)||0,date:x.date||'',note:x.note||'',status:x.status||'approved'}));
- n.siteLogs=(Array.isArray(raw?.siteLogs)?raw.siteLogs:[]).filter(x=>x&&typeof x==='object').map(x=>({...x,id:x.id||uid('log'),projectId:x.projectId||x.project||n.current,date:x.date||'',itemId:x.itemId||'',item:x.item||'',quantity:Number(x.quantity)||0,unit:x.unit||'',crew:x.crew||'',type:x.type||'execution',note:x.note||''}));
+ n.siteLogs=(Array.isArray(raw?.siteLogs)?raw.siteLogs:[]).filter(x=>x&&typeof x==='object').map(x=>({...x,id:x.id||uid('log'),projectId:x.projectId||x.project||n.current,date:x.date||'',itemId:x.itemId||'',item:x.item||'',quantity:x.quantity===''||x.quantity==null?null:Number(x.quantity),unit:x.unit||'',crew:x.crew||'',type:x.type||'execution',note:x.note||''}));
  n.payments=n.payments.map(x=>({...x,purpose:x.purpose||'legacy',invoiceId:x.invoiceId||''}));
  return n;
 };
@@ -489,7 +489,7 @@ function validateDailyLog(data){
  const parsed=new Date(Number(parts[1]),Number(parts[2])-1,Number(parts[3]));
  if(parsed.getFullYear()!==Number(parts[1])||parsed.getMonth()!==Number(parts[2])-1||parsed.getDate()!==Number(parts[3]))return {ok:false,reason:'التاريخ غير صحيح'};
  if(!String(data.note||'').trim())return {ok:false,reason:'اكتب تفاصيل التدوينة'};
- if(data.quantity!==''&&data.quantity!=null&&Number(data.quantity)!==0&&(!Number.isFinite(Number(data.quantity))||Number(data.quantity)<=0))return {ok:false,reason:'الكمية يجب أن تكون أكبر من صفر'};
+ if(data.quantity!==''&&data.quantity!=null&&(!Number.isFinite(Number(data.quantity))||Number(data.quantity)<=0))return {ok:false,reason:'الكمية يجب أن تكون أكبر من صفر'};
  return {ok:true};
 }
 function validateImportedState(raw){
@@ -574,7 +574,7 @@ showItemDetail=function(id){baseShowItemDetail(id);const d=$('itemDetail'),i=ite
 function saveNewSiteLog(data){
  const valid=validateDailyLog(data);if(!valid.ok){alert(valid.reason);return false;}
  const itemName=String(data.item||'').trim(),item=findNamedRecord(currentItems(),itemName);
- state.siteLogs.push({id:uid('log'),projectId:state.current,date:data.date,itemId:item?.id||'',item:item?.name||itemName,quantity:data.quantity?Number(data.quantity):0,unit:String(data.unit||''),crew:String(data.crew||''),type:data.type||'execution',note:String(data.note||'').trim()});
+ state.siteLogs.push({id:uid('log'),projectId:state.current,date:data.date,itemId:item?.id||'',item:item?.name||itemName,quantity:data.quantity===''||data.quantity==null?null:Number(data.quantity),unit:String(data.unit||''),crew:String(data.crew||''),type:data.type||'execution',note:String(data.note||'').trim()});
  save();return true;
 }
 $('quickKind').addEventListener('change',toggleInvoiceSelector);
