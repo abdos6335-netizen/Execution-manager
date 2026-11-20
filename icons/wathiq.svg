@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<defs>
+ <linearGradient id="base" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff" offset="0"/><stop stop-color="#f2eeeb" offset="1"/></linearGradient>
+ <linearGradient id="coral" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ff9b78"/><stop offset=".55" stop-color="#f45e42"/><stop offset="1" stop-color="#dc392e"/></linearGradient>
+ <linearGradient id="amber" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffd17c"/><stop offset="1" stop-color="#f7a34f"/></linearGradient>
+ <clipPath id="round"><rect x="28" y="28" width="456" height="456" rx="94"/></clipPath>
+</defs>
+<g clip-path="url(#round)">
+ <rect width="512" height="512" fill="url(#base)"/>
+ <g stroke="#e9e3df" stroke-opacity=".35" stroke-width="2" fill="none">
+  <path d="M142 28V484M256 28V484M370 28V484M28 142H484M28 256H484M28 370H484"/>
+ </g>
+ <g>
+  <rect x="142" y="370" width="114" height="114" fill="#f18a70" opacity=".75"/>
+  <rect x="256" y="370" width="114" height="114" fill="url(#amber)" opacity=".9"/>
+  <rect x="370" y="370" width="114" height="114" fill="url(#coral)" opacity=".96"/>
+  <rect x="256" y="256" width="114" height="114" fill="url(#amber)" opacity=".86"/>
+  <rect x="370" y="256" width="114" height="114" fill="url(#coral)" opacity=".92"/>
+  <rect x="370" y="142" width="114" height="114" fill="#f38c70" opacity=".72"/>
+  <rect x="256" y="142" width="114" height="114" fill="url(#coral)" opacity=".9"/>
+  <rect x="370" y="28" width="114" height="114" fill="#f6a58c" opacity=".55"/>
+  <rect x="142" y="256" width="114" height="114" fill="#f39a7e" opacity=".66"/>
+  <rect x="142" y="370" width="114" height="114" fill="#ed654f" opacity=".75"/>
+ </g>
+ <rect x="28" y="28" width="456" height="456" rx="94" fill="none" stroke="#f4e9e4" stroke-width="5"/>
+</g></svg>
