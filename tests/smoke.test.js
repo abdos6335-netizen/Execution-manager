@@ -47,7 +47,7 @@ function createApp(initialStorage = {}) {
   vm.runInContext(source + `
     globalThis.__appTest = {
       getState: () => state, normalizeState, parseQuickText,
-      contractorTotals, answerReportQuestion, today, spentForProject, SHEET_PALETTES,
+      contractorTotals, answerReportQuestion, today, spentForProject, SHEET_PALETTES, invoiceTotals, supplierLedgerTotals, laborTotalsForContractor, executionCostForProject, cashOutflowForProject, validateDailyLog,
       itemCard, itemMovements, paidForItem, findDuplicateMovement, save, elements: null, storage: null,
       failStorageWrites(value) { globalThis.__failWrites(value); }
     };
@@ -436,4 +436,33 @@ test('all card palettes use muted colors with readable dark text and a lightness
       if (i) assert.ok(luminance[i] > luminance[i - 1], name + ' must brighten from card to card');
     }
   }
+});
+
+
+test('supplier invoice and its linked payments are not counted twice as execution cost', () => {
+ const app=createApp();const s=app.getState();
+ s.purchases=[{id:'i1',projectId:'p1',supplierId:'v1',amount:10000,date:'2026-11-20'}];
+ s.payments=[{id:'p1',projectId:'p1',invoiceId:'i1',contractorId:'v1',type:'materials',purpose:'supplier_invoice_payment',amount:6000,date:'2026-11-21'}];
+ assert.deepEqual(JSON.parse(JSON.stringify(app.invoiceTotals(s.purchases[0]))),{amount:10000,paid:6000,outstanding:4000});
+ assert.equal(app.executionCostForProject(),10000);
+ assert.equal(app.cashOutflowForProject(),6000);
+});
+test('labor advances are cash paid but do not become earned labor cost', () => {
+ const app=createApp();const s=app.getState();
+ s.payments=[{id:'p1',projectId:'p1',contractorId:'c1',type:'labor',purpose:'advance',amount:1500,date:'2026-11-20'}];
+ s.laborEntries=[{id:'l1',projectId:'p1',contractorId:'c1',amount:4000,status:'approved',date:'2026-11-20'}];
+ assert.equal(app.executionCostForProject(),4000);
+ assert.equal(app.cashOutflowForProject(),1500);
+ assert.deepEqual(JSON.parse(JSON.stringify(app.laborTotalsForContractor('c1'))),{earned:4000,paid:1500,advances:1500,balance:2500});
+});
+test('legacy payments retain their prior cost treatment for backward compatibility', () => {
+ const app=createApp();app.getState().payments=[{id:'old',projectId:'p1',type:'labor',amount:700}];
+ assert.equal(app.executionCostForProject(),700);
+});
+test('daily site log validates date, description and positive optional quantity', () => {
+ const app=createApp();
+ assert.equal(app.validateDailyLog({date:'',note:'تم التنفيذ'}).ok,false);
+ assert.equal(app.validateDailyLog({date:'2026-11-20',note:'',quantity:''}).ok,false);
+ assert.equal(app.validateDailyLog({date:'2026-11-20',note:'تم تنفيذ المحارة',quantity:'0'}).ok,false);
+ assert.equal(app.validateDailyLog({date:'2026-11-20',note:'تم تنفيذ المحارة',quantity:'35'}).ok,true);
 });
