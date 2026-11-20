@@ -40,3 +40,54 @@ input,select,textarea{background:color-mix(in srgb,var(--ink) 3.5%,var(--paper))
 .metric-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.metric{padding:13px}.metric strong{font-size:19px}.two-col{grid-template-columns:1fr}.appearance-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.page-head h1{font-size:21px}.report-ask{flex-direction:column}}
 @media(max-width:420px){.appearance-grid{grid-template-columns:1fr}.metric-grid.mini{grid-template-columns:1fr 1fr}}
 @media print{.sidebar,.topbar,.mobile-nav,.btn,.quick-entry,.appearance-panel{display:none!important}.app-shell{display:block;padding:0}.main-wrap{box-shadow:none;border:0}main{padding:0}.page.hidden{display:none!important}.contextual-report{box-shadow:none;border:0}}
+
+/* Dark appearance: bring legacy fixed-color components into the shared theme. */
+html[data-dark="1"] body{background:var(--canvas);color:var(--ink)}
+html[data-dark="1"] .record-card,
+html[data-dark="1"] .table-wrap,
+html[data-dark="1"] .empty,
+html[data-dark="1"] .form-grid input,
+html[data-dark="1"] .form-grid select,
+html[data-dark="1"] .form-grid textarea,
+html[data-dark="1"] .quick-entry>textarea,
+html[data-dark="1"] .quick-entry .form-grid input,
+html[data-dark="1"] .quick-entry .form-grid select,
+html[data-dark="1"] .record-search input,
+html[data-dark="1"] .quick-tools input{background:#2a2a2d!important;color:var(--ink)!important;border-color:var(--line)!important}
+html[data-dark="1"] .split-stats>div,
+html[data-dark="1"] .surface-inset,
+html[data-dark="1"] .report-lower article{background:#29292c!important;border-color:var(--line)!important}
+html[data-dark="1"] .metric-highlight{background:#2b342e!important;border-color:#3c5144!important}
+html[data-dark="1"] .metric-highlight strong{color:#b4d1bd}
+html[data-dark="1"] .summary-row,
+html[data-dark="1"] .activity-row,
+html[data-dark="1"] .table-row,
+html[data-dark="1"] .card-foot,
+html[data-dark="1"] .subsection{border-color:var(--line)!important}
+html[data-dark="1"] .summary-row span,
+html[data-dark="1"] .activity-row small,
+html[data-dark="1"] .table-row small,
+html[data-dark="1"] .card-foot,
+html[data-dark="1"] .metric span,
+html[data-dark="1"] .metric small,
+html[data-dark="1"] .form-grid label{color:var(--muted)!important}
+html[data-dark="1"] .table-row strong,
+html[data-dark="1"] .table-row b,
+html[data-dark="1"] .record-card h3,
+html[data-dark="1"] .surface h2,
+html[data-dark="1"] .surface h3{color:var(--ink)}
+html[data-dark="1"] .pill{background:#343b36;color:#c4d8ca}
+html[data-dark="1"] .btn-light,
+html[data-dark="1"] .icon-btn{background:#333337;color:var(--ink);border-color:var(--line)}
+html[data-dark="1"] .text-btn{color:#b7cbbb}
+html[data-dark="1"] .delete-btn{background:#382a2a;color:#efb5b0;border-color:#593b3b}
+html[data-dark="1"] ::placeholder{color:#898991;opacity:1}
+html[data-dark="1"] .mobile-nav{background:#161618}
+html[data-dark="1"] .more-nav-menu{background:#242427;border-color:var(--line)}
+html[data-dark="1"] .more-nav-menu button{color:var(--ink)}
+html[data-dark="1"] .positive{color:#9bc8a8}
+html[data-dark="1"] .negative{color:#e6a09a}
+html[data-dark="1"] .page-head p,
+html[data-dark="1"] .muted,
+html[data-dark="1"] .hint{color:var(--muted)}
+html[data-dark="1"] select option{background:#2a2a2d;color:var(--ink)}
