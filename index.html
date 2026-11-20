@@ -2,13 +2,13 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#e3e3e4"><link rel="manifest" href="manifest.webmanifest">
-<title>Execution Manager</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap"><link rel="stylesheet" href="styles.css">
+<meta name="theme-color" content="#e3e3e4"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="وَثيق"><meta name="application-name" content="وَثيق"><link rel="apple-touch-icon" href="./icons/wathiq.svg"><link rel="icon" type="image/svg+xml" href="./icons/wathiq.svg"><link rel="manifest" href="./manifest.webmanifest">
+<title>وَثيق | إدارة تنفيذ التشطيبات</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap"><link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <div class="app-shell">
 <aside class="sidebar">
-  <div class="brand"><div class="brand-mark">E</div><div><strong>Execution Manager</strong><small>إدارة تنفيذ التشطيبات</small></div></div>
+  <div class="brand"><div class="brand-mark">و</div><div><strong>وَثيق</strong><small>إدارة تنفيذ التشطيبات</small></div></div>
   <div class="project-switch"><label for="projectSelect">المشروع الحالي</label><select id="projectSelect"></select></div>
   <div class="nav-label">مساحة العمل</div>
   <nav class="side-nav" aria-label="التنقل الرئيسي">
@@ -103,9 +103,10 @@
  <p class="hint">يتم حفظ البيانات محلياً في المتصفح. لا توجد مزامنة سحابية أو قاعدة بيانات مشتركة بين الأجهزة في هذه النسخة.</p>
 </section>
 </main>
-<footer>Execution Manager · نظام مستقل لإدارة تنفيذ التشطيبات</footer>
+<footer>وَثيق · نظام مستقل لإدارة تنفيذ التشطيبات</footer>
 </div>
 </div>
 <nav class="mobile-nav" aria-label="التنقل السريع"><button data-page="quick" class="active"><span>＋</span><small>تسجيل</small></button><button data-page="dashboard"><span>⌂</span><small>الرئيسية</small></button><button data-page="items"><span>▦</span><small>البنود</small></button><button data-page="contractors"><span>♙</span><small>الأشخاص</small></button><button type="button" id="moreNavButton"><span>•••</span><small>المزيد</small></button></nav><div id="moreNavMenu" class="more-nav-menu hidden"><button data-page="collections">تحصيلات العميل</button><button data-page="expenses">المصروفات</button><button data-page="settings">الإعدادات</button></div>
+<script>if ("serviceWorker" in navigator && location.protocol === "https:") { window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js", { scope: "./" }).catch((error) => console.error("Wathiq service worker registration failed:", error))); }</script>
 <script src="app.js"></script>
 </body></html>
