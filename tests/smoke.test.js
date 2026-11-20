@@ -305,3 +305,5 @@ test('input fields are tinted one shade lighter from each actual card color, not
   assert.ok(css.includes('background:color-mix(in srgb,var(--sheet-bg) 87%,white 13%)!important'));
   assert.ok(!css.includes('background:color-mix(in srgb,var(--sheet-ink) 13%,white)!important'));
 });
+
+// Mobile card input tint regression coverage.
