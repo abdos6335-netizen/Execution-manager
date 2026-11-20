@@ -62,12 +62,12 @@ window.addEventListener?.('popstate',e=>{
 });
 function enableWorkspaceSwipeBack(){
  let start=null;
- document.addEventListener('touchstart',e=>{
+ document.addEventListener?.('touchstart',e=>{
   if(document.body.dataset.hub!=='sheets'||e.touches.length!==1)return;
   const x=e.touches[0].clientX,w=window.innerWidth||document.documentElement.clientWidth;
   if(x<28||x>w-28)start={x,y:e.touches[0].clientY};
  },{passive:true});
- document.addEventListener('touchend',e=>{
+ document.addEventListener?.('touchend',e=>{
   if(!start)return;
   const end=e.changedTouches[0],dx=end.clientX-start.x,dy=end.clientY-start.y,from=start.x;
   start=null;
