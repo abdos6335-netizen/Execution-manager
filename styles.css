@@ -339,3 +339,36 @@ main{display:block;width:100%;max-width:none;margin:0;padding:0;min-height:100dv
 .sheet-inline-page .icon-btn{background:color-mix(in srgb,var(--sheet-ink) 10%,transparent);color:var(--sheet-ink);border-color:color-mix(in srgb,var(--sheet-ink) 22%,transparent)}
 .sheet-inline-page .pill{color:var(--sheet-ink)}
 .sheet-inline-page .positive,.sheet-inline-page .negative{color:var(--sheet-ink)!important}
+
+
+/* WeeklyPlanner-equivalent appearance controls, adapted to the six-card workspace. */
+body{line-height:var(--line-height,1.4)}
+.sheet-inline-page p,.sheet-inline-page label,.sheet-inline-page .table-row,.sheet-inline-page .summary-row,.sheet-inline-page .activity-row,.sheet-inline-page .hint{line-height:var(--line-height,1.4)}
+.sheet-inline-page>.page-head h1{font-size:calc(clamp(23px,3.2vw,34px) * var(--type-heading,1))}
+.sheet-inline-page .surface h2,.sheet-inline-page .subsection h3{font-size:calc(15px * var(--type-subheading,1))}
+.sheet-inline-page .table-row,.sheet-inline-page .summary-row,.sheet-inline-page .activity-row,.sheet-inline-page .muted{font-size:calc(12px * var(--type-item,1))}
+.sheet-inline-page>.surface,.sheet-inline-page .surface-inset{background:var(--sheet-surface)!important}
+.project-sheet-grid:before,.project-sheet-grid:after{filter:blur(var(--glass-blur,16px));opacity:var(--glass-opacity,.28)}
+.project-sheet .sheet-arrow{border-radius:var(--icon-radius,50%);background:var(--icon-bg,transparent);width:38px;height:38px;display:grid;place-items:center}
+.positive{color:var(--done-color,#1f9c70)!important}
+.project-sheet,.project-sheet-trigger,.sheet-inline-content{transition-duration:var(--motion-duration,.48s)!important}
+.sheets-intro{display:flex!important;align-items:center;justify-content:flex-end;margin:0 0 8px;padding:5px 12px}
+.workspace-settings-trigger{width:38px;height:38px;border:1px solid var(--line);border-radius:12px;background:var(--paper);color:var(--ink);font-size:20px;box-shadow:var(--shadow)}
+.settings-page-head{align-items:center;flex-wrap:wrap}
+.settings-page-head .btn{white-space:nowrap}
+.appearance-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 16px}
+.appearance-grid label{display:flex;flex-direction:column;gap:7px;color:var(--muted);font-size:12px;min-width:0}
+.appearance-grid input:not([type=checkbox]),.appearance-grid select{width:100%;min-width:0;border:1px solid var(--line);border-radius:9px;padding:9px 10px;background:var(--paper);color:var(--ink);font:inherit}
+.appearance-grid input[type=range]{padding:0;accent-color:var(--accent)}
+.appearance-grid input[type=color]{height:40px;padding:3px}
+.appearance-grid input[type=checkbox]{accent-color:var(--accent)}
+.appearance-inline{display:flex;align-items:center;gap:7px;color:var(--ink)}
+.appearance-grid output{color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
+.theme-options{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px}
+.theme-option{display:flex;align-items:center;gap:8px;min-width:0;padding:9px;border:1px solid var(--line);border-radius:11px;background:var(--paper);color:var(--ink)}
+.theme-option .theme-swatch{width:34px;height:28px;flex:0 0 34px}
+.theme-option strong{font-size:11px;white-space:nowrap}
+.theme-option.active{outline:2px solid var(--accent);outline-offset:1px}
+@media(max-width:800px){.appearance-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.theme-options{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.appearance-grid{grid-template-columns:1fr}.settings-page-head{align-items:flex-start}.settings-page-head .btn{width:100%}}
+@media(prefers-reduced-motion:reduce){.project-sheet,.project-sheet-trigger,.sheet-inline-content{transition:none!important;animation:none!important}}
