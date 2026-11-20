@@ -11,3 +11,5 @@
 
 .report-tools .form-grid{align-items:end}.report-tools .form-actions{grid-column:auto}.quick-tools input{flex:1;min-width:180px;border:1px solid #e1e4e8;border-radius:8px;padding:10px 12px;font:inherit;font-size:12px}.file-btn input[type=file]{width:1px;height:1px}.quick-tools .file-btn{cursor:pointer}.report-tools{max-width:none}.report-tools label{min-width:0}
 @media(max-width:720px){.report-tools .form-grid{grid-template-columns:1fr}.report-tools .form-actions{grid-column:auto}.quick-tools input{width:100%;flex-basis:100%}}
+
+.record-search{margin:0 0 14px}.record-search input{width:100%;max-width:560px;border:1px solid #e1e4e8;background:#fff;border-radius:9px;padding:11px 13px;color:#303640;font:inherit;font-size:12px;outline:0}.record-search input:focus{border-color:#94a99c;box-shadow:0 0 0 3px #eaf0ed}
