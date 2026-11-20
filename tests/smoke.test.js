@@ -47,7 +47,7 @@ function createApp(initialStorage = {}) {
   vm.runInContext(source + `
     globalThis.__appTest = {
       getState: () => state, normalizeState, parseQuickText,
-      contractorTotals, answerReportQuestion, today, spentForProject, SHEET_PALETTES, invoiceTotals, supplierLedgerTotals, laborTotalsForContractor, executionCostForProject, cashOutflowForProject, validateDailyLog,
+      contractorTotals, answerReportQuestion, today, spentForProject, SHEET_PALETTES, invoiceTotals, supplierLedgerTotals, laborTotalsForContractor, executionCostForProject, cashOutflowForProject, validateDailyLog, validateImportedState,
       itemCard, itemMovements, paidForItem, findDuplicateMovement, save, elements: null, storage: null,
       failStorageWrites(value) { globalThis.__failWrites(value); }
     };
@@ -465,4 +465,15 @@ test('daily site log validates date, description and positive optional quantity'
  assert.equal(app.validateDailyLog({date:'2026-11-20',note:'',quantity:''}).ok,false);
  assert.equal(app.validateDailyLog({date:'2026-11-20',note:'تم تنفيذ المحارة',quantity:'0'}).ok,false);
  assert.equal(app.validateDailyLog({date:'2026-11-20',note:'تم تنفيذ المحارة',quantity:'35'}).ok,true);
+});
+
+test('daily site log rejects impossible calendar dates', () => {
+ const app=createApp();
+ assert.equal(app.validateDailyLog({date:'2026-02-30',note:'ملاحظة'}).ok,false);
+ assert.equal(app.validateDailyLog({date:'2026-11-20',note:'ملاحظة'}).ok,true);
+});
+test('backup validation rejects supplier payments linked to a missing invoice', () => {
+ const app=createApp();
+ const result=app.validateImportedState({projects:[{id:'p1',name:'P'}],current:'p1',collections:[],payments:[{id:'x',projectId:'p1',amount:10,purpose:'supplier_invoice_payment',invoiceId:'missing'}]});
+ assert.equal(result.ok,false);
 });
