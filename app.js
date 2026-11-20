@@ -544,6 +544,20 @@ renderReports=function(){
   $('reportComparison').textContent='التكلفة المستحقة الحالية '+money(direct+legacyCost+invoiceCost+earnedCost)+'، الخروج النقدي '+money(cashOut)+'، التحصيل '+money(collected)+'. الفترة السابقة: تكلفة مستحقة '+money(costPrev)+'، خروج نقدي '+money(cashPrev)+'، تحصيل '+money(colPrev)+'.';
  }else $('reportComparison').textContent='حدد تاريخ بداية ونهاية للمقارنة مع الفترة السابقة بنفس المدة.';
 };
+const baseContractorCard=contractorCard;
+contractorCard=function(c){
+ const s=supplierLedgerTotals(c.id),l=laborTotalsForContractor(c.id);
+ return '<article class="record-card"><div class="card-top"><span class="pill">'+esc(c.trade||'مورد / صنايعي')+'</span></div><h3>'+esc(c.name)+'</h3><p class="muted">'+esc(c.phone||'لا يوجد رقم هاتف')+'</p><div class="advanced-item-stats"><small>فواتير المورد: '+money(s.invoiceAmount)+' · مسدد '+money(s.linkedPaid)+' · متبقي '+money(s.outstanding)+'</small><small>أجرة معتمدة: '+money(l.earned)+' · مدفوع '+money(l.paid)+' · متبقي '+money(l.balance)+' · سُلف '+money(l.advances)+'</small></div><div class="card-foot"><button class="text-btn" data-contractor-detail="'+esc(c.id)+'">كشف الحساب ←</button></div></article>';
+};
+const baseShowContractorDetail=showContractorDetail;
+showContractorDetail=function(id){
+ baseShowContractorDetail(id);
+ const d=$('contractorDetail'),c=contractorById(id);if(!c)return;
+ d.querySelectorAll?.('[data-ledger-delete]').forEach(b=>{const kind=b.dataset.ledgerKind==='payment'?'payment':'expense';if(b.parentNode&&!b.parentNode.querySelector('[data-edit-transaction]')){const e=document.createElement('button');e.type='button';e.className='text-btn';e.textContent='تعديل';e.dataset.editTransaction=kind;e.dataset.id=b.dataset.ledgerDelete;b.parentNode.insertBefore(e,b);}});
+ const s=supplierLedgerTotals(id),l=laborTotalsForContractor(id),metrics=d.querySelector('.metric-grid');
+ if(metrics)metrics.innerHTML='<div class="metric"><span>فواتير المورد</span><strong>'+money(s.invoiceAmount)+'</strong></div><div class="metric"><span>مدفوع المورد</span><strong>'+money(s.linkedPaid)+'</strong></div><div class="metric"><span>متبقي المورد</span><strong>'+money(s.outstanding)+'</strong></div>';
+ d.innerHTML+='<div class="advanced-ledger-group"><h3>ملخص الأجرة والسُلف</h3><div class="summary-list"><div class="summary-row"><span>أجرة معتمدة</span><strong>'+money(l.earned)+'</strong></div><div class="summary-row"><span>مدفوع أجرة / سُلف</span><strong>'+money(l.paid)+'</strong></div><div class="summary-row"><span>صافي مستحق الأجرة</span><strong>'+money(l.balance)+'</strong></div><div class="summary-row"><span>منها سُلف</span><strong>'+money(l.advances)+'</strong></div></div></div>';
+};
 const baseItemCard=itemCard;
 itemCard=function(i){const html=baseItemCard(i),inv=projectPurchases().filter(x=>x.itemId===i.id).reduce((s,x)=>s+x.amount,0),earned=projectLaborEntries().filter(x=>x.itemId===i.id).reduce((s,x)=>s+x.amount,0);return html.replace('</article>','<div class="advanced-item-stats"><small>فواتير المشتريات: '+money(inv)+'</small><small>الأجرة المعتمدة: '+money(earned)+'</small></div></article>');};
 const baseShowItemDetail=showItemDetail;
