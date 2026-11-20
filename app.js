@@ -50,6 +50,7 @@ function renderProjectSheets(){const sheets=[['dashboard','01 · OVERVIEW','نظ
 $('projectCards').addEventListener('click',e=>{const card=e.target.closest('[data-open-project]');if(!card)return;state.current=card.dataset.openProject;save();selectedSheet='';showProjectSheets()});
 $('projectSheetGrid').addEventListener('click',e=>{const card=e.target.closest('[data-sheet]');if(!card)return;const page=card.dataset.sheet;if(selectedSheet===page){selectedSheet='';setPage(page)}else{selectedSheet=page;renderProjectSheets()}});
 $('backToProjects').onclick=showProjectHome;
+$('backToSheets').onclick=showProjectSheets;
 $('hubAddProject').onclick=()=>$('addProject').click();
 document.querySelectorAll('[data-page]').forEach(b=>b.addEventListener('click',()=>setPage(b.dataset.page)));
 document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>$(b.dataset.close).classList.add('hidden')));
