@@ -405,3 +405,9 @@ test('direct expense entry can create and link a supplier or craftsman account',
   assert.match(source, /state\.contractors\.push\(matchedPayee\)/);
   assert.match(source, /payeeId:matchedPayee\?\.id/);
 });
+
+test('cancelled duplicate direct expense does not create an orphan contractor account', () => {
+  const createAt = source.indexOf('if(createPayee){matchedPayee=');
+  const duplicateGuardAt = source.indexOf('if(!confirmNoDuplicateMovement', source.indexOf("$('expenseForm').onsubmit"));
+  assert.ok(createAt > duplicateGuardAt);
+});
