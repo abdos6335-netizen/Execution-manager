@@ -372,3 +372,9 @@ body{line-height:var(--line-height,1.4)}
 @media(max-width:800px){.appearance-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.theme-options{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:520px){.appearance-grid{grid-template-columns:1fr}.settings-page-head{align-items:flex-start}.settings-page-head .btn{width:100%}}
 @media(prefers-reduced-motion:reduce){.project-sheet,.project-sheet-trigger,.sheet-inline-content{transition:none!important;animation:none!important}}
+
+/* User-selected text color is intentionally restricted to white, dark gray, or black. */
+.sheet-inline-page .positive,.sheet-inline-page .negative,.sheet-inline-page .muted,.sheet-inline-page .eyebrow,.sheet-inline-page .pill,.sheet-inline-page .text-btn,.sheet-inline-page .delete-btn{color:var(--sheet-ink)!important}
+
+/* Keep every visible workspace text element within the selected monochrome text palette. */
+.sheet-inline-page *,.project-sheet-trigger *{color:var(--sheet-ink)!important}
