@@ -126,3 +126,5 @@ body{font-family:var(--app-font,Inter,"IBM Plex Sans Arabic",sans-serif)}
 
 .topbar-actions{display:flex;align-items:center;gap:9px}
 .app-shell[data-hub="home"] .main-wrap,.app-shell[data-hub="sheets"] .main-wrap{min-height:100vh}
+
+body[data-hub="home"] .mobile-nav,body[data-hub="sheets"] .mobile-nav{display:none!important}
