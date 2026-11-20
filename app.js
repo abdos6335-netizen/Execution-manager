@@ -19,9 +19,13 @@ function normalizeState(raw){
  return {...raw,projects,current,collections,expenses,items,contractors,payments};
 }
 function loadState(){
- let raw=null,stored=null;
- try{stored=localStorage.getItem(KEY)||localStorage.getItem('execution-manager-v01')||null;if(stored)raw=JSON.parse(stored)}
- catch{try{if(stored)localStorage.setItem(KEY+'.recovery.'+Date.now(),stored)}catch{}}
+ const readStored=key=>{
+  let stored=null;try{stored=localStorage.getItem(key)}catch{return null}
+  if(!stored)return null;
+  try{return JSON.parse(stored)}catch{try{localStorage.setItem(KEY+'.recovery.'+Date.now(),stored)}catch{}return null}
+ };
+ let raw=readStored(KEY);
+ if(!raw)raw=readStored('execution-manager-v01');
  if(!raw)raw={projects:[{id:'p1',name:'المشروع الأول',rate:10}],current:'p1'};
  return normalizeState(raw);
 }
@@ -143,7 +147,7 @@ function parseQuickText(){
  const t=normArabic(raw),amount=parseAmountFromText(raw);
  if(amount!==null&&amount>0&&!$('quickAmount').value)$('quickAmount').value=amount;
  if(/تحصيل|استلمت|قبضت/.test(t))$('quickKind').value='collection';
- else if(/خامات|مونه|اشتريت|شراء|مشتريات|جردل|اسمنت|سيراميك/.test(t))$('quickKind').value='materials';
+ else if(/خامات|مونه|اشتريت|شراء|مشتريات|مورد|توريد|جردل|اسمنت|سيراميك/.test(t))$('quickKind').value='materials';
  else if(/اجره|مصنعيه|صنايعي|نقاش|نجار|كهربائي|سباك|دفعت|مقاول/.test(t))$('quickKind').value='labor';
  $('quickNote').value=raw;
 }
