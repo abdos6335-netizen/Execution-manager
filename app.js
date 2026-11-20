@@ -48,7 +48,7 @@ function render(){
 }
 function typeLabel(t){return t==='materials'?'مونة / خامات':t==='labor'?'مصنعية':'أخرى'}
 function itemCard(i){
- const m=agreement(i,'materials'),l=agreement(i,'labor'),mp=paidForItem(i.id,'materials'),lp=paidForItem(i.id,'labor'),c=contractorById(i.contractorId);
+ const m=agreement(i,'materials'),l=agreement(i,'labor'),mp=paidForItem(i.id,'materials'),lp=paidForItem(i.id,'labor'),c=contractorById(i.laborContractorId||i.contractorId),mc=contractorById(i.materialsContractorId||i.contractorId);
  return '<article class="record-card"><div class="card-top"><span class="pill">'+esc(i.status||'لم يبدأ')+'</span><span class="muted">'+esc(i.category||'بند تنفيذ')+'</span></div><h3>'+esc(i.name)+'</h3><p class="muted">'+esc(i.qty||1)+' '+esc(i.unit||'')+' · '+esc(i.method||'')+'</p><div class="split-stats"><div><small>المونة</small><b>'+money(m)+'</b><small>مدفوع '+money(mp)+' · متبقي '+money(Math.max(0,m-mp))+'</small></div><div><small>الأجرة</small><b>'+money(l)+'</b><small>مدفوع '+money(lp)+' · متبقي '+money(Math.max(0,l-lp))+'</small></div></div><div class="card-foot"><span>'+'المونة: '+esc(mc?.name||'غير محدد')+' · الأجرة: '+esc(c?.name||'غير محدد')+'</span><button class="text-btn" data-item-detail="'+i.id+'">التفاصيل والحركات ←</button></div></article>';
 }
 function contractorTotals(c){
