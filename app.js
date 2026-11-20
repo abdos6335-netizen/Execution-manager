@@ -58,7 +58,7 @@ function restoreInlineSheet(){if(!inlineSheetReturn)return;const {target,parent,
 function collapseInlineSheet(){restoreInlineSheet();expandedSheet='';renderProjectSheets()}
 function expandInlineSheet(page){expandedSheet=page;renderProjectSheets();const host=$('sheetInlineContent');host?.scrollIntoView({behavior:'smooth',block:'nearest'})}
 $('projectCards').addEventListener('click',e=>{const card=e.target.closest('[data-open-project]');if(!card)return;restoreInlineSheet();expandedSheet='';selectedSheet='';state.current=card.dataset.openProject;save();showProjectSheets()});
-$('projectSheetGrid').addEventListener('click',e=>{const trigger=e.target.closest('[data-sheet]');if(!trigger)return;const page=trigger.dataset.sheet;if(expandedSheet===page){collapseInlineSheet();return}if(selectedSheet===page){expandInlineSheet(page)}else{restoreInlineSheet();expandedSheet='';selectedSheet=page;renderProjectSheets()}});
+$('projectSheetGrid').addEventListener('click',e=>{const trigger=e.target.closest('[data-sheet]');if(!trigger)return;const page=trigger.dataset.sheet;if(expandedSheet===page){collapseInlineSheet();return}if(selectedSheet===page){expandInlineSheet(page)}else{restoreInlineSheet();expandedSheet='';selectedSheet=page;renderProjectSheets();const selected=$('projectSheetGrid').querySelector('[data-sheet-card="'+page+'"]');selected?.scrollIntoView?.({behavior:'smooth',block:'center'})}});
 $('backToProjects').onclick=showProjectHome;
 $('backToSheets').onclick=showProjectSheets;
 $('hubAddProject').onclick=()=>$('addProject').click();
