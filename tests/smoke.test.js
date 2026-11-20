@@ -92,6 +92,29 @@ test('quick entry still recognizes a craftsman labor payment', () => {
   assert.equal(Number(app.elements.get('quickAmount').value), 3000);
 });
 
+test('quick-entry clear action also clears the natural-language text', () => {
+  const app = createApp();
+  app.elements.get('quickText').value = 'دفعت ٣٠٠٠ جنيه';
+  app.elements.get('clearQuickForm').onclick();
+  assert.equal(app.elements.get('quickText').value, '');
+  assert.equal(app.elements.get('quickDate').value, app.today());
+});
+
+test('account Q&A respects the active report date filters', () => {
+  const app = createApp();
+  const state = app.getState();
+  state.contractors = [{ id: 'c1', projectId: 'p1', name: 'محمد النقاش', aliases: ['محمد'] }];
+  state.expenses = [
+    { id: 'old', projectId: 'p1', payee: 'محمد', payeeId: 'c1', amount: 900, date: '2026-01-01' },
+    { id: 'new', projectId: 'p1', payee: 'محمد', payeeId: 'c1', amount: 100, date: '2026-01-10' }
+  ];
+  app.elements.get('reportFrom').value = '2026-01-05';
+  app.elements.get('reportTo').value = '2026-01-15';
+  app.elements.get('reportQuestion').value = 'دفعت كام لمحمد';
+  app.answerReportQuestion();
+  assert.match(app.elements.get('reportAnswer').textContent, /١٠٠/);
+});
+
 test('contractor account includes both ledger payments and direct purchases', () => {
   const app = createApp();
   const state = app.getState();
