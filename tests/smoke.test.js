@@ -227,7 +227,7 @@ test('project sections expand progressively inside the same stacked cards', () =
   const fs = require('node:fs');
   const html = fs.readFileSync(new URL('../index.html', 'file://' + __filename), 'utf8');
   const css = fs.readFileSync(new URL('../styles.css', 'file://' + __filename), 'utf8');
-  assert.match(source, /if\(selectedSheet===page\)\{expandInlineSheet\(page\)\}/);
+  assert.match(source, /if\(selectedSheet===page\)\{pushWorkspaceHistory\('expanded',page\);expandInlineSheet\(page\)\}/);
   assert.match(source, /host\.appendChild\(target\)/);
   assert.match(source, /function restoreInlineSheet\(\)/);
   assert.doesNotMatch(source, /if\(selectedSheet===page\)\{[^}]*setPage/);
