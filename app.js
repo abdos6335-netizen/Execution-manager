@@ -485,7 +485,10 @@ function cashOutflowForProject(projectId=state.current){
  return state.expenses.filter(x=>x.projectId===projectId).reduce((s,x)=>s+Number(x.amount||0),0)+state.payments.filter(x=>x.projectId===projectId).reduce((s,x)=>s+Number(x.amount||0),0);
 }
 function validateDailyLog(data){
- if(!data||!/^\d{4}-\d{2}-\d{2}$/.test(String(data.date||'')))return {ok:false,reason:'التاريخ مطلوب'};
+ const date=String(data?.date||''),parts=/^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+ if(!parts)return {ok:false,reason:'التاريخ مطلوب'};
+ const parsed=new Date(Number(parts[1]),Number(parts[2])-1,Number(parts[3]));
+ if(parsed.getFullYear()!==Number(parts[1])||parsed.getMonth()!==Number(parts[2])-1||parsed.getDate()!==Number(parts[3]))return {ok:false,reason:'التاريخ غير صحيح'};
  if(!String(data.note||'').trim())return {ok:false,reason:'اكتب تفاصيل التدوينة'};
  if(data.quantity!==''&&data.quantity!=null&&(!Number.isFinite(Number(data.quantity))||Number(data.quantity)<=0))return {ok:false,reason:'الكمية يجب أن تكون أكبر من صفر'};
  return {ok:true};
@@ -511,6 +514,13 @@ render=function(){baseRenderApp();renderAdvancedLedger();
 const baseRenderReports=renderReports;
 renderReports=function(){baseRenderReports();const extra=[...projectPurchases().map(x=>({date:x.date,title:'فاتورة مشتريات · '+(x.supplier||'مورد')+' (تكلفة مستحقة)',person:itemById(x.itemId)?.name||x.item||'',amount:x.amount})),...projectLaborEntries().map(x=>({date:x.date,title:'أجرة معتمدة مستحقة',person:contractorById(x.contractorId)?.name||'',amount:x.amount}))];window.currentReportRows=[...(window.currentReportRows||[]),...extra].sort((a,b)=>(b.date||'').localeCompare(a.date||''));renderReportRows();const metric=$('reportMetrics');if(metric){const inv=projectPurchases().reduce((s,x)=>s+x.amount,0),earned=projectLaborEntries().reduce((s,x)=>s+x.amount,0),out=projectPurchases().reduce((s,x)=>s+invoiceTotals(x).outstanding,0);metric.innerHTML+='<div class="metric"><span>فواتير مشتريات</span><strong>'+money(inv)+'</strong></div><div class="metric"><span>أجور معتمدة</span><strong>'+money(earned)+'</strong></div><div class="metric"><span>متبقي فواتير الموردين</span><strong>'+money(out)+'</strong></div>';}}
 ;
+const baseContractorCard=contractorCard;
+contractorCard=function(c){
+ const base=baseContractorCard(c),supplier=supplierLedgerTotals(c.id),labor=laborTotalsForContractor(c.id);
+ return base.replace('</article>','<div class="advanced-item-stats"><small>فواتير المورد: '+money(supplier.invoiceAmount)+' · مسدد '+money(supplier.linkedPaid)+' · متبقي '+money(supplier.outstanding)+'</small><small>أجرة معتمدة: '+money(labor.earned)+' · مدفوع '+money(labor.paid)+' · متبقي '+money(labor.balance)+' · سُلف '+money(labor.advances)+'</small></div></article>');
+};
+const baseShowContractorDetail=showContractorDetail;
+showContractorDetail=function(id){baseShowContractorDetail(id);const d=$('contractorDetail');d.querySelectorAll?.('[data-ledger-delete]').forEach(b=>{const kind=b.dataset.ledgerKind==='payment'?'payment':'expense';if(b.parentNode&&!b.parentNode.querySelector('[data-edit-transaction]')){const e=document.createElement('button');e.type='button';e.className='text-btn';e.textContent='تعديل';e.dataset.editTransaction=kind;e.dataset.id=b.dataset.ledgerDelete;b.parentNode.insertBefore(e,b);}});const c=contractorById(id);if(c){const s=supplierLedgerTotals(id),l=laborTotalsForContractor(id);d.innerHTML+='<div class="advanced-ledger-group"><h3>ملخص الحسابات المفصولة</h3><div class="summary-list"><div class="summary-row"><span>فواتير المورد</span><strong>'+money(s.invoiceAmount)+'</strong></div><div class="summary-row"><span>المسدد على الفواتير</span><strong>'+money(s.linkedPaid)+'</strong></div><div class="summary-row"><span>المتبقي للمورد</span><strong>'+money(s.outstanding)+'</strong></div><div class="summary-row"><span>أجرة معتمدة</span><strong>'+money(l.earned)+'</strong></div><div class="summary-row"><span>مدفوع أجرة / سُلف</span><strong>'+money(l.paid)+'</strong></div><div class="summary-row"><span>صافي مستحق الأجرة</span><strong>'+money(l.balance)+'</strong></div><div class="summary-row"><span>منها سُلف</span><strong>'+money(l.advances)+'</strong></div></div></div>';}};
 const baseItemCard=itemCard;
 itemCard=function(i){const html=baseItemCard(i),inv=projectPurchases().filter(x=>x.itemId===i.id).reduce((s,x)=>s+x.amount,0),earned=projectLaborEntries().filter(x=>x.itemId===i.id).reduce((s,x)=>s+x.amount,0);return html.replace('</article>','<div class="advanced-item-stats"><small>فواتير المشتريات: '+money(inv)+'</small><small>الأجرة المعتمدة: '+money(earned)+'</small></div></article>');};
 const baseShowItemDetail=showItemDetail;
@@ -528,11 +538,19 @@ $('clearSiteLog').onclick=()=>{$('siteLogForm').reset();$('siteLogDate').value=t
 $('quickInvoice')?.addEventListener('change',()=>{const invoice=state.purchases.find(x=>x.id===$('quickInvoice').value);if(invoice){$('quickPerson').value=invoice.supplier||'';$('quickItem').value=itemById(invoice.itemId)?.name||invoice.item||'';}});
 function editTransaction(kind,id){
  const list={purchase:state.purchases,laborEntry:state.laborEntries,siteLog:state.siteLogs,collection:state.collections,expense:state.expenses,payment:state.payments}[kind],record=list?.find(x=>x.id===id);if(!record)return;
- const amountKinds=['purchase','laborEntry','collection','expense','payment'];
- if(amountKinds.includes(kind)){const value=window.prompt('المبلغ الجديد بالجنيه',String(record.amount));if(value===null)return;const amount=Number(value);if(!Number.isFinite(amount)||amount<=0){alert('المبلغ يجب أن يكون أكبر من صفر.');return;}record.amount=amount;if(kind==='collection')record.reserved=amount*(Number(record.rate)||0)/100;}
- const date=window.prompt('التاريخ (YYYY-MM-DD)',record.date||today());if(date===null)return;if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){alert('صيغة التاريخ غير صحيحة.');return;}record.date=date;
- const note=window.prompt('ملاحظات / وصف',record.note||'');if(note!==null)record.note=note;
- save();renderQuickLists();if(kind==='collection'||kind==='expense')renderReports();
+ const amountKinds=['purchase','laborEntry','collection','expense','payment'];let amount=record.amount;
+ if(amountKinds.includes(kind)){const value=window.prompt('المبلغ الجديد بالجنيه',String(record.amount));if(value===null)return;amount=Number(value);if(!Number.isFinite(amount)||amount<=0){alert('المبلغ يجب أن يكون أكبر من صفر.');return;}}
+ const date=window.prompt('التاريخ (YYYY-MM-DD)',record.date||today());if(date===null)return;
+ const dateParts=/^(\d{4})-(\d{2})-(\d{2})$/.exec(date),parsed=dateParts?new Date(Number(dateParts[1]),Number(dateParts[2])-1,Number(dateParts[3])):null;
+ if(!parsed||parsed.getFullYear()!==Number(dateParts[1])||parsed.getMonth()!==Number(dateParts[2])-1||parsed.getDate()!==Number(dateParts[3])){alert('التاريخ غير صحيح.');return;}
+ const note=window.prompt('ملاحظات / وصف',record.note||'');if(note===null)return;
+ let quantity=record.quantity,crew=record.crew,unit=record.unit;
+ if(kind==='siteLog'){const q=window.prompt('الكمية المنفذة (اتركها فارغة إذا لا تنطبق)',String(record.quantity||''));if(q===null)return;if(q!==''&&(!Number.isFinite(Number(q))||Number(q)<=0)){alert('الكمية يجب أن تكون أكبر من صفر.');return;}quantity=q===''?0:Number(q);crew=window.prompt('الصنايعي / الطاقم',record.crew||'');if(crew===null)return;unit=window.prompt('الوحدة',record.unit||'');if(unit===null)return;}
+ if(kind==='purchase'&&state.payments.filter(x=>x.invoiceId===id).reduce((s,x)=>s+x.amount,0)>amount+.005){alert('قيمة الفاتورة لا يمكن أن تقل عن الدفعات المسددة عليها.');return;}
+ if(kind==='payment'&&record.invoiceId){const invoice=state.purchases.find(x=>x.id===record.invoiceId),alreadyPaid=state.payments.filter(x=>x.invoiceId===record.invoiceId&&x.id!==id).reduce((s,x)=>s+x.amount,0);if(invoice&&alreadyPaid+amount>invoice.amount+.005){alert('إجمالي الدفعات سيتجاوز قيمة الفاتورة.');return;}}
+ if(amountKinds.includes(kind))record.amount=amount;if(kind==='collection')record.reserved=amount*(Number(record.rate)||0)/100;
+ record.date=date;record.note=note;if(kind==='siteLog'){record.quantity=quantity;record.crew=crew;record.unit=unit;}
+ save();renderQuickLists();if(kind==='collection'||kind==='expense'||kind==='purchase'||kind==='laborEntry')renderReports();
 }
 document.addEventListener?.('click',e=>{
  const edit=e.target.closest?.('[data-edit-transaction]');if(edit){editTransaction(edit.dataset.editTransaction,edit.dataset.id);return;}
