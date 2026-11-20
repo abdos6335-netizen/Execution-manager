@@ -249,3 +249,19 @@ test('workspace cards compress vertically and keep section content inside the ex
   assert.match(css, /@media\(min-width:721px\)/);
   assert.match(css, /@media\(max-width:720px\)/);
 });
+
+
+test('workspace uses the full viewport and hides legacy navigation chrome', () => {
+  const css = fs.readFileSync(new URL('../styles.css', 'file://' + __filename), 'utf8');
+  assert.match(css, /\.sidebar,\.topbar,\.mobile-nav\{display:none!important\}/);
+  assert.match(css, /main\{display:block;width:100%;max-width:none/);
+  assert.match(css, /#projectSheets \.project-sheet-grid\{width:100%;max-width:none/);
+});
+test('workspace supports browser history and edge swipe back at one level per gesture', () => {
+  assert.match(source, /function pushWorkspaceHistory\(level,page=''\)/);
+  assert.match(source, /window\.addEventListener\?\.\('popstate'/);
+  assert.match(source, /function enableWorkspaceSwipeBack\(\)/);
+  assert.match(source, /if\(expandedSheet===page\)\{goWorkspaceBack\(\);return\}/);
+  assert.match(source, /pushWorkspaceHistory\('expanded',page\)/);
+  assert.match(source, /pushWorkspaceHistory\('selected',page\)/);
+});
