@@ -492,6 +492,16 @@ function validateDailyLog(data){
  if(data.quantity!==''&&data.quantity!=null&&Number(data.quantity)!==0&&(!Number.isFinite(Number(data.quantity))||Number(data.quantity)<=0))return {ok:false,reason:'الكمية يجب أن تكون أكبر من صفر'};
  return {ok:true};
 }
+function validateImportedState(raw){
+ const next=normalizeState(raw),projectIds=new Set(next.projects.map(x=>x.id)),itemIds=new Set(next.items.map(x=>x.id)),personIds=new Set(next.contractors.map(x=>x.id));
+ const validAmount=x=>Number.isFinite(Number(x.amount))&&Number(x.amount)>0;
+ for(const x of next.purchases){if(!validAmount(x)||!projectIds.has(x.projectId)||(x.itemId&&!itemIds.has(x.itemId))||(x.supplierId&&!personIds.has(x.supplierId)))return {ok:false,reason:'بيانات فاتورة مشتريات غير مكتملة'};}
+ for(const x of next.laborEntries){if(!validAmount(x)||!projectIds.has(x.projectId)||(x.itemId&&!itemIds.has(x.itemId))||(x.contractorId&&!personIds.has(x.contractorId)))return {ok:false,reason:'بيانات أجرة مستحقة غير مكتملة'};}
+ for(const x of next.siteLogs){if(!validateDailyLog(x).ok||!projectIds.has(x.projectId))return {ok:false,reason:'بيانات يومية الموقع غير صحيحة'};}
+ for(const x of next.payments.filter(p=>p.purpose==='supplier_invoice_payment')){const invoice=next.purchases.find(i=>i.id===x.invoiceId);if(!invoice||invoice.projectId!==x.projectId||!validAmount(x))return {ok:false,reason:'دفعة مورد مرتبطة بفاتورة غير موجودة'};}
+ for(const invoice of next.purchases){const paid=next.payments.filter(x=>x.invoiceId===invoice.id).reduce((s,x)=>s+Number(x.amount||0),0);if(paid>invoice.amount+.005)return {ok:false,reason:'دفعات إحدى الفواتير أكبر من قيمتها'};}
+ return {ok:true,state:next};
+}
 function renderAdvancedLedger(){
  const invoices=projectPurchases().slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
  const earned=projectLaborEntries().slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
