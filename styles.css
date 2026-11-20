@@ -273,12 +273,12 @@ main{display:block;width:100%;max-width:none;margin:0;padding:0;min-height:100dv
 
 
 /* Card-first color system: every expanded section inherits its card palette. */
-.project-sheet:nth-child(1){--sheet-ink:var(--sheet-1-ink)}
-.project-sheet:nth-child(2){--sheet-ink:var(--sheet-2-ink)}
-.project-sheet:nth-child(3){--sheet-ink:var(--sheet-3-ink)}
-.project-sheet:nth-child(4){--sheet-ink:var(--sheet-4-ink)}
-.project-sheet:nth-child(5){--sheet-ink:var(--sheet-5-ink)}
-.project-sheet:nth-child(6){--sheet-ink:var(--sheet-6-ink)}
+.project-sheet:nth-child(1){--sheet-ink:var(--sheet-1-ink);--sheet-bg:var(--sheet-1-color)}
+.project-sheet:nth-child(2){--sheet-ink:var(--sheet-2-ink);--sheet-bg:var(--sheet-2-color)}
+.project-sheet:nth-child(3){--sheet-ink:var(--sheet-3-ink);--sheet-bg:var(--sheet-3-color)}
+.project-sheet:nth-child(4){--sheet-ink:var(--sheet-4-ink);--sheet-bg:var(--sheet-4-color)}
+.project-sheet:nth-child(5){--sheet-ink:var(--sheet-5-ink);--sheet-bg:var(--sheet-5-color)}
+.project-sheet:nth-child(6){--sheet-ink:var(--sheet-6-ink);--sheet-bg:var(--sheet-6-color)}
 .project-sheet,.project-sheet-trigger,.sheet-inline-content{color:var(--sheet-ink)}
 .sheet-inline-content{background:transparent!important;box-shadow:none!important}
 .sheet-inline-page{color:var(--sheet-ink)}
@@ -329,7 +329,7 @@ main{display:block;width:100%;max-width:none;margin:0;padding:0;min-height:100dv
 .sheet-inline-page textarea,
 .sheet-inline-page .quick-tools input,
 .sheet-inline-page .record-search input,
-.sheet-inline-page .quick-entry>textarea{background:color-mix(in srgb,var(--sheet-ink) 13%,white)!important;color:var(--sheet-ink)!important;border:1px solid color-mix(in srgb,var(--sheet-ink) 24%,transparent)!important;box-shadow:none}
+.sheet-inline-page .quick-entry>textarea{background:color-mix(in srgb,var(--sheet-bg) 87%,white 13%)!important;color:var(--sheet-ink)!important;border:1px solid color-mix(in srgb,var(--sheet-ink) 24%,transparent)!important;box-shadow:none}
 .sheet-inline-page input::placeholder,
 .sheet-inline-page textarea::placeholder{color:color-mix(in srgb,var(--sheet-ink) 58%,transparent)!important;opacity:1}
 .sheet-inline-page input:focus,
