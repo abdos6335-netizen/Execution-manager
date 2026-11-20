@@ -238,7 +238,7 @@ $('importData').onchange=async e=>{
   if(!imported||!Array.isArray(imported.projects)||!imported.projects.length||!Array.isArray(imported.collections))throw Error('shape');
   for(const key of ['expenses','items','contractors','payments'])if(imported[key]!==undefined&&!Array.isArray(imported[key]))throw Error('shape');
   if(!confirm('سيتم استبدال البيانات الحالية بالنسخة الاحتياطية. يفضل تصدير نسخة من البيانات الحالية أولاً. هل تريد المتابعة؟'))return;
-  const next=normalizeState(imported),serialized=JSON.stringify(next);
+  const validation=validateImportedState(imported);if(!validation.ok)throw Error(validation.reason);const next=validation.state,serialized=JSON.stringify(next);
   localStorage.setItem(KEY,serialized);
   state=next;closePanels();render();renderQuickLists();renderReports();
   alert('تم استيراد النسخة الاحتياطية بنجاح');
@@ -279,31 +279,30 @@ function answerReportQuestion(){
  const raw=$('reportQuestion').value.trim(),q=normArabic(raw),from=$('reportFrom').value,to=$('reportTo').value,within=x=>(!from||x.date>=from)&&(!to||x.date<=to);
  if(!q){$('reportAnswer').textContent='اكتب سؤالك الأول.';return;}
  if(from&&to&&from>to){$('reportAnswer').textContent='تاريخ البداية لازم يكون قبل تاريخ النهاية.';return;}
- const ex=state.expenses.filter(x=>x.projectId===state.current&&within(x)),pays=state.payments.filter(x=>x.projectId===state.current&&within(x)),cols=state.collections.filter(x=>x.project===state.current&&within(x));
- const findMentions=list=>{
-  const exact=list.filter(r=>[r.name,...(r.aliases||[])].some(n=>{const v=normArabic(n);return v.length>=3&&q.includes(v)}));
-  if(exact.length)return exact;
-  return list.filter(r=>[r.name,...(r.aliases||[])].some(n=>normArabic(n).split(' ').some(w=>w.length>=3&&q.includes(w))));
- };
- const people=findMentions(currentContractors()),items=findMentions(currentItems());
- if(people.length>1){$('reportAnswer').textContent='الاسم غير محدد كفاية. اكتب الاسم الكامل للشخص أو المورد عشان ما أديكش حساب شخص تاني.';return;}
- if(!people.length&&items.length>1){$('reportAnswer').textContent='اسم البند محتمل يكون أكثر من بند. اكتب اسم البند بشكل أوضح.';return;}
+ const ex=state.expenses.filter(x=>x.projectId===state.current&&within(x)),payments=state.payments.filter(x=>x.projectId===state.current&&within(x)),cols=state.collections.filter(x=>x.project===state.current&&within(x)),invoices=projectPurchases().filter(within),earned=projectLaborEntries().filter(within);
+ const mentions=list=>{const exact=list.filter(r=>[r.name,...(r.aliases||[])].some(n=>{const v=normArabic(n);return v.length>=3&&q.includes(v)}));if(exact.length)return exact;return list.filter(r=>[r.name,...(r.aliases||[])].some(n=>normArabic(n).split(' ').some(w=>w.length>=3&&q.includes(w))));};
+ const people=mentions(currentContractors()),items=mentions(currentItems());
+ if(people.length>1||items.length>1){$('reportAnswer').textContent='الاسم غير محدد كفاية. اكتب اسم الشخص والبند بشكل أوضح.';return;}
  const person=people[0]||null,item=items[0]||null;
- let answer='';
- if(person){
-  const names=[person.name,...(person.aliases||[])].map(normArabic);
-  const direct=ex.filter(x=>x.payeeId===person.id||(x.payee&&names.includes(normArabic(x.payee)))).reduce((s,x)=>s+x.amount,0);
-  const paid=pays.filter(x=>x.contractorId===person.id).reduce((s,x)=>s+x.amount,0);
-  answer='إجمالي المسجل باسم '+person.name+' = '+money(paid+direct)+' (دفعات مقاول '+money(paid)+'، مصروفات مباشرة '+money(direct)+').';
+ const directFor=(p,i)=>ex.filter(x=>(!p||x.payeeId===p.id||normArabic(x.payee)===normArabic(p.name))&&(!i||x.itemId===i.id||normArabic(x.item)===normArabic(i.name)));
+ const paymentFor=(p,i)=>payments.filter(x=>(!p||x.contractorId===p.id)&&(!i||x.itemId===i.id));
+ const invoiceFor=(p,i)=>invoices.filter(x=>(!p||x.supplierId===p.id)&&(!i||x.itemId===i.id));
+ const earnedFor=(p,i)=>earned.filter(x=>(!p||x.contractorId===p.id)&&(!i||x.itemId===i.id));
+ const sum=rows=>rows.reduce((s,x)=>s+Number(x.amount||0),0);
+ if(person&&item){
+  const d=directFor(person,item),p=paymentFor(person,item),inv=invoiceFor(person,item),lab=earnedFor(person,item),cost=sum(d)+sum(p.filter(x=>!x.purpose||x.purpose==='legacy'))+sum(inv)+sum(lab),cash=sum(d)+sum(p);
+  $('reportAnswer').textContent='حساب '+person.name+' في بند '+item.name+': تكلفة مسجلة '+money(cost)+'، خروج نقدي '+money(cash)+'، فواتير مشتريات '+money(sum(inv))+'، أجرة معتمدة '+money(sum(lab))+'.';
+ }else if(person){
+  const d=directFor(person,null),p=paymentFor(person,null),inv=invoiceFor(person,null),lab=earnedFor(person,null),s=supplierLedgerTotals(person.id),l=laborTotalsForContractor(person.id);
+  $('reportAnswer').textContent='حساب '+person.name+': فواتير المورد '+money(sum(inv))+'، المسدد عليها '+money(s.linkedPaid)+'، المتبقي '+money(s.outstanding)+'؛ أجرة معتمدة '+money(sum(lab))+'، مدفوع أجرة / سُلف '+money(l.paid)+'، صافي الأجرة '+money(l.balance)+'؛ مصروفات مباشرة '+money(sum(d))+'، دفعات نقدية '+money(sum(p))+'.';
  }else if(item){
-  const direct=ex.filter(x=>x.itemId===item.id||normArabic(x.item)===normArabic(item.name)).reduce((s,x)=>s+x.amount,0);
-  const paid=pays.filter(x=>x.itemId===item.id).reduce((s,x)=>s+x.amount,0);
-  answer='إجمالي تكلفة بند '+item.name+' = '+money(direct+paid)+' (مصروفات مباشرة '+money(direct)+'، دفعات '+money(paid)+').';
- }else if(/تحصيل|قبض|استلم/.test(q)){answer='إجمالي التحصيلات المسجلة = '+money(cols.reduce((s,x)=>s+x.amount,0))+'.';}
- else if(/ربح|محجوز/.test(q)){answer='إجمالي الربح المحجوز = '+money(cols.reduce((s,x)=>s+(Number(x.reserved)||0),0))+'.';}
- else if(/مصروف|صرف|تكلف|اتصرف/.test(q)){const direct=ex.reduce((s,x)=>s+x.amount,0),paid=pays.reduce((s,x)=>s+x.amount,0);answer='المصروفات المباشرة '+money(direct)+'، ودفعات المقاولين '+money(paid)+'، والإجمالي '+money(direct+paid)+'.';}
- else{answer='مش قادر أحدد المقصود من السؤال. جرّب اسم بند أو شخص مسجل، أو اسأل عن إجمالي التحصيلات أو المصروفات.';}
- $('reportAnswer').textContent=answer;
+  const d=directFor(null,item),p=paymentFor(null,item),inv=invoiceFor(null,item),lab=earnedFor(null,item),cost=sum(d)+sum(p.filter(x=>!x.purpose||x.purpose==='legacy'))+sum(inv)+sum(lab);
+  $('reportAnswer').textContent='تكلفة بند '+item.name+' = '+money(cost)+'؛ فواتير مشتريات '+money(sum(inv))+'، أجرة معتمدة '+money(sum(lab))+'، مصروفات مباشرة '+money(sum(d))+'، دفعات قديمة '+money(sum(p.filter(x=>!x.purpose||x.purpose==='legacy')))+'.';
+ }else if(/تحصيل|قبض|استلم/.test(q))$('reportAnswer').textContent='إجمالي التحصيلات المسجلة = '+money(sum(cols))+'.';
+ else if(/ربح|محجوز/.test(q))$('reportAnswer').textContent='إجمالي الربح المحجوز = '+money(cols.reduce((s,x)=>s+(Number(x.reserved)||0),0))+'.';
+ else if(/تكلف|تكلفة التنفيذ/.test(q))$('reportAnswer').textContent='تكلفة التنفيذ المستحقة = '+money(sum(ex)+sum(payments.filter(x=>!x.purpose||x.purpose==='legacy'))+sum(invoices)+sum(earned))+'.';
+ else if(/مدفوع|دفعت|صرف|مصروف/.test(q))$('reportAnswer').textContent='إجمالي الخروج النقدي = '+money(sum(ex)+sum(payments))+' (مصروفات مباشرة '+money(sum(ex))+'، دفعات '+money(sum(payments))+').';
+ else $('reportAnswer').textContent='مش قادر أحدد المقصود. اكتب اسم بند أو شخص مسجل، أو اسأل عن التحصيلات أو تكلفة التنفيذ أو المدفوعات النقدية.';
 }
 async function handleReceiptImage(e){const file=e.target.files?.[0];if(!file)return;const status=$('receiptStatus');status.textContent='جاري قراءة الفاتورة… قد يستغرق ذلك بعض الوقت حسب حجم الصورة.';try{if(!window.Tesseract){await new Promise((resolve,reject)=>{const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';sc.onload=resolve;sc.onerror=()=>reject(new Error('تعذر تحميل محرك قراءة الفواتير'));document.head.appendChild(sc)});}const result=await window.Tesseract.recognize(file,'ara+eng',{logger:m=>{if(m.status==='recognizing text')status.textContent='جاري قراءة الفاتورة… '+Math.round((m.progress||0)*100)+'%'}});$('quickText').value=result.data.text||'';$('quickNote').value=result.data.text||'';parseQuickText();status.textContent='تم استخراج النص مبدئيًا. راجع المبلغ والبند والشخص يدويًا قبل التسجيل.';}catch(err){status.textContent='تعذرت قراءة الصورة تلقائيًا. يمكنك كتابة بيانات الفاتورة يدويًا.';}finally{e.target.value='';}}
 function renderReports(){
@@ -332,7 +331,7 @@ $('quickText').addEventListener('input',parseQuickText);$('quickAmount').addEven
 $('quickForm').addEventListener('submit',e=>{
  e.preventDefault();
  const kind=$('quickKind').value,amount=Number($('quickAmount').value),itemName=$('quickItem').value.trim(),personName=$('quickPerson').value.trim(),date=$('quickDate').value,note=$('quickNote').value.trim();
- if(!Number.isFinite(amount)||amount<=0||!/^\d{4}-\d{2}-\d{2}$/.test(date||'')){alert('راجع المبلغ والتاريخ قبل التسجيل.');return;}
+ if(!kind){alert('اختار نوع الحركة الأول.');return;}if(!Number.isFinite(amount)||amount<=0||!/^\d{4}-\d{2}-\d{2}$/.test(date||'')){alert('راجع المبلغ والتاريخ قبل التسجيل.');return;}
  if(kind==='collection'){const rate=Number(project().rate);state.collections.push({id:uid('col'),project:state.current,amount,rate,reserved:amount*rate/100,date,note});}
  else if(kind==='purchase_invoice'||kind==='supplier_payment'||kind==='labor_earned'||kind==='labor_advance'){
   let item=itemName?findNamedRecord(currentItems(),itemName):null,person=personName?findNamedRecord(currentContractors(),personName):null;
