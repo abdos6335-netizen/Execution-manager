@@ -395,3 +395,8 @@ body{line-height:var(--line-height,1.4)}
 #siteLogForm{margin-bottom:14px}
 #siteLogList:empty,#advancedLedger:empty{display:none}
 @media(max-width:600px){.site-log-row{grid-template-columns:1fr}.ledger-row-actions{justify-content:flex-start}}
+
+.advanced-item-stats{display:grid;gap:6px;margin:12px 0;padding:10px 12px;border-radius:12px;background:color-mix(in srgb,var(--ink) 5%,transparent)}
+.advanced-item-stats small{display:block;line-height:1.55;color:inherit}
+.advanced-ledger-group{min-width:0}
+.ledger-row-actions{flex-shrink:0}
