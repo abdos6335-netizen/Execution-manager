@@ -375,3 +375,6 @@ body{line-height:var(--line-height,1.4)}
 
 /* User-selected text color is intentionally restricted to white, dark gray, or black. */
 .sheet-inline-page .positive,.sheet-inline-page .negative,.sheet-inline-page .muted,.sheet-inline-page .eyebrow,.sheet-inline-page .pill,.sheet-inline-page .text-btn,.sheet-inline-page .delete-btn{color:var(--sheet-ink)!important}
+
+/* Keep every visible workspace text element within the selected monochrome text palette. */
+.sheet-inline-page *,.project-sheet-trigger *{color:var(--sheet-ink)!important}
