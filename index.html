@@ -2,8 +2,8 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#20242d"><link rel="manifest" href="manifest.webmanifest">
-<title>Execution Manager</title><link rel="stylesheet" href="styles.css">
+<meta name="theme-color" content="#e3e3e4"><link rel="manifest" href="manifest.webmanifest">
+<title>Execution Manager</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap"><link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <div class="app-shell">
@@ -11,15 +11,14 @@
   <div class="brand"><div class="brand-mark">E</div><div><strong>Execution Manager</strong><small>إدارة تنفيذ التشطيبات</small></div></div>
   <div class="project-switch"><label for="projectSelect">المشروع الحالي</label><select id="projectSelect"></select></div>
   <div class="nav-label">مساحة العمل</div>
-  <nav class="side-nav">
-    <button data-page="quick" class="active"><span class="nav-icon">＋</span>تسجيل حركة</button>
-    <button data-page="reports"><span class="nav-icon">▤</span>التقارير</button>
-    <button data-page="dashboard"><span class="nav-icon">⌂</span>الرئيسية</button>
-    <button data-page="items"><span class="nav-icon">▦</span>بنود التنفيذ</button>
-    <button data-page="contractors"><span class="nav-icon">♙</span>المقاولون والصنايعية</button>
-    <button data-page="collections"><span class="nav-icon">↙</span>تحصيلات العميل</button>
-    <button data-page="expenses"><span class="nav-icon">↗</span>المصروفات</button>
-    <button data-page="settings"><span class="nav-icon">⚙</span>إعدادات المشروع</button>
+  <nav class="side-nav" aria-label="التنقل الرئيسي">
+    <button data-page="quick" data-label="تسجيل حركة" title="تسجيل حركة" class="active"><span class="nav-icon">＋</span><span class="nav-text">تسجيل حركة</span></button>
+    <button data-page="dashboard" data-label="الرئيسية" title="الرئيسية"><span class="nav-icon">⌂</span><span class="nav-text">الرئيسية</span></button>
+    <button data-page="items" data-label="بنود التنفيذ" title="بنود التنفيذ"><span class="nav-icon">▦</span><span class="nav-text">بنود التنفيذ</span></button>
+    <button data-page="contractors" data-label="الأشخاص" title="المقاولون والصنايعية"><span class="nav-icon">♙</span><span class="nav-text">الأشخاص</span></button>
+    <button data-page="collections" data-label="التحصيلات" title="تحصيلات العميل"><span class="nav-icon">↙</span><span class="nav-text">التحصيلات</span></button>
+    <button data-page="expenses" data-label="المصروفات" title="المصروفات"><span class="nav-icon">↗</span><span class="nav-text">المصروفات</span></button>
+    <button data-page="settings" data-label="الإعدادات" title="الإعدادات"><span class="nav-icon">⚙</span><span class="nav-text">الإعدادات</span></button>
   </nav>
   <div class="sidebar-foot"><span class="status-dot"></span>نسخة مستقلة · حفظ محلي</div>
 </aside>
@@ -32,7 +31,7 @@
  <form id="quickForm" class="form-grid"><label>نوع الحركة<select id="quickKind"><option value="materials">شراء خامات / مصروف</option><option value="labor">دفعة أجرة / صنايعي</option><option value="other">مصروف عام</option><option value="collection">تحصيل من العميل</option></select></label><label>المبلغ بالجنيه<input id="quickAmount" type="number" min="0.01" step=".01" required></label><label>بند التنفيذ<input id="quickItem" list="quickItems" placeholder="مثال: دهانات البوابة"><datalist id="quickItems"></datalist></label><label>الشخص / المورد<input id="quickPerson" list="quickPeople" placeholder="اسم الصنايعي أو المورد"><datalist id="quickPeople"></datalist></label><label>التاريخ<input id="quickDate" type="date" required></label><label class="span-2">تفاصيل إضافية<input id="quickNote" placeholder="الكمية، الخامات، طريقة الدفع أو أي ملاحظة"></label><div class="form-actions"><button class="btn btn-primary">مراجعة وتسجيل الحركة</button><button type="reset" class="btn btn-light">مسح</button></div></form></div>
  <div class="surface"><div class="surface-head"><h2>آخر الحركات المسجلة</h2></div><div id="quickRecent" class="activity-list"></div></div>
 </section>
-<section id="reports" class="page hidden"><div class="page-head"><div><span class="eyebrow">PROJECT REPORTS</span><h1>التقارير</h1><p>ملخصات فعلية من الحركات المسجلة، بدون حسابات تقديرية.</p></div><button id="printReport" class="btn btn-light">طباعة التقرير</button></div><div class="metric-grid mini" id="reportMetrics"></div><div class="surface report-tools"><h2>تصفية الحركات</h2><div class="form-grid"><label>بحث بالاسم أو البند أو الوصف<input id="reportSearch" placeholder="مثال: دهانات، محمد، خامات"></label><label>من تاريخ<input id="reportFrom" type="date"></label><label>إلى تاريخ<input id="reportTo" type="date"></label><div class="form-actions"><button type="button" id="clearReportFilters" class="btn btn-light">مسح التصفية</button></div></div></div><div class="surface"><h2>اسأل عن حسابات المشروع</h2><div class="quick-tools"><input id="reportQuestion" placeholder="مثال: دفعت كام لمحمد؟ أو تكلفة بند الدهانات؟"><button type="button" id="askReport" class="btn btn-primary">اعرض الإجابة</button></div><div id="reportAnswer" class="muted" aria-live="polite">الإجابات مبنية على الحركات المسجلة فقط.</div></div><div class="two-col"><article class="surface"><h2>التكلفة حسب بند التنفيذ</h2><div id="reportItems"></div></article><article class="surface"><h2>المدفوع حسب الشخص / المورد</h2><div id="reportPeople"></div></article></div><div class="surface"><h2>مراجعة سلامة التسجيل</h2><div id="reportWarnings"></div></div><div class="surface"><h2>مقارنة الفترات</h2><div id="reportComparison" class="muted">حدد تاريخ بداية ونهاية للمقارنة مع الفترة السابقة بنفس المدة.</div></div><article class="surface"><h2>تفاصيل الحركات</h2><div id="reportTransactions" class="table-wrap"></div></article></section>
+
 <section id="dashboard" class="page hidden">
  <div class="page-head"><div><span class="eyebrow">OVERVIEW</span><h1>لوحة التحكم</h1><p>نظرة سريعة على الوضع المالي للمشروع.</p></div></div>
  <div class="metric-grid">
@@ -42,10 +41,16 @@
   <article class="metric metric-highlight"><span>المتاح المخصص للتنفيذ</span><strong id="available">0 ج.م</strong><small>ليس رصيد الخزنة النقدي</small></article>
  </div>
  <div class="two-col"><article class="surface"><div class="surface-head"><h2>ملخص التنفيذ</h2></div><div class="summary-list" id="dashboardSummary"></div></article><article class="surface"><div class="surface-head"><h2>آخر الحركات</h2></div><div id="recentActivity" class="activity-list"></div></article></div>
+ <div class="surface contextual-report"><div class="surface-head"><div><h2>التقرير العام للمشروع</h2><p class="muted">ملخص الحركات والتكلفة والتحصيل.</p></div><button id="printReport" class="btn btn-light">طباعة</button></div>
+ <div class="metric-grid mini" id="reportMetrics"></div>
+ <div class="form-grid report-filters"><label>بحث في الحركات<input id="reportSearch" placeholder="اسم، بند، وصف"></label><label>من تاريخ<input id="reportFrom" type="date"></label><label>إلى تاريخ<input id="reportTo" type="date"></label><div class="form-actions"><button type="button" id="clearReportFilters" class="btn btn-light">مسح التصفية</button></div></div>
+ <div class="report-ask"><input id="reportQuestion" placeholder="اسأل: دفعت كام لمحمد؟ أو تكلفة الدهانات؟"><button type="button" id="askReport" class="btn btn-primary">اسأل عن الحسابات</button></div><div id="reportAnswer" class="muted" aria-live="polite">الإجابات مبنية على الحركات المسجلة فقط.</div>
+ <div class="two-col report-lower"><article><h3>مراجعة التسجيل</h3><div id="reportWarnings"></div></article><article><h3>مقارنة الفترات</h3><div id="reportComparison" class="muted">حدد تاريخ بداية ونهاية للمقارنة.</div></article></div>
+ <h3>سجل الحركات</h3><div id="reportTransactions" class="table-wrap"></div></div>
 </section>
 <section id="items" class="page hidden">
  <div class="page-head"><div><span class="eyebrow">SCOPE & AGREEMENTS</span><h1>بنود التنفيذ</h1><p>سجل كل بند واتفاق المونة والأجرة بشكل مستقل.</p></div><button class="btn btn-primary" id="newItemBtn">＋ إضافة بند</button></div>
- <div class="record-search"><input id="itemsSearch" type="search" placeholder="ابحث عن بند أو اسم بديل أو تصنيف"></div><div id="itemsList" class="record-grid"></div>
+ <div class="surface contextual-report compact-report"><div class="surface-head"><h2>تكلفة البنود</h2><span class="muted">التكلفة المسجلة حسب كل بند</span></div><div id="reportItems"></div></div><div class="record-search"><input id="itemsSearch" type="search" placeholder="ابحث عن بند أو اسم بديل أو تصنيف"></div><div id="itemsList" class="record-grid"></div>
  <div id="itemEditor" class="surface hidden"><div class="surface-head"><h2 id="itemFormTitle">إضافة بند جديد</h2><button class="icon-btn" type="button" data-close="itemEditor">✕</button></div>
  <form id="itemForm" class="form-grid">
   <input type="hidden" id="itemId">
@@ -68,20 +73,31 @@
 </section>
 <section id="contractors" class="page hidden">
  <div class="page-head"><div><span class="eyebrow">PEOPLE & LEDGERS</span><h1>المقاولون والصنايعية</h1><p>ملف مستقل ومستحقات واضحة لكل مقاول أو صنايعي.</p></div><button id="newContractorBtn" class="btn btn-primary">＋ إضافة مقاول</button></div>
- <div class="record-search"><input id="contractorsSearch" type="search" placeholder="ابحث عن مقاول أو صنايعي أو اسم بديل"></div><div id="contractorsList" class="record-grid"></div>
+ <div class="surface contextual-report compact-report"><div class="surface-head"><h2>كشف المدفوعات حسب الشخص / المورد</h2><span class="muted">إجمالي ما تم تسجيله لكل شخص</span></div><div id="reportPeople"></div></div><div class="record-search"><input id="contractorsSearch" type="search" placeholder="ابحث عن مقاول أو صنايعي أو اسم بديل"></div><div id="contractorsList" class="record-grid"></div>
  <div id="contractorEditor" class="surface hidden"><div class="surface-head"><h2 id="contractorFormTitle">إضافة مقاول أو صنايعي</h2><button class="icon-btn" type="button" data-close="contractorEditor">✕</button></div><form id="contractorForm" class="form-grid"><input type="hidden" id="contractorId"><label>الاسم<input id="contractorName" required></label><label>أسماء بديلة / طريقة كتابة الاسم<input id="contractorAliases" placeholder="مثال: محمد النقاش، محمد عبدو"></label><label>رقم الهاتف<input id="contractorPhone" inputmode="tel"></label><label>التخصص<input id="contractorTrade" placeholder="محارة، كهرباء، سباكة..."></label><label>ملاحظات<textarea id="contractorNotes" rows="2"></textarea></label><div class="form-actions"><button class="btn btn-primary">حفظ</button><button type="button" class="btn btn-light" data-close="contractorEditor">إلغاء</button></div></form></div>
  <div id="contractorDetail" class="surface hidden"></div>
 </section>
 <section id="collections" class="page hidden">
  <div class="page-head"><div><span class="eyebrow">CLIENT RECEIPTS</span><h1>تحصيلات العميل</h1><p>كل تحصيل يحتفظ بنسبة الربح التي كانت سارية وقت تسجيله.</p></div></div>
- <form id="collectionForm" class="surface form-grid"><label>المبلغ<input type="number" min="0.01" step="0.01" id="collectionAmount" required></label><label>التاريخ<input type="date" id="collectionDate" required></label><label class="span-2">ملاحظات<input id="collectionNote" placeholder="اختياري"></label><div class="form-actions"><button class="btn btn-primary">تسجيل التحصيل</button></div></form><div id="collectionList" class="table-wrap"></div>
+ <form id="collectionForm" class="surface form-grid"><label>المبلغ<input type="number" min="0.01" step="0.01" id="collectionAmount" required></label><label>التاريخ<input type="date" id="collectionDate" required></label><label class="span-2">ملاحظات<input id="collectionNote" placeholder="اختياري"></label><div class="form-actions"><button class="btn btn-primary">تسجيل التحصيل</button></div></form><div class="surface contextual-report compact-report"><div class="surface-head"><h2>ملخص التحصيلات</h2></div><div id="collectionReportSummary" class="summary-list"></div></div><div id="collectionList" class="table-wrap"></div>
 </section>
 <section id="expenses" class="page hidden">
  <div class="page-head"><div><span class="eyebrow">PROJECT COSTS</span><h1>المصروفات</h1><p>سجل المشتريات والمصروفات المباشرة غير المسجلة كدفعات مقاول.</p></div></div>
- <form id="expenseForm" class="surface form-grid"><label>البند المرتبط<select id="expenseItem"><option value="">مصروف عام للمشروع</option></select></label><label>نوع المصروف<select id="expenseType"><option value="materials">مونة / خامات</option><option value="labor">مصنعية</option><option value="other">أخرى</option></select></label><label>المبلغ<input type="number" min="0.01" step="0.01" id="expenseAmount" required></label><label>المورد / المستلم<input id="expensePayee"></label><label>التاريخ<input type="date" id="expenseDate" required></label><label>وصف<input id="expenseNote"></label><div class="form-actions"><button class="btn btn-primary">تسجيل المصروف</button></div></form><div id="expenseList" class="table-wrap"></div>
+ <form id="expenseForm" class="surface form-grid"><label>البند المرتبط<select id="expenseItem"><option value="">مصروف عام للمشروع</option></select></label><label>نوع المصروف<select id="expenseType"><option value="materials">مونة / خامات</option><option value="labor">مصنعية</option><option value="other">أخرى</option></select></label><label>المبلغ<input type="number" min="0.01" step="0.01" id="expenseAmount" required></label><label>المورد / المستلم<input id="expensePayee"></label><label>التاريخ<input type="date" id="expenseDate" required></label><label>وصف<input id="expenseNote"></label><div class="form-actions"><button class="btn btn-primary">تسجيل المصروف</button></div></form><div class="surface contextual-report compact-report"><div class="surface-head"><h2>ملخص المصروفات</h2></div><div id="expenseReportSummary" class="summary-list"></div></div><div id="expenseList" class="table-wrap"></div>
 </section>
 <section id="settings" class="page hidden">
  <div class="page-head"><div><span class="eyebrow">PROJECT CONFIGURATION</span><h1>إعدادات المشروع</h1><p>بيانات المشروع وقواعد توزيع التحصيلات.</p></div></div>
+ <section class="surface appearance-panel">
+  <div class="surface-head"><div><h2>المظهر والتخصيص</h2><p class="muted">ثيم هادئ، ألوان قابلة للتغيير وخط واضح.</p></div><button type="button" id="resetAppearance" class="btn btn-light">استعادة الافتراضي</button></div>
+  <div class="appearance-grid">
+   <label>وضع العرض<select id="appearanceMode"><option value="light">فاتح</option><option value="dark">داكن</option><option value="system">حسب الجهاز</option></select></label>
+   <label>لون التمييز<input id="appearanceAccent" type="color" value="#302e32"></label>
+   <label>لون الخلفية<input id="appearanceBackground" type="color" value="#e3e3e4"></label>
+   <label>الخط العربي<select id="appearanceFont"><option value="ibm">IBM Plex Sans Arabic</option><option value="alexandria">Alexandria</option><option value="readex">Readex Pro</option><option value="noto">Noto Sans Arabic</option><option value="almarai">Almarai</option><option value="cairo">Cairo</option><option value="tajawal">Tajawal</option><option value="system">System</option></select></label>
+   <label>حجم الخط <output id="appearanceScaleValue">100%</output><input id="appearanceScale" type="range" min="90" max="115" step="5" value="100"></label>
+  </div>
+  <div class="palette-row"><span>ألوان جاهزة</span><button type="button" data-palette="glass" style="--swatch:#302e32">رمادي هادئ</button><button type="button" data-palette="sage" style="--swatch:#3f5a4a">أخضر</button><button type="button" data-palette="sand" style="--swatch:#6b5a43">رملي</button><button type="button" data-palette="slate" style="--swatch:#38465c">أزرق رمادي</button><button type="button" data-palette="rose" style="--swatch:#7a3b4f">وردي</button></div>
+ </section>
  <form id="settingsForm" class="surface form-grid"><label>اسم المشروع<input id="projectName" required></label><label>نسبة الربح المحجوزة %<input id="profitRate" type="number" min="0" max="100" step=".1" required></label><div class="form-actions"><button class="btn btn-primary">حفظ الإعدادات</button></div></form>
  <div class="surface"><h2>نسخة احتياطية</h2><p class="muted">احفظ نسخة من بياناتك أو استعد نسخة سابقة على هذا الجهاز.</p><div class="inline-actions"><button id="exportData" class="btn btn-light">تصدير نسخة احتياطية</button><label class="btn btn-light file-btn">استيراد نسخة<input id="importData" type="file" accept="application/json"></label></div></div>
  <p class="hint">يتم حفظ البيانات محلياً في المتصفح. لا توجد مزامنة سحابية أو قاعدة بيانات مشتركة بين الأجهزة في هذه النسخة.</p>
@@ -90,8 +106,6 @@
 <footer>Execution Manager · نظام مستقل لإدارة تنفيذ التشطيبات</footer>
 </div>
 </div>
-<nav class="mobile-nav">
-<button data-page="quick" class="active"><span>＋</span>تسجيل</button><button data-page="reports"><span>▤</span>التقارير</button><button data-page="dashboard"><span>⌂</span>الرئيسية</button><button data-page="items"><span>▦</span>البنود</button><button data-page="contractors"><span>♙</span>المقاولون</button><button data-page="collections"><span>↙</span>التحصيل</button><button data-page="expenses"><span>↗</span>المصروفات</button>
-</nav>
+<nav class="mobile-nav" aria-label="التنقل السريع"><button data-page="quick" class="active"><span>＋</span><small>تسجيل</small></button><button data-page="dashboard"><span>⌂</span><small>الرئيسية</small></button><button data-page="items"><span>▦</span><small>البنود</small></button><button data-page="contractors"><span>♙</span><small>الأشخاص</small></button><button type="button" id="moreNavButton"><span>•••</span><small>المزيد</small></button></nav><div id="moreNavMenu" class="more-nav-menu hidden"><button data-page="collections">تحصيلات العميل</button><button data-page="expenses">المصروفات</button><button data-page="settings">الإعدادات</button></div>
 <script src="app.js"></script>
 </body></html>
