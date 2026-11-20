@@ -480,6 +480,6 @@ test('backup validation rejects supplier payments linked to a missing invoice', 
 
 test('site diary entries without a quantity remain valid after normalization', () => {
  const app=createApp();
- const normalized=app.normalizeState({projects:[{id:'p1',name:'P'}],current:'p1',collections:[],siteLogs:[{id:'l1',projectId:'p1',date:'2026-11-20',note:'ملاحظة موقع',quantity:0}]});
+ const normalized=app.normalizeState({projects:[{id:'p1',name:'P'}],current:'p1',collections:[],siteLogs:[{id:'l1',projectId:'p1',date:'2026-11-20',note:'ملاحظة موقع'}]});
  assert.equal(app.validateDailyLog(normalized.siteLogs[0]).ok,true);
 });
