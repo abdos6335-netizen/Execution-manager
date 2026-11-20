@@ -330,3 +330,11 @@ test('Android PWA cache is refreshed for expanded appearance settings', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
   assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v8"'));
 });
+
+test('workspace settings shortcut remains visible in the full-width six-card layout', () => {
+  const css = fs.readFileSync(new URL('../styles.css', 'file://' + __filename), 'utf8');
+  const html = fs.readFileSync(new URL('../index.html', 'file://' + __filename), 'utf8');
+  assert.ok(html.includes('id="workspaceSettingsButton"'));
+  assert.ok(css.includes('#projectSheets .sheets-intro{display:flex!important'));
+  assert.ok(html.includes('id="settingsBackToSheets"'));
+});
