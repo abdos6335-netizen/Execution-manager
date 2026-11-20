@@ -47,7 +47,7 @@ function createApp(initialStorage = {}) {
     globalThis.__appTest = {
       getState: () => state, normalizeState, parseQuickText,
       contractorTotals, answerReportQuestion, today, spentForProject,
-      itemCard, elements: null, storage: null,
+      itemCard, save, elements: null, storage: null,
       failStorageWrites(value) { globalThis.__failWrites(value); }
     };
   `, context);
@@ -185,4 +185,39 @@ test('corrupted local data is copied to a recovery key before defaults are used'
   const app = createApp({ 'execution-manager-v02': '{broken-json' });
   assert.equal(app.getState().current, 'p1');
   assert.ok([...app.storage.keys()].some(key => key.startsWith('execution-manager-v02.recovery.')));
+});
+
+test('quick entry understands taa marbuta spellings and prefers explicit labor words over item words', () => {
+  const app = createApp();
+  const set = text => { app.elements.get('quickAmount').value = ''; app.elements.get('quickAmount').dataset.auto = ''; app.elements.get('quickText').value = text; app.parseQuickText(); };
+  set('دفعت ٢٠٠٠ جنيه أجرة تركيب سيراميك');
+  assert.equal(app.elements.get('quickKind').value, 'labor');
+  set('اشتريت مونة بـ ١٥٠٠');
+  assert.equal(app.elements.get('quickKind').value, 'materials');
+  assert.equal(Number(app.elements.get('quickAmount').value), 1500);
+  set('دفعت مصنعية ٧٠٠');
+  assert.equal(app.elements.get('quickKind').value, 'labor');
+});
+
+test('quick amount follows the typed text until the user edits it manually', () => {
+  const app = createApp();
+  const amount = app.elements.get('quickAmount');
+  app.elements.get('quickText').value = 'دفعت ٣';
+  app.parseQuickText();
+  assert.equal(Number(amount.value), 3);
+  app.elements.get('quickText').value = 'دفعت ٣٠٠٠ جنيه';
+  app.parseQuickText();
+  assert.equal(Number(amount.value), 3000);
+  amount.value = '500';
+  amount.dataset.auto = '';
+  app.parseQuickText();
+  assert.equal(Number(amount.value), 500);
+});
+
+test('save() keeps the app working when localStorage rejects the write', () => {
+  const app = createApp();
+  app.failStorageWrites(true);
+  app.getState().collections.push({ id: 'c1', project: 'p1', amount: 100, rate: 10, reserved: 10, date: '2026-01-01' });
+  assert.doesNotThrow(() => app.save());
+  assert.equal(app.getState().collections.length, 1);
 });
