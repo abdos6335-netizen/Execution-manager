@@ -330,7 +330,7 @@ test('appearance preferences expose WeeklyPlanner-style controls and persist lin
 });
 test('Android PWA cache is refreshed for expanded appearance settings', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v9"'));
+  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v10"'));
 });
 
 test('workspace settings shortcut remains visible in the full-width six-card layout', () => {
