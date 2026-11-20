@@ -312,3 +312,21 @@ test('Android PWA cache version is bumped for the new mobile card styles', () =>
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
   assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v7"'));
 });
+
+test('appearance preferences expose WeeklyPlanner-style controls and persist line spacing', () => {
+  const html = fs.readFileSync(new URL('../index.html', 'file://' + __filename), 'utf8');
+  const app = fs.readFileSync(new URL('../app.js', 'file://' + __filename), 'utf8');
+  const css = fs.readFileSync(new URL('../styles.css', 'file://' + __filename), 'utf8');
+  for (const id of ['appearanceMode','appearanceAccent','appearanceBackground','appearanceTextAuto','appearanceText','appearanceFont','appearanceScale','appearanceSaturation','appearanceSurface','appearanceGlass','appearanceBlur','appearanceIconStyle','appearanceLineHeight','appearanceHeading','appearanceSubheading','appearanceItem','appearanceMotionStyle','appearanceMotionSpeed','appearanceDoneColor']) {
+    assert.ok(html.includes('id="' + id + '"'), 'missing appearance control: ' + id);
+  }
+  assert.ok(app.includes("lineHeight:1.4"));
+  assert.ok(app.includes("'--line-height':String(Math.min(1.8,Math.max(1.2,Number(a.lineHeight)||1.4)))"));
+  assert.ok(css.includes('body{line-height:var(--line-height,1.4)}'));
+  assert.ok(html.includes('id="workspaceSettingsButton"'));
+  assert.ok(html.includes('id="settingsBackToSheets"'));
+});
+test('Android PWA cache is refreshed for expanded appearance settings', () => {
+  const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
+  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v8"'));
+});
