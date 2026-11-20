@@ -240,3 +240,33 @@ body[data-hub="home"] .mobile-nav,body[data-hub="sheets"] .mobile-nav{display:no
 @media(prefers-reduced-motion:reduce){
  .project-sheet,.project-sheet-trigger,.sheet-inline-content{transition:none!important;animation:none!important}
 }
+
+
+/* Full-bleed card workspace: the six connected cards are the entire app shell */
+.app-shell{display:block;min-height:100dvh;width:100%;overflow-x:hidden}
+.sidebar,.topbar,.mobile-nav{display:none!important}
+.main-wrap{display:block;width:100%;min-width:0;min-height:100dvh}
+main{display:block;width:100%;max-width:none;margin:0;padding:0;min-height:100dvh}
+.hub-page{width:100%;max-width:none;min-height:100dvh;margin:0;padding:clamp(12px,2vw,24px)}
+#projectSheets.hub-page{padding:0;display:block}
+#projectSheets .back-link,#projectSheets .project-cover,#projectSheets .sheets-intro{display:none!important}
+#projectSheets .project-sheet-grid{width:100%;max-width:none;margin:0;padding:0;gap:0}
+#projectSheets .project-sheet{width:100%;border-radius:0}
+#projectSheets .project-sheet:first-child{border-radius:0}
+#projectSheets .project-sheet:last-child{border-radius:0}
+#projectSheets .project-sheet-trigger{width:100%;padding-inline:clamp(18px,4vw,56px)}
+#projectSheets .project-sheet.expanded{margin:0;border-radius:0;box-shadow:none}
+#projectSheets .sheet-inline-content{width:100%;border-radius:0;padding:clamp(14px,2.4vw,34px)}
+#projectSheets .sheet-inline-page{width:100%;max-width:none}
+#projectHome.hub-page{width:100%;max-width:none}
+@media(min-width:721px){
+ #projectSheets .project-sheet-trigger{height:clamp(100px,13vh,156px)}
+ #projectSheets .project-sheet.selected .project-sheet-trigger{height:clamp(155px,20vh,220px)}
+ #projectSheets .project-sheet.expanded .project-sheet-trigger{height:clamp(116px,15vh,170px)}
+}
+@media(max-width:720px){
+ #projectSheets .project-sheet-trigger{height:clamp(72px,11vh,98px);padding-inline:18px}
+ #projectSheets .project-sheet.selected .project-sheet-trigger{height:clamp(118px,17vh,150px)}
+ #projectSheets .project-sheet.expanded .project-sheet-trigger{height:clamp(92px,13vh,116px)}
+ #projectSheets .sheet-inline-content{padding:12px 9px calc(18px + env(safe-area-inset-bottom))}
+}
