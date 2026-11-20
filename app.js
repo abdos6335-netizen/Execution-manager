@@ -238,7 +238,7 @@ $('importData').onchange=async e=>{
   if(!imported||!Array.isArray(imported.projects)||!imported.projects.length||!Array.isArray(imported.collections))throw Error('shape');
   for(const key of ['expenses','items','contractors','payments'])if(imported[key]!==undefined&&!Array.isArray(imported[key]))throw Error('shape');
   if(!confirm('سيتم استبدال البيانات الحالية بالنسخة الاحتياطية. يفضل تصدير نسخة من البيانات الحالية أولاً. هل تريد المتابعة؟'))return;
-  const next=normalizeState(imported),serialized=JSON.stringify(next);
+  const validation=validateImportedState(imported);if(!validation.ok)throw Error(validation.reason);const next=validation.state,serialized=JSON.stringify(next);
   localStorage.setItem(KEY,serialized);
   state=next;closePanels();render();renderQuickLists();renderReports();
   alert('تم استيراد النسخة الاحتياطية بنجاح');
@@ -260,8 +260,12 @@ function parseQuickText(){
  if(amount!==null&&amount>0){if(!amountEl.value||auto){amountEl.value=amount;amountEl.dataset.auto='1'}}
  else if(auto){amountEl.value='';amountEl.dataset.auto=''}
  if(/تحصيل|استلمت|قبضت/.test(t))$('quickKind').value='collection';
+ else if(/سلفه|سلفة|مقدم/.test(t))$('quickKind').value='labor_advance';
+ else if(/اجره مستحقه|مستحقات صنايعي|اعتماد اجرة|اعتماد اجره/.test(t))$('quickKind').value='labor_earned';
+ else if(/سداد فاتوره|سداد فاتورة|دفعت للمورد|سددت للمورد/.test(t))$('quickKind').value='supplier_payment';
+ else if(/فاتوره|فاتورة|اشتريت|شراء|مشتريات|توريد/.test(t))$('quickKind').value='purchase_invoice';
  else if(/اجره|مصنعيه|يوميه|صنايعي/.test(t))$('quickKind').value='labor';
- else if(/خامات|مونه|اشتريت|شراء|مشتريات|مورد|توريد|جردل|اسمنت|سيراميك/.test(t))$('quickKind').value='materials';
+ else if(/خامات|مونه|جردل|اسمنت|سيراميك/.test(t))$('quickKind').value='materials';
  else if(/نقاش|نجار|كهربائي|سباك|دفعت|مقاول/.test(t))$('quickKind').value='labor';
  $('quickNote').value=raw;
 }
@@ -275,31 +279,30 @@ function answerReportQuestion(){
  const raw=$('reportQuestion').value.trim(),q=normArabic(raw),from=$('reportFrom').value,to=$('reportTo').value,within=x=>(!from||x.date>=from)&&(!to||x.date<=to);
  if(!q){$('reportAnswer').textContent='اكتب سؤالك الأول.';return;}
  if(from&&to&&from>to){$('reportAnswer').textContent='تاريخ البداية لازم يكون قبل تاريخ النهاية.';return;}
- const ex=state.expenses.filter(x=>x.projectId===state.current&&within(x)),pays=state.payments.filter(x=>x.projectId===state.current&&within(x)),cols=state.collections.filter(x=>x.project===state.current&&within(x));
- const findMentions=list=>{
-  const exact=list.filter(r=>[r.name,...(r.aliases||[])].some(n=>{const v=normArabic(n);return v.length>=3&&q.includes(v)}));
-  if(exact.length)return exact;
-  return list.filter(r=>[r.name,...(r.aliases||[])].some(n=>normArabic(n).split(' ').some(w=>w.length>=3&&q.includes(w))));
- };
- const people=findMentions(currentContractors()),items=findMentions(currentItems());
- if(people.length>1){$('reportAnswer').textContent='الاسم غير محدد كفاية. اكتب الاسم الكامل للشخص أو المورد عشان ما أديكش حساب شخص تاني.';return;}
- if(!people.length&&items.length>1){$('reportAnswer').textContent='اسم البند محتمل يكون أكثر من بند. اكتب اسم البند بشكل أوضح.';return;}
+ const ex=state.expenses.filter(x=>x.projectId===state.current&&within(x)),payments=state.payments.filter(x=>x.projectId===state.current&&within(x)),cols=state.collections.filter(x=>x.project===state.current&&within(x)),invoices=projectPurchases().filter(within),earned=projectLaborEntries().filter(within);
+ const mentions=list=>{const exact=list.filter(r=>[r.name,...(r.aliases||[])].some(n=>{const v=normArabic(n);return v.length>=3&&q.includes(v)}));if(exact.length)return exact;return list.filter(r=>[r.name,...(r.aliases||[])].some(n=>normArabic(n).split(' ').some(w=>w.length>=3&&q.includes(w))));};
+ const people=mentions(currentContractors()),items=mentions(currentItems());
+ if(people.length>1||items.length>1){$('reportAnswer').textContent='الاسم غير محدد كفاية. اكتب اسم الشخص والبند بشكل أوضح.';return;}
  const person=people[0]||null,item=items[0]||null;
- let answer='';
- if(person){
-  const names=[person.name,...(person.aliases||[])].map(normArabic);
-  const direct=ex.filter(x=>x.payeeId===person.id||(x.payee&&names.includes(normArabic(x.payee)))).reduce((s,x)=>s+x.amount,0);
-  const paid=pays.filter(x=>x.contractorId===person.id).reduce((s,x)=>s+x.amount,0);
-  answer='إجمالي المسجل باسم '+person.name+' = '+money(paid+direct)+' (دفعات مقاول '+money(paid)+'، مصروفات مباشرة '+money(direct)+').';
+ const directFor=(p,i)=>ex.filter(x=>(!p||x.payeeId===p.id||normArabic(x.payee)===normArabic(p.name))&&(!i||x.itemId===i.id||normArabic(x.item)===normArabic(i.name)));
+ const paymentFor=(p,i)=>payments.filter(x=>(!p||x.contractorId===p.id)&&(!i||x.itemId===i.id));
+ const invoiceFor=(p,i)=>invoices.filter(x=>(!p||x.supplierId===p.id)&&(!i||x.itemId===i.id));
+ const earnedFor=(p,i)=>earned.filter(x=>(!p||x.contractorId===p.id)&&(!i||x.itemId===i.id));
+ const sum=rows=>rows.reduce((s,x)=>s+Number(x.amount||0),0);
+ if(person&&item){
+  const d=directFor(person,item),p=paymentFor(person,item),inv=invoiceFor(person,item),lab=earnedFor(person,item),cost=sum(d)+sum(p.filter(x=>!x.purpose||x.purpose==='legacy'))+sum(inv)+sum(lab),cash=sum(d)+sum(p);
+  $('reportAnswer').textContent='حساب '+person.name+' في بند '+item.name+': تكلفة مسجلة '+money(cost)+'، خروج نقدي '+money(cash)+'، فواتير مشتريات '+money(sum(inv))+'، أجرة معتمدة '+money(sum(lab))+'.';
+ }else if(person){
+  const d=directFor(person,null),p=paymentFor(person,null),inv=invoiceFor(person,null),lab=earnedFor(person,null),invoiceIds=new Set(inv.map(x=>x.id)),linkedPaid=sum(p.filter(x=>invoiceIds.has(x.invoiceId))),laborPayments=p.filter(x=>x.type==='labor'&&x.purpose!=='supplier_invoice_payment'),laborPaid=sum(laborPayments),advances=sum(laborPayments.filter(x=>x.purpose==='advance'));
+  $('reportAnswer').textContent='حساب '+person.name+': فواتير المورد '+money(sum(inv))+'، المسدد عليها '+money(linkedPaid)+'، المتبقي '+money(sum(inv)-linkedPaid)+'؛ أجرة معتمدة '+money(sum(lab))+'، مدفوع أجرة / سُلف '+money(laborPaid)+'، صافي الأجرة '+money(sum(lab)-laborPaid)+' (منها سُلف '+money(advances)+')؛ مصروفات مباشرة '+money(sum(d))+'، دفعات نقدية '+money(sum(p))+'.';
  }else if(item){
-  const direct=ex.filter(x=>x.itemId===item.id||normArabic(x.item)===normArabic(item.name)).reduce((s,x)=>s+x.amount,0);
-  const paid=pays.filter(x=>x.itemId===item.id).reduce((s,x)=>s+x.amount,0);
-  answer='إجمالي تكلفة بند '+item.name+' = '+money(direct+paid)+' (مصروفات مباشرة '+money(direct)+'، دفعات '+money(paid)+').';
- }else if(/تحصيل|قبض|استلم/.test(q)){answer='إجمالي التحصيلات المسجلة = '+money(cols.reduce((s,x)=>s+x.amount,0))+'.';}
- else if(/ربح|محجوز/.test(q)){answer='إجمالي الربح المحجوز = '+money(cols.reduce((s,x)=>s+(Number(x.reserved)||0),0))+'.';}
- else if(/مصروف|صرف|تكلف|اتصرف/.test(q)){const direct=ex.reduce((s,x)=>s+x.amount,0),paid=pays.reduce((s,x)=>s+x.amount,0);answer='المصروفات المباشرة '+money(direct)+'، ودفعات المقاولين '+money(paid)+'، والإجمالي '+money(direct+paid)+'.';}
- else{answer='مش قادر أحدد المقصود من السؤال. جرّب اسم بند أو شخص مسجل، أو اسأل عن إجمالي التحصيلات أو المصروفات.';}
- $('reportAnswer').textContent=answer;
+  const d=directFor(null,item),p=paymentFor(null,item),inv=invoiceFor(null,item),lab=earnedFor(null,item),cost=sum(d)+sum(p.filter(x=>!x.purpose||x.purpose==='legacy'))+sum(inv)+sum(lab);
+  $('reportAnswer').textContent='تكلفة بند '+item.name+' = '+money(cost)+'؛ فواتير مشتريات '+money(sum(inv))+'، أجرة معتمدة '+money(sum(lab))+'، مصروفات مباشرة '+money(sum(d))+'، دفعات قديمة '+money(sum(p.filter(x=>!x.purpose||x.purpose==='legacy')))+'.';
+ }else if(/تحصيل|قبض|استلم/.test(q))$('reportAnswer').textContent='إجمالي التحصيلات المسجلة = '+money(sum(cols))+'.';
+ else if(/ربح|محجوز/.test(q))$('reportAnswer').textContent='إجمالي الربح المحجوز = '+money(cols.reduce((s,x)=>s+(Number(x.reserved)||0),0))+'.';
+ else if(/تكلف|تكلفة التنفيذ/.test(q))$('reportAnswer').textContent='تكلفة التنفيذ المستحقة = '+money(sum(ex)+sum(payments.filter(x=>!x.purpose||x.purpose==='legacy'))+sum(invoices)+sum(earned))+'.';
+ else if(/مدفوع|دفعت|صرف|مصروف/.test(q))$('reportAnswer').textContent='إجمالي الخروج النقدي = '+money(sum(ex)+sum(payments))+' (مصروفات مباشرة '+money(sum(ex))+'، دفعات '+money(sum(payments))+').';
+ else $('reportAnswer').textContent='مش قادر أحدد المقصود. اكتب اسم بند أو شخص مسجل، أو اسأل عن التحصيلات أو تكلفة التنفيذ أو المدفوعات النقدية.';
 }
 async function handleReceiptImage(e){const file=e.target.files?.[0];if(!file)return;const status=$('receiptStatus');status.textContent='جاري قراءة الفاتورة… قد يستغرق ذلك بعض الوقت حسب حجم الصورة.';try{if(!window.Tesseract){await new Promise((resolve,reject)=>{const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';sc.onload=resolve;sc.onerror=()=>reject(new Error('تعذر تحميل محرك قراءة الفواتير'));document.head.appendChild(sc)});}const result=await window.Tesseract.recognize(file,'ara+eng',{logger:m=>{if(m.status==='recognizing text')status.textContent='جاري قراءة الفاتورة… '+Math.round((m.progress||0)*100)+'%'}});$('quickText').value=result.data.text||'';$('quickNote').value=result.data.text||'';parseQuickText();status.textContent='تم استخراج النص مبدئيًا. راجع المبلغ والبند والشخص يدويًا قبل التسجيل.';}catch(err){status.textContent='تعذرت قراءة الصورة تلقائيًا. يمكنك كتابة بيانات الفاتورة يدويًا.';}finally{e.target.value='';}}
 function renderReports(){
@@ -324,28 +327,49 @@ function renderReportRows(){const q=normArabic($('reportSearch')?.value||''),fro
 $('quickDate').value=today();
 $('clearQuickForm').onclick=()=>{$('quickForm').reset();$('quickAmount').dataset.auto='';$('quickDate').value=today();$('quickText').value='';$('voiceStatus').textContent='اكتب الحركة أو استخدم الصوت أو صوّر الفاتورة، ثم راجع البيانات قبل الحفظ.';$('receiptStatus').textContent=''};
 $('quickText').addEventListener('input',parseQuickText);$('quickAmount').addEventListener('input',()=>{$('quickAmount').dataset.auto=''});
+
 $('quickForm').addEventListener('submit',e=>{
- e.preventDefault();const kind=$('quickKind').value,amount=Number($('quickAmount').value),itemName=$('quickItem').value.trim(),personName=$('quickPerson').value.trim(),date=$('quickDate').value,note=$('quickNote').value.trim();
- if(!amount||amount<=0||!date)return;
+ e.preventDefault();
+ const kind=$('quickKind').value,amount=Number($('quickAmount').value),itemName=$('quickItem').value.trim(),personName=$('quickPerson').value.trim(),date=$('quickDate').value,note=$('quickNote').value.trim();
+ if(!kind){alert('اختار نوع الحركة الأول.');return;}if(!Number.isFinite(amount)||amount<=0||!/^\d{4}-\d{2}-\d{2}$/.test(date||'')){alert('راجع المبلغ والتاريخ قبل التسجيل.');return;}
  if(kind==='collection'){const rate=Number(project().rate);state.collections.push({id:uid('col'),project:state.current,amount,rate,reserved:amount*rate/100,date,note});}
- else {
-  let item=null,person=null;
-  const existingItem=itemName?findNamedRecord(currentItems(),itemName):null,existingPerson=personName?findNamedRecord(currentContractors(),personName):null;
-  if(itemName&&!existingItem&&!confirm('البند "'+itemName+'" غير مسجل. هل تريد إنشاءه وربط الحركة به؟'))return;
-  if(personName&&!existingPerson&&!confirm('الشخص / المورد "'+personName+'" غير مسجل. هل تريد إنشاء ملف له؟'))return;
-  item=existingItem;if(itemName&&!item){item={id:uid('item'),projectId:state.current,name:itemName,aliases:[],category:'',qty:1,unit:'',method:'',materialsAmount:0,laborAmount:0,status:'جاري التنفيذ'};}
-  person=existingPerson;if(personName&&!person){person={id:uid('con'),projectId:state.current,name:personName,aliases:[],phone:'',trade:kind==='labor'?'صنايعي':'مورد',notes:''};}
-  if(!confirmNoDuplicateMovement({itemId:item?.id||'',item:item?.name||itemName,type:kind==='collection'?'collection':kind,amount,date,personId:person?.id||'',personName:person?.name||personName}))return;
-  if(item&&!existingItem)state.items.push(item);if(person&&!existingPerson)state.contractors.push(person);
-  if(item&&person&&kind==='materials'&&!(item.materialsContractorId||item.contractorId))item.materialsContractorId=person.id;
-  if(item&&person&&kind==='labor'&&!(item.laborContractorId||item.contractorId))item.laborContractorId=person.id;
-  if(kind==='labor'&&item&&person){
-   state.payments.push({id:uid('pay'),projectId:state.current,itemId:item.id,type:'labor',contractorId:person.id,amount,date,note});
+ else if(kind==='purchase_invoice'||kind==='supplier_payment'||kind==='labor_earned'||kind==='labor_advance'){
+  let item=itemName?findNamedRecord(currentItems(),itemName):null,person=personName?findNamedRecord(currentContractors(),personName):null;
+  const invoice=kind==='supplier_payment'?state.purchases.find(x=>x.id===$('quickInvoice').value):null;
+  if(kind==='supplier_payment'&&!invoice){alert('اختار فاتورة المورد التي تسددها حتى لا تختلط الفاتورة بالدفعة.');return;}
+  if(kind==='supplier_payment'&&amount>invoiceTotals(invoice).outstanding+.005){alert('المبلغ أكبر من المتبقي في الفاتورة. سجّل دفعة لا تتجاوز '+money(invoiceTotals(invoice).outstanding)+'.');return;}
+  if(kind==='purchase_invoice'&&!personName){alert('اكتب اسم المورد لتسجيل الفاتورة على حسابه.');return;}
+  if(['labor_earned','labor_advance'].includes(kind)&&!personName){alert('اكتب اسم الصنايعي لربط الأجرة أو السلفة بحسابه.');return;}
+  if(itemName&&!item&&!confirm('البند "'+itemName+'" غير مسجل. هل تريد إنشاءه وربط الحركة به؟'))return;
+  if(personName&&!person&&!confirm('الشخص / المورد "'+personName+'" غير مسجل. هل تريد إنشاء حساب له؟'))return;
+  if(!item&&itemName){item={id:uid('item'),projectId:state.current,name:itemName,aliases:[],category:'',qty:1,unit:'',method:'',materialsAmount:0,laborAmount:0,status:'جاري التنفيذ'};}
+  if(!person&&personName){person={id:uid('con'),projectId:state.current,name:personName,aliases:[],phone:'',trade:kind.startsWith('labor')?'صنايعي':'مورد',notes:''};}
+  if(kind==='purchase_invoice'){
+   state.purchases.push({id:uid('inv'),projectId:state.current,itemId:item?.id||'',item:item?.name||itemName,supplierId:person.id,supplier:person.name,amount,date,note});
+   if(item&&!item.materialsContractorId)item.materialsContractorId=person.id;
+  }else if(kind==='supplier_payment'){
+   state.payments.push({id:uid('pay'),projectId:state.current,itemId:invoice.itemId||'',type:'materials',contractorId:invoice.supplierId||person?.id||'',amount,date,note,purpose:'supplier_invoice_payment',invoiceId:invoice.id});
+  }else if(kind==='labor_earned'){
+   state.laborEntries.push({id:uid('earned'),projectId:state.current,itemId:item?.id||'',contractorId:person.id,amount,date,note,status:'approved'});
   }else{
-   state.expenses.push({id:uid('ex'),projectId:state.current,itemId:item?.id||'',item:item?.name||itemName,type:kind==='materials'?'materials':kind==='labor'?'labor':'other',amount,payee:person?.name||personName,payeeId:person?.id||'',date,note,kind:'direct'});
+   state.payments.push({id:uid('pay'),projectId:state.current,itemId:item?.id||'',type:'labor',contractorId:person.id,amount,date,note,purpose:'advance'});
   }
+  if(item&&!currentItems().some(x=>x.id===item.id))state.items.push(item);
+  if(person&&!currentContractors().some(x=>x.id===person.id))state.contractors.push(person);
+ }else{
+  let item=itemName?findNamedRecord(currentItems(),itemName):null,person=personName?findNamedRecord(currentContractors(),personName):null;
+  if(itemName&&!item&&!confirm('البند "'+itemName+'" غير مسجل. هل تريد إنشاءه وربط الحركة به؟'))return;
+  if(personName&&!person&&!confirm('الشخص / المورد "'+personName+'" غير مسجل. هل تريد إنشاء ملف له؟'))return;
+  if(itemName&&!item)item={id:uid('item'),projectId:state.current,name:itemName,aliases:[],category:'',qty:1,unit:'',method:'',materialsAmount:0,laborAmount:0,status:'جاري التنفيذ'};
+  if(personName&&!person)person={id:uid('con'),projectId:state.current,name:personName,aliases:[],phone:'',trade:kind==='labor'?'صنايعي':'مورد',notes:''};
+  if(!confirmNoDuplicateMovement({itemId:item?.id||'',item:item?.name||itemName,type:kind,amount,date,personId:person?.id||'',personName:person?.name||personName}))return;
+  if(item&&!currentItems().some(x=>x.id===item.id))state.items.push(item);
+  if(person&&!currentContractors().some(x=>x.id===person.id))state.contractors.push(person);
+  if(item&&person&&kind==='labor'&&!(item.laborContractorId||item.contractorId))item.laborContractorId=person.id;
+  if(kind==='labor'&&item&&person)state.payments.push({id:uid('pay'),projectId:state.current,itemId:item.id,type:'labor',contractorId:person.id,amount,date,note,purpose:'labor_payment'});
+  else state.expenses.push({id:uid('ex'),projectId:state.current,itemId:item?.id||'',item:item?.name||itemName,type:kind==='materials'?'materials':kind==='labor'?'labor':'other',amount,payee:person?.name||personName,payeeId:person?.id||'',date,note,kind:'direct'});
  }
- $('quickForm').reset();$('quickAmount').dataset.auto='';$('quickDate').value=today();$('quickText').value='';save();renderQuickLists();alert('تم تسجيل الحركة.');
+ $('quickForm').reset();$('quickAmount').dataset.auto='';$('quickDate').value=today();$('quickText').value='';$('quickInvoice').value='';toggleInvoiceSelector();save();renderQuickLists();alert('تم تسجيل الحركة بنجاح.');
 });
 $('voiceEntry').addEventListener('click',()=>{
  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
@@ -369,8 +393,8 @@ renderQuickLists();
 
 $('moreNavButton')?.addEventListener('click',()=>$('moreNavMenu').classList.toggle('hidden'));
 const APPEARANCE_KEY='em:appearance',APPEARANCE_DEFAULT={mode:'light',accent:'#294438',background:'#f1f0e8',text:'#333333',theme:'sage',font:'ibm',scale:100,saturation:100,surface:'tint',glass:true,blur:16,iconStyle:'plain',lineHeight:1.4,heading:100,subheading:100,item:100,motionStyle:'smooth',motionSpeed:'normal',doneColor:'green'};
-const APPEARANCE_PRESETS={sage:{accent:'#294438',background:'#f1f0e8'},sunset:{accent:'#8f3529',background:'#fff0d8'},earth:{accent:'#493528',background:'#f5ecdd'},ocean:{accent:'#203f50',background:'#edf3eb'},berry:{accent:'#4b2d43',background:'#f6e9e8'},slate:{accent:'#303b49',background:'#eef0ec'},glass:{accent:'#302e32',background:'#e3e3e4'},soft:{accent:'#2c2c30',background:'#e8e8ea'},sand:{accent:'#6b5a43',background:'#ebe4d8'},rose:{accent:'#7a3b4f',background:'#ede2e5'}};
-const SHEET_PALETTES={sage:['#294438','#42634b','#73916f','#a5b092','#d2d2c4','#f1f0e8'],sunset:['#8f3529','#bd4e32','#e47b43','#f0a75e','#f5d18a','#fff0d8'],earth:['#493528','#70513a','#9b7350','#c2a27e','#e1cdb0','#f5ecdd'],ocean:['#203f50','#326373','#5b9299','#8db9b5','#c5dbd2','#edf3eb'],berry:['#4b2d43','#70445f','#a36b83','#c99aa5','#e7cbd0','#f6e9e8'],slate:['#303b49','#4c5c6b','#748795','#a6b4b9','#d0d9d8','#eef0ec'],glass:['#302e32','#55545a','#85858a','#b7b7bb','#d0d0d2','#e3e3e4'],soft:['#2c2c30','#55555b','#898990','#b8b8bd','#d2d2d6','#e8e8ea'],sand:['#594a39','#78634b','#a58c6d','#c5b295','#ded1bb','#ebe4d8'],rose:['#65313f','#874b5d','#ad7282','#c99aa5','#dfc3c9','#ede2e5']};
+const APPEARANCE_PRESETS={sage:{accent:'#8cab99',background:'#e7eeea'},sunset:{accent:'#af9688',background:'#efeae7'},earth:{accent:'#ac9c8b',background:'#eeebe7'},ocean:{accent:'#8aa5ad',background:'#e7ecee'},berry:{accent:'#ab8c9c',background:'#eee7eb'},slate:{accent:'#909ca7',background:'#e8ebed'},glass:{accent:'#9a96a2',background:'#eae9ec'},soft:{accent:'#9998a0',background:'#eaeaeb'},sand:{accent:'#aaa08d',background:'#eeebe8'},rose:{accent:'#aa8d92',background:'#eee8e9'}};
+const SHEET_PALETTES={sage:['#97b4a3','#a6bfb0','#b5c9be','#c4d4cb','#d3dfd8','#e7eeea'],sunset:['#b8a194','#c2aea3','#ccbcb3','#d6c9c2','#e0d7d1','#efeae7'],earth:['#b5a697','#c0b2a5','#cabfb4','#d5ccc3','#dfd9d2','#eeebe7'],ocean:['#96aeb6','#a5b9c0','#b4c5cb','#c3d1d5','#d2dce0','#e7ecee'],berry:['#b497a6','#bfa6b2','#c9b5bf','#d4c4cc','#dfd3d9','#eee7eb'],slate:['#9ba6b0','#a9b2bc','#b8bfc7','#c6ccd2','#d4d9dd','#e8ebed'],glass:['#a4a0ab','#b1aeb7','#bebbc3','#cbc9cf','#d8d6db','#eae9ec'],soft:['#a3a2a9','#b0afb6','#bebdc2','#cbcace','#d8d7da','#eaeaeb'],sand:['#b3a998','#beb6a7','#c9c2b6','#d4cec4','#dedad3','#eeebe8'],rose:['#b3989d','#bea7ab','#c9b6b9','#d4c4c7','#ded3d5','#eee8e9']};
 function contrastInk(hex){const rgb=String(hex).match(/[0-9a-f]{2}/gi)?.slice(-3).map(x=>parseInt(x,16)/255)||[0,0,0],linear=rgb.map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4),l=.2126*linear[0]+.7152*linear[1]+.0722*linear[2];return l>.179?'#17191c':'#ffffff';}
 function getAppearance(){try{return {...APPEARANCE_DEFAULT,...JSON.parse(localStorage.getItem(APPEARANCE_KEY)||'{}')}}catch{return {...APPEARANCE_DEFAULT}}}
 function hexToHsl(hex){const n=String(hex).replace('#',''),r=parseInt(n.slice(0,2),16)/255,g=parseInt(n.slice(2,4),16)/255,b=parseInt(n.slice(4,6),16)/255,max=Math.max(r,g,b),min=Math.min(r,g,b),d=max-min,l=(max+min)/2;let h=0,s=0;if(d){s=d/(1-Math.abs(2*l-1));if(max===r)h=60*(((g-b)/d)%6);else if(max===g)h=60*((b-r)/d+2);else h=60*((r-g)/d+4)}return [((h+360)%360),s,l]}
@@ -381,7 +405,7 @@ function applyAppearance(){
  const mix=(x,y,t)=>{const p=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)],A=p(x),B=p(y);return '#'+A.map((v,i)=>Math.round(v+(B[i]-v)*t).toString(16).padStart(2,'0')).join('')};
  const rgb=accent.match(/[0-9a-f]{2}/gi)?.map(x=>parseInt(x,16)/255)||[.2,.2,.2],linear=rgb.map(v=>v<=.03928?v/12.92:((v+.055)/1.055)**2.4),accentInk=.2126*linear[0]+.7152*linear[1]+.0722*linear[2]>.45?'#14161a':'#fff';
  const textColor=['#ffffff','#333333','#000000'].includes(String(a.text).toLowerCase())?String(a.text).toLowerCase():'#333333';
- const root=document.documentElement;root.dataset.theme=a.theme||'sage';const sheetPalette=SHEET_PALETTES[a.theme]||SHEET_PALETTES.sage;sheetPalette.forEach((raw,i)=>{const color=saturateHex(raw,(Number(a.saturation)||0)/100);root.style.setProperty('--sheet-'+(i+1)+'-color',color);root.style.setProperty('--sheet-'+(i+1)+'-ink',textColor);root.style.setProperty('--sheet-'+(i+1)+'-surface',a.surface==='same'?mix(color,'#ffffff',dark?.035:.055):mix(color,accent,dark?.14:.10))});
+ const root=document.documentElement;root.dataset.theme=a.theme||'sage';const sheetPalette=SHEET_PALETTES[a.theme]||SHEET_PALETTES.sage;sheetPalette.forEach((raw,i)=>{const color=saturateHex(raw,(Number(a.saturation)||0)/100),readableInk=contrastInk(color)==='#ffffff'?'#ffffff':(textColor==='#ffffff'?'#333333':textColor);root.style.setProperty('--sheet-'+(i+1)+'-color',color);root.style.setProperty('--sheet-'+(i+1)+'-ink',readableInk);root.style.setProperty('--sheet-'+(i+1)+'-surface',a.surface==='same'?mix(color,'#ffffff',dark?.035:.055):mix(color,accent,dark?.14:.10))});
  const speed={slow:1.35,normal:1,fast:.7}[a.motionSpeed]||1,styleDuration={smooth:.48,subtle:.24,reduced:0}[a.motionStyle]??.48,motionDuration=styleDuration*speed;
  const vars={'--canvas':bg,'--paper':dark?'#232325':'#f0f1f0','--ink':textColor,'--muted':textColor,'--line':dark?'rgba(255,255,255,.08)':'rgba(0,0,0,.085)','--nav':dark?'#262628':'#ececed','--nav2':dark?'#303033':'#e4e5e4','--accent':accent,'--accent-ink':accentInk,'--accent-soft':dark?mix('#1b1b1d',accent,.22):mix(bg,accent,.14),'--shadow':dark?'0 1px 0 rgba(255,255,255,.06) inset,0 14px 30px -12px rgba(0,0,0,.65)':'0 1px 0 rgba(255,255,255,.95) inset,0 12px 28px -12px rgba(20,20,26,.20)','--scale':String((Number(a.scale)||100)/100),'--line-height':String(Math.min(1.8,Math.max(1.2,Number(a.lineHeight)||1.4))),'--type-heading':String((Number(a.heading)||100)/100),'--type-subheading':String((Number(a.subheading)||100)/100),'--type-item':String((Number(a.item)||100)/100),'--glass-blur':(a.glass?Math.min(32,Math.max(0,Number(a.blur)||0)):0)+'px','--glass-opacity':a.glass?'.28':'0','--icon-radius':a.iconStyle==='squircle'?'30%':'50%','--icon-bg':a.iconStyle==='squircle'?'color-mix(in srgb,var(--sheet-ink) 10%,transparent)':'transparent','--motion-duration':motionDuration+'s','--done-color':a.doneColor==='orange'?'#e58a32':'#1f9c70'};
  Object.entries(vars).forEach(([k,v])=>root.style.setProperty(k,v));
@@ -412,3 +436,177 @@ applyAppearance();syncAppearanceControls();
 showProjectHome();
 if(window.matchMedia){const mq=window.matchMedia('(prefers-color-scheme: dark)'),onChange=()=>{if(getAppearance().mode==='system')applyAppearance()};if(mq.addEventListener)mq.addEventListener('change',onChange);else if(mq.addListener)mq.addListener(onChange)}
 renderReports();
+
+// Execution diary + separate supplier invoices, cash payments, and earned labor.
+// These are additive records; existing financial and storage keys remain unchanged.
+state.purchases=Array.isArray(state.purchases)?state.purchases:[];
+state.laborEntries=Array.isArray(state.laborEntries)?state.laborEntries:[];
+state.siteLogs=Array.isArray(state.siteLogs)?state.siteLogs:[];
+const normalizeStateBeforeLedgers=normalizeState;
+normalizeState=function(raw){
+ const n=normalizeStateBeforeLedgers(raw);
+ n.purchases=(Array.isArray(raw?.purchases)?raw.purchases:[]).filter(x=>x&&typeof x==='object').map(x=>({...x,id:x.id||uid('inv'),projectId:x.projectId||x.project||n.current,itemId:x.itemId||'',item:x.item||'',supplierId:x.supplierId||'',supplier:x.supplier||'',amount:Number(x.amount)||0,date:x.date||'',note:x.note||''}));
+ n.laborEntries=(Array.isArray(raw?.laborEntries)?raw.laborEntries:[]).filter(x=>x&&typeof x==='object').map(x=>({...x,id:x.id||uid('earned'),projectId:x.projectId||x.project||n.current,itemId:x.itemId||'',contractorId:x.contractorId||'',amount:Number(x.amount)||0,date:x.date||'',note:x.note||'',status:x.status||'approved'}));
+ n.siteLogs=(Array.isArray(raw?.siteLogs)?raw.siteLogs:[]).filter(x=>x&&typeof x==='object').map(x=>({...x,id:x.id||uid('log'),projectId:x.projectId||x.project||n.current,date:x.date||'',itemId:x.itemId||'',item:x.item||'',quantity:x.quantity===''||x.quantity==null?null:Number(x.quantity),unit:x.unit||'',crew:x.crew||'',type:x.type||'execution',note:x.note||''}));
+ n.payments=n.payments.map(x=>({...x,purpose:x.purpose||'legacy',invoiceId:x.invoiceId||''}));
+ return n;
+};
+function projectPurchases(projectId=state.current){return state.purchases.filter(x=>x.projectId===projectId)}
+function projectLaborEntries(projectId=state.current){return state.laborEntries.filter(x=>x.projectId===projectId&&x.status!=='void')}
+function invoiceTotals(invoice){
+ const paid=state.payments.filter(x=>x.projectId===invoice.projectId&&x.invoiceId===invoice.id).reduce((s,x)=>s+Number(x.amount||0),0);
+ const amount=Number(invoice.amount)||0;
+ return {amount,paid,outstanding:amount-paid};
+}
+function supplierLedgerTotals(supplierId,projectId=state.current){
+ const invoices=state.purchases.filter(x=>x.projectId===projectId&&x.supplierId===supplierId);
+ const invoiceIds=new Set(invoices.map(x=>x.id));
+ const invoiceAmount=invoices.reduce((s,x)=>s+Number(x.amount||0),0);
+ const linkedPaid=state.payments.filter(x=>x.projectId===projectId&&invoiceIds.has(x.invoiceId)).reduce((s,x)=>s+Number(x.amount||0),0);
+ const unlinkedPaid=state.payments.filter(x=>x.projectId===projectId&&x.contractorId===supplierId&&x.type==='materials'&&!x.invoiceId).reduce((s,x)=>s+Number(x.amount||0),0);
+ return {invoiceAmount,linkedPaid,unlinkedPaid,outstanding:invoiceAmount-linkedPaid};
+}
+function laborTotalsForContractor(contractorId,projectId=state.current){
+ const earned=state.laborEntries.filter(x=>x.projectId===projectId&&x.contractorId===contractorId&&x.status!=='void').reduce((s,x)=>s+Number(x.amount||0),0);
+ const rows=state.payments.filter(x=>x.projectId===projectId&&x.contractorId===contractorId&&x.type==='labor'&&x.purpose!=='supplier_invoice_payment');
+ const paid=rows.reduce((s,x)=>s+Number(x.amount||0),0);
+ const advances=rows.filter(x=>x.purpose==='advance').reduce((s,x)=>s+Number(x.amount||0),0);
+ return {earned,paid,advances,balance:earned-paid};
+}
+function executionCostForProject(projectId=state.current){
+ const direct=state.expenses.filter(x=>x.projectId===projectId).reduce((s,x)=>s+Number(x.amount||0),0);
+ const legacyPayments=state.payments.filter(x=>x.projectId===projectId&&(!x.purpose||x.purpose==='legacy')).reduce((s,x)=>s+Number(x.amount||0),0);
+ const invoices=state.purchases.filter(x=>x.projectId===projectId).reduce((s,x)=>s+Number(x.amount||0),0);
+ const earned=projectLaborEntries(projectId).reduce((s,x)=>s+Number(x.amount||0),0);
+ return direct+legacyPayments+invoices+earned;
+}
+function cashOutflowForProject(projectId=state.current){
+ return state.expenses.filter(x=>x.projectId===projectId).reduce((s,x)=>s+Number(x.amount||0),0)+state.payments.filter(x=>x.projectId===projectId).reduce((s,x)=>s+Number(x.amount||0),0);
+}
+function validateDailyLog(data){
+ const date=String(data?.date||''),parts=/^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+ if(!parts)return {ok:false,reason:'التاريخ مطلوب'};
+ const parsed=new Date(Number(parts[1]),Number(parts[2])-1,Number(parts[3]));
+ if(parsed.getFullYear()!==Number(parts[1])||parsed.getMonth()!==Number(parts[2])-1||parsed.getDate()!==Number(parts[3]))return {ok:false,reason:'التاريخ غير صحيح'};
+ if(!String(data.note||'').trim())return {ok:false,reason:'اكتب تفاصيل التدوينة'};
+ if(data.quantity!==''&&data.quantity!=null&&(!Number.isFinite(Number(data.quantity))||Number(data.quantity)<=0))return {ok:false,reason:'الكمية يجب أن تكون أكبر من صفر'};
+ return {ok:true};
+}
+function validateImportedState(raw){
+ const next=normalizeState(raw),projectIds=new Set(next.projects.map(x=>x.id)),itemIds=new Set(next.items.map(x=>x.id)),personIds=new Set(next.contractors.map(x=>x.id));
+ const validAmount=x=>Number.isFinite(Number(x.amount))&&Number(x.amount)>0;
+ for(const x of next.purchases){if(!validAmount(x)||!projectIds.has(x.projectId)||(x.itemId&&!itemIds.has(x.itemId))||(x.supplierId&&!personIds.has(x.supplierId)))return {ok:false,reason:'بيانات فاتورة مشتريات غير مكتملة'};}
+ for(const x of next.laborEntries){if(!validAmount(x)||!projectIds.has(x.projectId)||(x.itemId&&!itemIds.has(x.itemId))||(x.contractorId&&!personIds.has(x.contractorId)))return {ok:false,reason:'بيانات أجرة مستحقة غير مكتملة'};}
+ for(const x of next.siteLogs){if(!validateDailyLog(x).ok||!projectIds.has(x.projectId))return {ok:false,reason:'بيانات يومية الموقع غير صحيحة'};}
+ for(const x of next.payments.filter(p=>p.purpose==='supplier_invoice_payment')){const invoice=next.purchases.find(i=>i.id===x.invoiceId);if(!invoice||invoice.projectId!==x.projectId||!validAmount(x))return {ok:false,reason:'دفعة مورد مرتبطة بفاتورة غير موجودة'};}
+ for(const invoice of next.purchases){const paid=next.payments.filter(x=>x.invoiceId===invoice.id).reduce((s,x)=>s+Number(x.amount||0),0);if(paid>invoice.amount+.005)return {ok:false,reason:'دفعات إحدى الفواتير أكبر من قيمتها'};}
+ return {ok:true,state:next};
+}
+function renderAdvancedLedger(){
+ const invoices=projectPurchases().slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+ const earned=projectLaborEntries().slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+ const invHtml=invoices.map(x=>{const t=invoiceTotals(x),payments=state.payments.filter(p=>p.invoiceId===x.id).sort((a,b)=>(b.date||'').localeCompare(a.date||'')),paymentHtml=payments.map(p=>'<div class="table-row"><div><strong>سداد نقدي · '+money(p.amount)+'</strong><small>'+esc(p.date)+' · '+esc(p.note||'')+'</small></div><div class="ledger-row-actions"><button class="text-btn" data-edit-transaction="payment" data-id="'+esc(p.id)+'">تعديل</button><button class="delete-btn" data-delete-transaction="payment" data-id="'+esc(p.id)+'">حذف</button></div></div>').join('');return '<div class="advanced-ledger-group"><div class="table-row expense-row"><div><strong>فاتورة مورد · '+esc(x.supplier||'مورد غير محدد')+'</strong><small>'+esc(x.date)+' · '+esc(itemById(x.itemId)?.name||x.item||'مصروف عام')+' · إجمالي '+money(t.amount)+' · مدفوع '+money(t.paid)+' · متبقي '+money(t.outstanding)+'</small></div><div class="ledger-row-actions"><button class="text-btn" data-edit-transaction="purchase" data-id="'+esc(x.id)+'">تعديل</button><button class="delete-btn" data-delete-transaction="purchase" data-id="'+esc(x.id)+'">حذف</button></div></div>'+(paymentHtml||'<div class="muted">لم يتم سداد هذه الفاتورة بعد.</div>')+'</div>'}).join('');
+ const laborHtml=earned.map(x=>'<div class="table-row expense-row"><div><strong>أجرة مستحقة · '+esc(contractorById(x.contractorId)?.name||'صنايعي غير محدد')+'</strong><small>'+esc(x.date)+' · '+esc(itemById(x.itemId)?.name||'بند غير محدد')+' · معتمد '+money(x.amount)+'</small></div><div class="ledger-row-actions"><button class="text-btn" data-edit-transaction="laborEntry" data-id="'+esc(x.id)+'">تعديل</button><button class="delete-btn" data-delete-transaction="laborEntry" data-id="'+esc(x.id)+'">حذف</button></div></div>').join('');
+ $('advancedLedger').innerHTML='<div class="advanced-ledger-group"><h3>فواتير المشتريات وحساب الموردين</h3>'+(invHtml||'<div class="empty">لا توجد فواتير مشتريات مسجلة.</div>')+'</div><div class="advanced-ledger-group"><h3>الأجور المستحقة والمعتمدة</h3>'+(laborHtml||'<div class="empty">لا توجد أجور مستحقة مسجلة.</div>')+'</div>';
+ const logs=state.siteLogs.filter(x=>x.projectId===state.current).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+ $('siteLogList').innerHTML=logs.length?logs.map(x=>'<div class="site-log-row"><div><strong>'+esc(x.note)+'</strong><small>'+esc(x.date)+' · '+esc(x.type==='delivery'?'توريد / استلام':x.type==='issue'?'مشكلة / معوق':x.type==='note'?'ملاحظة موقع':'تنفيذ')+'</small><div class="site-log-meta">'+(x.item?'<span>البند: '+esc(x.item)+'</span>':'')+(x.quantity?'<span>الكمية: '+esc(x.quantity)+' '+esc(x.unit)+'</span>':'')+(x.crew?'<span>الطاقم: '+esc(x.crew)+'</span>':'')+'</div></div><div class="ledger-row-actions"><button class="text-btn" data-edit-transaction="siteLog" data-id="'+esc(x.id)+'">تعديل</button><button class="delete-btn" data-delete-transaction="siteLog" data-id="'+esc(x.id)+'">حذف</button></div></div>').join(''):'<div class="empty">لا توجد تدوينات موقع حتى الآن.</div>';
+ const invoiceSelect=$('quickInvoice');if(invoiceSelect){const selected=invoiceSelect.value;invoiceSelect.innerHTML='<option value="">اختر فاتورة مورد</option>'+invoices.filter(x=>invoiceTotals(x).outstanding>0.005).map(x=>'<option value="'+esc(x.id)+'">'+esc(x.supplier||'مورد')+' · '+esc(x.date)+' · متبقي '+money(invoiceTotals(x).outstanding)+'</option>').join('');if(invoiceSelect.options&&[...invoiceSelect.options].some(o=>o.value===selected))invoiceSelect.value=selected;}
+}
+function toggleInvoiceSelector(){const wrap=$('quickInvoiceWrap'),kind=$('quickKind').value;if(wrap)wrap.classList.toggle('hidden',kind!=='supplier_payment');}
+const baseRenderQuickLists=renderQuickLists;
+renderQuickLists=function(){baseRenderQuickLists();renderAdvancedLedger();};
+const baseRenderApp=render;
+render=function(){
+ baseRenderApp();renderAdvancedLedger();
+ const cl=$('collectionList');if(cl)cl.querySelectorAll?.('[data-delete-collection]').forEach(b=>{if(b.parentNode&&!b.parentNode.querySelector('[data-edit-collection]')){const e=document.createElement('button');e.type='button';e.className='text-btn';e.textContent='تعديل';e.dataset.editCollection=b.dataset.deleteCollection;b.parentNode.insertBefore(e,b);}});
+ const el=$('expenseList');if(el)el.querySelectorAll?.('[data-delete-expense]').forEach(b=>{if(b.parentNode&&!b.parentNode.querySelector('[data-edit-expense]')){const e=document.createElement('button');e.type='button';e.className='text-btn';e.textContent='تعديل';e.dataset.editExpense=b.dataset.deleteExpense;b.parentNode.insertBefore(e,b);}});
+ const summary=$('dashboardSummary');if(summary){
+  const invoices=projectPurchases(),earned=projectLaborEntries(),supplierOutstanding=invoices.reduce((s,x)=>s+invoiceTotals(x).outstanding,0),advances=state.payments.filter(x=>x.projectId===state.current&&x.purpose==='advance').reduce((s,x)=>s+x.amount,0);
+  const rows=[['عدد بنود التنفيذ',currentItems().length],['عدد المقاولين والصنايعية',currentContractors().length],['إجمالي اتفاقات البنود',money(currentItems().reduce((s,x)=>s+agreement(x,'materials')+agreement(x,'labor'),0))],['تكلفة التنفيذ المستحقة',money(executionCostForProject())],['المدفوعات والمصروفات النقدية',money(cashOutflowForProject())],['إجمالي فواتير المشتريات',money(invoices.reduce((s,x)=>s+x.amount,0))],['المتبقي لفواتير الموردين',money(supplierOutstanding)],['الأجور المعتمدة',money(earned.reduce((s,x)=>s+x.amount,0))],['السُلف المسجلة',money(advances)]];
+  summary.innerHTML=rows.map(x=>'<div class="summary-row"><span>'+x[0]+'</span><strong>'+x[1]+'</strong></div>').join('');
+ }
+};
+const baseRenderReports=renderReports;
+renderReports=function(){
+ baseRenderReports();
+ const from=$('reportFrom').value,to=$('reportTo').value,within=x=>(!from||x.date>=from)&&(!to||x.date<=to);
+ const ex=state.expenses.filter(x=>x.projectId===state.current&&within(x));
+ const payments=state.payments.filter(x=>x.projectId===state.current&&within(x));
+ const legacy=payments.filter(x=>!x.purpose||x.purpose==='legacy');
+ const invoices=projectPurchases().filter(within),earned=projectLaborEntries().filter(within),cols=state.collections.filter(x=>x.project===state.current&&within(x));
+ const direct=ex.reduce((s,x)=>s+x.amount,0),legacyCost=legacy.reduce((s,x)=>s+x.amount,0),invoiceCost=invoices.reduce((s,x)=>s+x.amount,0),earnedCost=earned.reduce((s,x)=>s+x.amount,0),cashOut=direct+payments.reduce((s,x)=>s+x.amount,0),collected=cols.reduce((s,x)=>s+x.amount,0),outstanding=invoices.reduce((s,x)=>s+invoiceTotals(x).outstanding,0);
+ $('reportMetrics').innerHTML=[['تحصيلات العميل',collected],['فواتير مشتريات',invoiceCost],['أجور معتمدة',earnedCost],['مصروفات مباشرة',direct],['مدفوعات نقدية خارجة',cashOut],['متبقي فواتير الموردين',outstanding]].map(x=>'<div class="metric"><span>'+x[0]+'</span><strong>'+money(x[1])+'</strong></div>').join('');
+ const byItem=new Map(),byPerson=new Map(),add=(map,key,value)=>map.set(key,(map.get(key)||0)+value);
+ ex.forEach(x=>{add(byItem,itemById(x.itemId)?.name||x.item||'مصروف عام',x.amount);if(x.payee)add(byPerson,contractorById(x.payeeId)?.name||x.payee,x.amount)});
+ legacy.forEach(x=>{add(byItem,itemById(x.itemId)?.name||'بند غير محدد',x.amount);add(byPerson,contractorById(x.contractorId)?.name||'مستلم غير محدد',x.amount)});
+ invoices.forEach(x=>{add(byItem,itemById(x.itemId)?.name||x.item||'مصروف عام',x.amount);add(byPerson,x.supplier||contractorById(x.supplierId)?.name||'مورد غير محدد',x.amount)});
+ earned.forEach(x=>{add(byItem,itemById(x.itemId)?.name||'بند غير محدد',x.amount);add(byPerson,contractorById(x.contractorId)?.name||'صنايعي غير محدد',x.amount)});
+ $('reportItems').innerHTML=byItem.size?[...byItem].sort((a,b)=>b[1]-a[1]).map(x=>entryRow('',x[0],x[1])).join(''):'<div class="empty">لا توجد تكاليف مسجلة.</div>';
+ $('reportPeople').innerHTML=byPerson.size?[...byPerson].sort((a,b)=>b[1]-a[1]).map(x=>entryRow('',x[0],x[1])).join(''):'<div class="empty">لا توجد تكاليف مسجلة لأشخاص.</div>';
+ const all=[...ex.map(x=>({date:x.date,title:'مصروف مباشر · '+(itemById(x.itemId)?.name||x.item||'عام')+' · '+typeLabel(x.type),person:x.payee||'',amount:-x.amount})),...payments.map(x=>({date:x.date,title:x.invoiceId?'سداد فاتورة مورد':x.purpose==='advance'?'سلفة صنايعي':x.purpose==='labor_payment'?'دفعة أجرة':'دفعة مسجلة',person:contractorById(x.contractorId)?.name||'',amount:-x.amount})),...cols.map(x=>({date:x.date,title:'تحصيل من العميل',person:'',amount:x.amount})),...invoices.map(x=>({date:x.date,title:'فاتورة مشتريات · تكلفة مستحقة',person:x.supplier||'',amount:-x.amount})),...earned.map(x=>({date:x.date,title:'أجرة معتمدة · تكلفة مستحقة',person:contractorById(x.contractorId)?.name||'',amount:-x.amount}))].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+ window.currentReportRows=all;renderReportRows();
+ $('expenseReportSummary').innerHTML=[['تكلفة فواتير المشتريات',money(invoiceCost)],['الأجور المعتمدة',money(earnedCost)],['المصروفات المباشرة',money(direct)],['مدفوعات قديمة (محافظة على سجلها)',money(legacyCost)],['إجمالي تكلفة التنفيذ المستحقة',money(direct+legacyCost+invoiceCost+earnedCost)],['إجمالي الخروج النقدي',money(cashOut)]].map(x=>'<div class="summary-row"><span>'+x[0]+'</span><strong>'+x[1]+'</strong></div>').join('');
+ if(from&&to&&from<=to){
+  const start=new Date(from+'T00:00:00Z'),end=new Date(to+'T00:00:00Z'),days=Math.round((end-start)/86400000)+1,prevEnd=new Date(start.getTime()-86400000),prevStart=new Date(start.getTime()-days*86400000),fmt=d=>d.toISOString().slice(0,10),inPrev=x=>x>=fmt(prevStart)&&x<=fmt(prevEnd);
+  const costPrev=state.expenses.filter(x=>x.projectId===state.current&&inPrev(x.date)).reduce((s,x)=>s+x.amount,0)+state.payments.filter(x=>x.projectId===state.current&&inPrev(x.date)&&(!x.purpose||x.purpose==='legacy')).reduce((s,x)=>s+x.amount,0)+state.purchases.filter(x=>x.projectId===state.current&&inPrev(x.date)).reduce((s,x)=>s+x.amount,0)+state.laborEntries.filter(x=>x.projectId===state.current&&inPrev(x.date)&&x.status!=='void').reduce((s,x)=>s+x.amount,0);
+  const cashPrev=state.expenses.filter(x=>x.projectId===state.current&&inPrev(x.date)).reduce((s,x)=>s+x.amount,0)+state.payments.filter(x=>x.projectId===state.current&&inPrev(x.date)).reduce((s,x)=>s+x.amount,0),colPrev=state.collections.filter(x=>x.project===state.current&&inPrev(x.date)).reduce((s,x)=>s+x.amount,0);
+  $('reportComparison').textContent='التكلفة المستحقة الحالية '+money(direct+legacyCost+invoiceCost+earnedCost)+'، الخروج النقدي '+money(cashOut)+'، التحصيل '+money(collected)+'. الفترة السابقة: تكلفة مستحقة '+money(costPrev)+'، خروج نقدي '+money(cashPrev)+'، تحصيل '+money(colPrev)+'.';
+ }else $('reportComparison').textContent='حدد تاريخ بداية ونهاية للمقارنة مع الفترة السابقة بنفس المدة.';
+};
+const baseContractorCard=contractorCard;
+contractorCard=function(c){
+ const s=supplierLedgerTotals(c.id),l=laborTotalsForContractor(c.id);
+ return '<article class="record-card"><div class="card-top"><span class="pill">'+esc(c.trade||'مورد / صنايعي')+'</span></div><h3>'+esc(c.name)+'</h3><p class="muted">'+esc(c.phone||'لا يوجد رقم هاتف')+'</p><div class="advanced-item-stats"><small>فواتير المورد: '+money(s.invoiceAmount)+' · مسدد '+money(s.linkedPaid)+' · متبقي '+money(s.outstanding)+'</small><small>أجرة معتمدة: '+money(l.earned)+' · مدفوع '+money(l.paid)+' · متبقي '+money(l.balance)+' · سُلف '+money(l.advances)+'</small></div><div class="card-foot"><button class="text-btn" data-contractor-detail="'+esc(c.id)+'">كشف الحساب ←</button></div></article>';
+};
+const baseShowContractorDetail=showContractorDetail;
+showContractorDetail=function(id){
+ baseShowContractorDetail(id);
+ const d=$('contractorDetail'),c=contractorById(id);if(!c)return;
+ d.querySelectorAll?.('[data-ledger-delete]').forEach(b=>{const kind=b.dataset.ledgerKind==='payment'?'payment':'expense';if(b.parentNode&&!b.parentNode.querySelector('[data-edit-transaction]')){const e=document.createElement('button');e.type='button';e.className='text-btn';e.textContent='تعديل';e.dataset.editTransaction=kind;e.dataset.id=b.dataset.ledgerDelete;b.parentNode.insertBefore(e,b);}});
+ const s=supplierLedgerTotals(id),l=laborTotalsForContractor(id),metrics=d.querySelector('.metric-grid');
+ if(metrics)metrics.innerHTML='<div class="metric"><span>فواتير المورد</span><strong>'+money(s.invoiceAmount)+'</strong></div><div class="metric"><span>مدفوع المورد</span><strong>'+money(s.linkedPaid)+'</strong></div><div class="metric"><span>متبقي المورد</span><strong>'+money(s.outstanding)+'</strong></div>';
+ d.innerHTML+='<div class="advanced-ledger-group"><h3>ملخص الأجرة والسُلف</h3><div class="summary-list"><div class="summary-row"><span>أجرة معتمدة</span><strong>'+money(l.earned)+'</strong></div><div class="summary-row"><span>مدفوع أجرة / سُلف</span><strong>'+money(l.paid)+'</strong></div><div class="summary-row"><span>صافي مستحق الأجرة</span><strong>'+money(l.balance)+'</strong></div><div class="summary-row"><span>منها سُلف</span><strong>'+money(l.advances)+'</strong></div></div></div>';
+};
+const baseItemCard=itemCard;
+itemCard=function(i){const html=baseItemCard(i),inv=projectPurchases().filter(x=>x.itemId===i.id).reduce((s,x)=>s+x.amount,0),earned=projectLaborEntries().filter(x=>x.itemId===i.id).reduce((s,x)=>s+x.amount,0);return html.replace('</article>','<div class="advanced-item-stats"><small>فواتير المشتريات: '+money(inv)+'</small><small>الأجرة المعتمدة: '+money(earned)+'</small></div></article>');};
+const baseShowItemDetail=showItemDetail;
+showItemDetail=function(id){baseShowItemDetail(id);const d=$('itemDetail'),i=itemById(id);if(!i||d.classList.contains('hidden'))return;d.querySelectorAll?.('[data-item-ledger-delete]').forEach(b=>{const kind=b.dataset.ledgerKind==='payment'?'payment':'expense';if(b.parentNode&&!b.parentNode.querySelector('[data-edit-transaction]')){const e=document.createElement('button');e.type='button';e.className='text-btn';e.textContent='تعديل';e.dataset.editTransaction=kind;e.dataset.id=b.dataset.itemLedgerDelete;b.parentNode.insertBefore(e,b);}});const invoices=projectPurchases().filter(x=>x.itemId===id),earned=projectLaborEntries().filter(x=>x.itemId===id);d.innerHTML+='<div class="advanced-ledger-group"><h3>فواتير المشتريات المرتبطة</h3>'+(invoices.map(x=>{const t=invoiceTotals(x);return '<div class="table-row"><div><strong>'+esc(x.supplier||'مورد')+'</strong><small>'+esc(x.date)+' · فاتورة '+money(t.amount)+' · مسدد '+money(t.paid)+' · متبقي '+money(t.outstanding)+'</small></div></div>'}).join('')||'<div class="empty">لا توجد فواتير.</div>')+'</div><div class="advanced-ledger-group"><h3>الأجور المعتمدة</h3>'+(earned.map(x=>'<div class="table-row"><div><strong>'+esc(contractorById(x.contractorId)?.name||'صنايعي')+'</strong><small>'+esc(x.date)+' · '+money(x.amount)+'</small></div></div>').join('')||'<div class="empty">لا توجد أجور معتمدة.</div>')+'</div>';};
+function saveNewSiteLog(data){
+ const valid=validateDailyLog(data);if(!valid.ok){alert(valid.reason);return false;}
+ const itemName=String(data.item||'').trim(),item=findNamedRecord(currentItems(),itemName);
+ state.siteLogs.push({id:uid('log'),projectId:state.current,date:data.date,itemId:item?.id||'',item:item?.name||itemName,quantity:data.quantity===''||data.quantity==null?null:Number(data.quantity),unit:String(data.unit||''),crew:String(data.crew||''),type:data.type||'execution',note:String(data.note||'').trim()});
+ save();return true;
+}
+$('quickKind').addEventListener('change',toggleInvoiceSelector);
+$('siteLogDate').value=today();
+$('siteLogForm').addEventListener('submit',e=>{e.preventDefault();const ok=saveNewSiteLog({date:$('siteLogDate').value,item:$('siteLogItem').value,quantity:$('siteLogQty').value,unit:$('siteLogUnit').value,crew:$('siteLogCrew').value,type:$('siteLogType').value,note:$('siteLogNote').value});if(ok){e.target.reset();$('siteLogDate').value=today();renderAdvancedLedger();}});
+$('clearSiteLog').onclick=()=>{$('siteLogForm').reset();$('siteLogDate').value=today()};
+$('quickInvoice')?.addEventListener('change',()=>{const invoice=state.purchases.find(x=>x.id===$('quickInvoice').value);if(invoice){$('quickPerson').value=invoice.supplier||'';$('quickItem').value=itemById(invoice.itemId)?.name||invoice.item||'';}});
+function editTransaction(kind,id){
+ const list={purchase:state.purchases,laborEntry:state.laborEntries,siteLog:state.siteLogs,collection:state.collections,expense:state.expenses,payment:state.payments}[kind],record=list?.find(x=>x.id===id);if(!record)return;
+ const amountKinds=['purchase','laborEntry','collection','expense','payment'];let amount=record.amount;
+ if(amountKinds.includes(kind)){const value=window.prompt('المبلغ الجديد بالجنيه',String(record.amount));if(value===null)return;amount=Number(value);if(!Number.isFinite(amount)||amount<=0){alert('المبلغ يجب أن يكون أكبر من صفر.');return;}}
+ const date=window.prompt('التاريخ (YYYY-MM-DD)',record.date||today());if(date===null)return;
+ const dateParts=/^(\d{4})-(\d{2})-(\d{2})$/.exec(date),parsed=dateParts?new Date(Number(dateParts[1]),Number(dateParts[2])-1,Number(dateParts[3])):null;
+ if(!parsed||parsed.getFullYear()!==Number(dateParts[1])||parsed.getMonth()!==Number(dateParts[2])-1||parsed.getDate()!==Number(dateParts[3])){alert('التاريخ غير صحيح.');return;}
+ const note=window.prompt('ملاحظات / وصف',record.note||'');if(note===null)return;
+ let quantity=record.quantity,crew=record.crew,unit=record.unit;
+ if(kind==='siteLog'){const q=window.prompt('الكمية المنفذة (اتركها فارغة إذا لا تنطبق)',String(record.quantity||''));if(q===null)return;if(q!==''&&(!Number.isFinite(Number(q))||Number(q)<=0)){alert('الكمية يجب أن تكون أكبر من صفر.');return;}quantity=q===''?0:Number(q);crew=window.prompt('الصنايعي / الطاقم',record.crew||'');if(crew===null)return;unit=window.prompt('الوحدة',record.unit||'');if(unit===null)return;}
+ if(kind==='purchase'&&state.payments.filter(x=>x.invoiceId===id).reduce((s,x)=>s+x.amount,0)>amount+.005){alert('قيمة الفاتورة لا يمكن أن تقل عن الدفعات المسددة عليها.');return;}
+ if(kind==='payment'&&record.invoiceId){const invoice=state.purchases.find(x=>x.id===record.invoiceId),alreadyPaid=state.payments.filter(x=>x.invoiceId===record.invoiceId&&x.id!==id).reduce((s,x)=>s+x.amount,0);if(invoice&&alreadyPaid+amount>invoice.amount+.005){alert('إجمالي الدفعات سيتجاوز قيمة الفاتورة.');return;}}
+ if(amountKinds.includes(kind))record.amount=amount;if(kind==='collection')record.reserved=amount*(Number(record.rate)||0)/100;
+ record.date=date;record.note=note;if(kind==='siteLog'){record.quantity=quantity;record.crew=crew;record.unit=unit;}
+ save();renderQuickLists();if(kind==='collection'||kind==='expense'||kind==='purchase'||kind==='laborEntry')renderReports();
+}
+document.addEventListener?.('click',e=>{
+ const edit=e.target.closest?.('[data-edit-transaction]');if(edit){editTransaction(edit.dataset.editTransaction,edit.dataset.id);return;}
+ const del=e.target.closest?.('[data-delete-transaction]');if(del){const kind=del.dataset.deleteTransaction,id=del.dataset.id,list={purchase:state.purchases,laborEntry:state.laborEntries,siteLog:state.siteLogs,payment:state.payments}[kind],record=list?.find(x=>x.id===id);if(!record)return;if(!confirm('حذف هذا السجل؟ سيتم تحديث المتبقي والحسابات المرتبطة به.'))return;if(kind==='purchase'&&state.payments.some(x=>x.invoiceId===id)){alert('لا يمكن حذف فاتورة عليها دفعات. احذف الدفعات المرتبطة أولاً.');return;}const target={purchase:state.purchases,laborEntry:state.laborEntries,siteLog:state.siteLogs,payment:state.payments}[kind];const index=target.findIndex(x=>x.id===id);if(index>=0)target.splice(index,1);save();renderQuickLists();}
+});
+$('collectionList').addEventListener('click',e=>{const edit=e.target.closest('[data-edit-collection]');if(edit){editTransaction('collection',edit.dataset.editCollection);return;}});
+$('expenseList').addEventListener('click',e=>{const edit=e.target.closest('[data-edit-expense]');if(edit){editTransaction('expense',edit.dataset.editExpense);return;}});
+const baseRenderLists=render;
+
+
+
+// Render the additive diary and accounting views on first load; no storage migration is performed.
+render();renderReports();

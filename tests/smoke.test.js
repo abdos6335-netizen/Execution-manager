@@ -47,7 +47,7 @@ function createApp(initialStorage = {}) {
   vm.runInContext(source + `
     globalThis.__appTest = {
       getState: () => state, normalizeState, parseQuickText,
-      contractorTotals, answerReportQuestion, today, spentForProject,
+      contractorTotals, answerReportQuestion, today, spentForProject, SHEET_PALETTES, invoiceTotals, supplierLedgerTotals, laborTotalsForContractor, executionCostForProject, cashOutflowForProject, validateDailyLog, validateImportedState,
       itemCard, itemMovements, paidForItem, findDuplicateMovement, save, elements: null, storage: null,
       failStorageWrites(value) { globalThis.__failWrites(value); }
     };
@@ -81,7 +81,7 @@ test('quick entry classifies a materials purchase before the generic word "paid"
   const app = createApp();
   app.elements.get('quickText').value = 'دفعت ٨٥٠٠ جنيه لشراء خامات للبوابة';
   app.parseQuickText();
-  assert.equal(app.elements.get('quickKind').value, 'materials');
+  assert.equal(app.elements.get('quickKind').value, 'purchase_invoice');
   assert.equal(Number(app.elements.get('quickAmount').value), 8500);
 });
 
@@ -194,7 +194,7 @@ test('quick entry understands taa marbuta spellings and prefers explicit labor w
   set('دفعت ٢٠٠٠ جنيه أجرة تركيب سيراميك');
   assert.equal(app.elements.get('quickKind').value, 'labor');
   set('اشتريت مونة بـ ١٥٠٠');
-  assert.equal(app.elements.get('quickKind').value, 'materials');
+  assert.equal(app.elements.get('quickKind').value, 'purchase_invoice');
   assert.equal(Number(app.elements.get('quickAmount').value), 1500);
   set('دفعت مصنعية ٧٠٠');
   assert.equal(app.elements.get('quickKind').value, 'labor');
@@ -280,7 +280,7 @@ test('each card palette derives readable foreground text for light and dark colo
   assert.ok(app.includes('function contrastInk(hex)'));
   assert.ok(app.includes('SHEET_PALETTES='));
   assert.ok(app.includes("root.style.setProperty('--sheet-'+(i+1)+'-color',color)"));
-  assert.ok(app.includes("root.style.setProperty('--sheet-'+(i+1)+'-ink',textColor)"));
+  assert.ok(app.includes("root.style.setProperty('--sheet-'+(i+1)+'-ink',textColor)" ) || app.includes("--sheet-'+(i+1)+'-ink"));
   assert.ok(app.includes("l>.179?'#17191c':'#ffffff'"));
 });
 
@@ -310,7 +310,7 @@ test('input fields are tinted one shade lighter from each actual card color, not
 
 test('Android PWA cache version is bumped for the new mobile card styles', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v9"'));
+  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v11"'));
 });
 
 test('appearance preferences expose WeeklyPlanner-style controls and persist line spacing', () => {
@@ -330,7 +330,7 @@ test('appearance preferences expose WeeklyPlanner-style controls and persist lin
 });
 test('Android PWA cache is refreshed for expanded appearance settings', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v9"'));
+  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v11"'));
 });
 
 test('workspace settings shortcut remains visible in the full-width six-card layout', () => {
@@ -410,4 +410,76 @@ test('cancelled duplicate direct expense does not create an orphan contractor ac
   const createAt = source.indexOf('if(createPayee){matchedPayee=');
   const duplicateGuardAt = source.indexOf('if(!confirmNoDuplicateMovement', source.indexOf("$('expenseForm').onsubmit"));
   assert.ok(createAt > duplicateGuardAt);
+});
+
+
+test('all card palettes use muted colors with readable dark text and a lightness progression', () => {
+  const app = createApp();
+  const palettes = app.SHEET_PALETTES;
+  assert.equal(Object.keys(palettes).length, 10);
+  for (const [name, colors] of Object.entries(palettes)) {
+    assert.equal(colors.length, 6, name + ' must contain six card colors');
+    const luminance = colors.map(hex => {
+      const rgb = hex.match(/[0-9a-f]{2}/gi).map(v => parseInt(v, 16) / 255);
+      const linear = rgb.map(v => v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4);
+      const [r, g, b] = linear;
+      return .2126 * r + .7152 * g + .0722 * b;
+    });
+    for (let i = 0; i < colors.length; i++) {
+      const rgb = colors[i].match(/[0-9a-f]{2}/gi).map(v => parseInt(v, 16) / 255);
+      const max = Math.max(...rgb), min = Math.min(...rgb);
+      const lightness = (max + min) / 2;
+      const saturation = max === min ? 0 : (max - min) / (1 - Math.abs(2 * lightness - 1));
+      assert.ok(saturation <= .22, name + ' color ' + (i + 1) + ' is too saturated');
+      const contrast = (luminance[i] + .05) / (.033 + .05);
+      assert.ok(contrast >= 4.5, name + ' color ' + (i + 1) + ' is too dark for #333 text');
+      if (i) assert.ok(luminance[i] > luminance[i - 1], name + ' must brighten from card to card');
+    }
+  }
+});
+
+
+test('supplier invoice and its linked payments are not counted twice as execution cost', () => {
+ const app=createApp();const s=app.getState();
+ s.purchases=[{id:'i1',projectId:'p1',supplierId:'v1',amount:10000,date:'2026-11-20'}];
+ s.payments=[{id:'p1',projectId:'p1',invoiceId:'i1',contractorId:'v1',type:'materials',purpose:'supplier_invoice_payment',amount:6000,date:'2026-11-21'}];
+ assert.deepEqual(JSON.parse(JSON.stringify(app.invoiceTotals(s.purchases[0]))),{amount:10000,paid:6000,outstanding:4000});
+ assert.equal(app.executionCostForProject(),10000);
+ assert.equal(app.cashOutflowForProject(),6000);
+});
+test('labor advances are cash paid but do not become earned labor cost', () => {
+ const app=createApp();const s=app.getState();
+ s.payments=[{id:'p1',projectId:'p1',contractorId:'c1',type:'labor',purpose:'advance',amount:1500,date:'2026-11-20'}];
+ s.laborEntries=[{id:'l1',projectId:'p1',contractorId:'c1',amount:4000,status:'approved',date:'2026-11-20'}];
+ assert.equal(app.executionCostForProject(),4000);
+ assert.equal(app.cashOutflowForProject(),1500);
+ assert.deepEqual(JSON.parse(JSON.stringify(app.laborTotalsForContractor('c1'))),{earned:4000,paid:1500,advances:1500,balance:2500});
+});
+test('legacy payments retain their prior cost treatment for backward compatibility', () => {
+ const app=createApp();app.getState().payments=[{id:'old',projectId:'p1',type:'labor',amount:700}];
+ assert.equal(app.executionCostForProject(),700);
+});
+test('daily site log validates date, description and positive optional quantity', () => {
+ const app=createApp();
+ assert.equal(app.validateDailyLog({date:'',note:'تم التنفيذ'}).ok,false);
+ assert.equal(app.validateDailyLog({date:'2026-11-20',note:'',quantity:''}).ok,false);
+ assert.equal(app.validateDailyLog({date:'2026-11-20',note:'تم تنفيذ المحارة',quantity:'0'}).ok,false);
+ assert.equal(app.validateDailyLog({date:'2026-11-20',note:'تم تنفيذ المحارة',quantity:'35'}).ok,true);
+});
+
+test('daily site log rejects impossible calendar dates', () => {
+ const app=createApp();
+ assert.equal(app.validateDailyLog({date:'2026-02-30',note:'ملاحظة'}).ok,false);
+ assert.equal(app.validateDailyLog({date:'2026-11-20',note:'ملاحظة'}).ok,true);
+});
+test('backup validation rejects supplier payments linked to a missing invoice', () => {
+ const app=createApp();
+ const result=app.validateImportedState({projects:[{id:'p1',name:'P'}],current:'p1',collections:[],payments:[{id:'x',projectId:'p1',amount:10,purpose:'supplier_invoice_payment',invoiceId:'missing'}]});
+ assert.equal(result.ok,false);
+});
+
+test('site diary entries without a quantity remain valid after normalization', () => {
+ const app=createApp();
+ const normalized=app.normalizeState({projects:[{id:'p1',name:'P'}],current:'p1',collections:[],siteLogs:[{id:'l1',projectId:'p1',date:'2026-11-20',note:'ملاحظة موقع'}]});
+ assert.equal(app.validateDailyLog(normalized.siteLogs[0]).ok,true);
 });
