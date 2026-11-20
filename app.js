@@ -31,6 +31,52 @@ function loadState(){
 }
 let state=loadState();
 let selectedSheet='';
+function workspaceHistory(level,page=''){
+ return {emWorkspace:true,level,page,project:state.current};
+}
+function pushWorkspaceHistory(level,page=''){
+ if(window.history?.pushState)window.history.pushState(workspaceHistory(level,page),'',window.location.href);
+}
+function replaceWorkspaceHistory(level,page=''){
+ if(window.history?.replaceState)window.history.replaceState(workspaceHistory(level,page),'',window.location.href);
+}
+function applyWorkspaceHistory(entry){
+ restoreInlineSheet();
+ selectedSheet=entry?.level==='selected'||entry?.level==='expanded'?entry.page||'':'';
+ expandedSheet=entry?.level==='expanded'?entry.page||'':'';
+ if(entry?.project&&state.projects.some(p=>p.id===entry.project)&&state.current!==entry.project){state.current=entry.project;save()}
+ if(entry?.level==='home'){showProjectHome(true);return}
+ if(!['sheets','selected','expanded'].includes(entry?.level)){showProjectHome(true);return}
+ document.querySelectorAll('.page').forEach(p=>p.classList.toggle('hidden',p.id!=='projectSheets'));
+ $('appShell')?.setAttribute('data-hub','sheets');document.body.dataset.hub='sheets';
+ const p=project();$('hubProjectTitle').textContent=p.name;$('hubProjectMeta').textContent='مساحة تنفيذ المشروع · '+currentItems().length+' بند';
+ renderProjectSheets();
+}
+function goWorkspaceBack(){
+ if(window.history?.state?.emWorkspace&&window.history.state.level!=='home'){window.history.back();return}
+ if(document.body.dataset.hub==='sheets')showProjectHome(true);
+}
+window.addEventListener?.('popstate',e=>{
+ if(e.state?.emWorkspace){applyWorkspaceHistory(e.state);return}
+ if(document.body.dataset.hub==='sheets')showProjectHome(true);
+});
+function enableWorkspaceSwipeBack(){
+ let start=null;
+ document.addEventListener('touchstart',e=>{
+  if(document.body.dataset.hub!=='sheets'||e.touches.length!==1)return;
+  const x=e.touches[0].clientX,w=window.innerWidth||document.documentElement.clientWidth;
+  if(x<28||x>w-28)start={x,y:e.touches[0].clientY};
+ },{passive:true});
+ document.addEventListener('touchend',e=>{
+  if(!start)return;
+  const end=e.changedTouches[0],dx=end.clientX-start.x,dy=end.clientY-start.y,from=start.x;
+  start=null;
+  if(Math.abs(dy)>85||Math.abs(dx)<70)return;
+  const width=window.innerWidth||document.documentElement.clientWidth;
+  if((from<28&&dx>70)||(from>width-28&&dx< -70))goWorkspaceBack();
+ },{passive:true});
+}
+enableWorkspaceSwipeBack();
 function project(){return state.projects.find(p=>p.id===state.current)||state.projects[0]}
 let storageWarned=false;
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state));storageWarned=false}catch(err){if(!storageWarned){storageWarned=true;alert('تعذر حفظ البيانات على هذا الجهاز (المساحة ممتلئة أو التخزين غير متاح). التغييرات ظاهرة الآن فقط، فصدّر نسخة احتياطية قبل إغلاق الصفحة.')}}render();if(typeof renderReports==='function')renderReports()}
@@ -43,8 +89,8 @@ function paidForItem(id,type){return paymentsForItem(id,type).reduce((s,p)=>s+p.
 function agreement(item,type){return Number(item?.[type==='materials'?'materialsAmount':'laborAmount']||0)}
 function spentForProject(){const direct=state.expenses.filter(x=>x.projectId===state.current).reduce((s,x)=>s+x.amount,0);const paid=state.payments.filter(x=>x.projectId===state.current).reduce((s,x)=>s+x.amount,0);return direct+paid}
 function setPage(page){restoreInlineSheet();expandedSheet='';selectedSheet='';document.querySelectorAll('.page').forEach(p=>p.classList.toggle('hidden',p.id!==page));document.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===page));$('moreNavButton')?.classList.toggle('active',['collections','expenses','settings'].includes(page));$('appShell')?.setAttribute('data-hub','project');document.body.dataset.hub='project';if(['dashboard','items','contractors','collections','expenses'].includes(page))renderReports();$('moreNavMenu')?.classList.add('hidden');window.scrollTo({top:0,behavior:'smooth'})}
-function showProjectHome(){restoreInlineSheet();expandedSheet='';selectedSheet='';document.querySelectorAll('.page').forEach(p=>p.classList.toggle('hidden',p.id!=='projectHome'));$('appShell')?.setAttribute('data-hub','home');document.body.dataset.hub='home';renderProjectCards();window.scrollTo({top:0,behavior:'smooth'})}
-function showProjectSheets(){restoreInlineSheet();expandedSheet='';document.querySelectorAll('.page').forEach(p=>p.classList.toggle('hidden',p.id!=='projectSheets'));$('appShell')?.setAttribute('data-hub','sheets');document.body.dataset.hub='sheets';const p=project();$('hubProjectTitle').textContent=p.name;$('hubProjectMeta').textContent='مساحة تنفيذ المشروع · '+currentItems().length+' بند';renderProjectSheets();window.scrollTo({top:0,behavior:'smooth'})}
+function showProjectHome(fromPop=false){restoreInlineSheet();expandedSheet='';selectedSheet='';document.querySelectorAll('.page').forEach(p=>p.classList.toggle('hidden',p.id!=='projectHome'));$('appShell')?.setAttribute('data-hub','home');document.body.dataset.hub='home';renderProjectCards();if(!fromPop)replaceWorkspaceHistory('home');window.scrollTo({top:0,behavior:'smooth'})}
+function showProjectSheets(){restoreInlineSheet();expandedSheet='';selectedSheet='';document.querySelectorAll('.page').forEach(p=>p.classList.toggle('hidden',p.id!=='projectSheets'));$('appShell')?.setAttribute('data-hub','sheets');document.body.dataset.hub='sheets';const p=project();$('hubProjectTitle').textContent=p.name;$('hubProjectMeta').textContent='مساحة تنفيذ المشروع · '+currentItems().length+' بند';renderProjectSheets();pushWorkspaceHistory('sheets');window.scrollTo({top:0,behavior:'smooth'})}
 function renderProjectCards(){const colors=['var(--sheet-1)','var(--sheet-2)','var(--sheet-3)','var(--sheet-4)','var(--sheet-5)','var(--sheet-6)'];$('projectCards').innerHTML=state.projects.map((p,i)=>{const count=state.items.filter(x=>x.projectId===p.id).length;return '<button class="project-tile" data-open-project="'+esc(p.id)+'" style="background:'+colors[i%colors.length]+'"><small>PROJECT '+String(i+1).padStart(2,'0')+'</small><strong>'+esc(p.name)+'</strong><span>'+count+' بند تنفيذ · فتح مساحة المشروع ↗</span></button>'}).join('')}
 function renderProjectSheets(){
  const sheets=[['dashboard','01 · PROJECT FINANCE','الماليات'],['quick','02 · DAILY LOG','الحركات اليومية'],['items','03 · EXECUTION ITEMS','بنود التنفيذ'],['contractors','04 · PEOPLE & SUPPLIERS','الصنايعية والموردين'],['collections','05 · COLLECTIONS','التحصيلات'],['expenses','06 · EXPENSES','المصروفات']];
@@ -58,8 +104,8 @@ function restoreInlineSheet(){if(!inlineSheetReturn)return;const {target,parent,
 function collapseInlineSheet(){restoreInlineSheet();expandedSheet='';renderProjectSheets()}
 function expandInlineSheet(page){expandedSheet=page;renderProjectSheets();const host=$('sheetInlineContent');host?.scrollIntoView({behavior:'smooth',block:'nearest'})}
 $('projectCards').addEventListener('click',e=>{const card=e.target.closest('[data-open-project]');if(!card)return;restoreInlineSheet();expandedSheet='';selectedSheet='';state.current=card.dataset.openProject;save();showProjectSheets()});
-$('projectSheetGrid').addEventListener('click',e=>{const trigger=e.target.closest('[data-sheet]');if(!trigger)return;const page=trigger.dataset.sheet;if(expandedSheet===page){collapseInlineSheet();return}if(selectedSheet===page){expandInlineSheet(page)}else{restoreInlineSheet();expandedSheet='';selectedSheet=page;renderProjectSheets();const selected=$('projectSheetGrid').querySelector('[data-sheet-card="'+page+'"]');selected?.scrollIntoView?.({behavior:'smooth',block:'center'})}});
-$('backToProjects').onclick=showProjectHome;
+$('projectSheetGrid').addEventListener('click',e=>{const trigger=e.target.closest('[data-sheet]');if(!trigger)return;const page=trigger.dataset.sheet;if(expandedSheet===page){goWorkspaceBack();return}if(selectedSheet===page){pushWorkspaceHistory('expanded',page);expandInlineSheet(page)}else{const hadSelection=!!selectedSheet;restoreInlineSheet();expandedSheet='';selectedSheet=page;if(hadSelection)replaceWorkspaceHistory('selected',page);else pushWorkspaceHistory('selected',page);renderProjectSheets();const selected=$('projectSheetGrid').querySelector('[data-sheet-card="'+page+'"]');selected?.scrollIntoView?.({behavior:'smooth',block:'center'})}});
+$('backToProjects').onclick=goWorkspaceBack;
 $('backToSheets').onclick=showProjectSheets;
 $('hubAddProject').onclick=()=>$('addProject').click();
 document.querySelectorAll('[data-page]').forEach(b=>b.addEventListener('click',()=>setPage(b.dataset.page)));
