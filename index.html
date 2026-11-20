@@ -12,7 +12,9 @@
   <div class="project-switch"><label for="projectSelect">المشروع الحالي</label><select id="projectSelect"></select></div>
   <div class="nav-label">مساحة العمل</div>
   <nav class="side-nav">
-    <button data-page="dashboard" class="active"><span class="nav-icon">⌂</span>الرئيسية</button>
+    <button data-page="quick" class="active"><span class="nav-icon">＋</span>تسجيل حركة</button>
+    <button data-page="reports"><span class="nav-icon">▤</span>التقارير</button>
+    <button data-page="dashboard"><span class="nav-icon">⌂</span>الرئيسية</button>
     <button data-page="items"><span class="nav-icon">▦</span>بنود التنفيذ</button>
     <button data-page="contractors"><span class="nav-icon">♙</span>المقاولون والصنايعية</button>
     <button data-page="collections"><span class="nav-icon">↙</span>تحصيلات العميل</button>
@@ -24,7 +26,14 @@
 <div class="main-wrap">
 <header class="topbar"><div><span class="eyebrow">EXECUTION WORKSPACE</span><strong id="topProjectName">المشروع الحالي</strong></div><button id="addProject" class="btn btn-primary">＋ مشروع جديد</button></header>
 <main>
-<section id="dashboard" class="page">
+<section id="quick" class="page">
+ <div class="page-head"><div><span class="eyebrow">QUICK ENTRY</span><h1>تسجيل حركة</h1><p>سجل أي مصروف أو دفعة أو تحصيل من مكان واحد.</p></div></div>
+ <div class="surface quick-entry"><label class="quick-label" for="quickText">اكتب الحركة بطريقتك</label><textarea id="quickText" rows="2" placeholder="مثال: دفعت ٣٠٠٠ جنيه لمحمد النقاش أجرة دهانات البوابة"></textarea><div class="quick-tools"><button type="button" id="voiceEntry" class="btn btn-light">🎙 تسجيل صوتي</button><span id="voiceStatus" class="muted">يمكنك كتابة الحركة أو استخدام الصوت إذا كان المتصفح يدعمه.</span></div>
+ <form id="quickForm" class="form-grid"><label>نوع الحركة<select id="quickKind"><option value="materials">شراء خامات / مصروف</option><option value="labor">دفعة أجرة / صنايعي</option><option value="other">مصروف عام</option><option value="collection">تحصيل من العميل</option></select></label><label>المبلغ بالجنيه<input id="quickAmount" type="number" min="0.01" step=".01" required></label><label>بند التنفيذ<input id="quickItem" list="quickItems" placeholder="مثال: دهانات البوابة"><datalist id="quickItems"></datalist></label><label>الشخص / المورد<input id="quickPerson" list="quickPeople" placeholder="اسم الصنايعي أو المورد"><datalist id="quickPeople"></datalist></label><label>التاريخ<input id="quickDate" type="date" required></label><label class="span-2">تفاصيل إضافية<input id="quickNote" placeholder="الكمية، الخامات، طريقة الدفع أو أي ملاحظة"></label><div class="form-actions"><button class="btn btn-primary">مراجعة وتسجيل الحركة</button><button type="reset" class="btn btn-light">مسح</button></div></form></div>
+ <div class="surface"><div class="surface-head"><h2>آخر الحركات المسجلة</h2></div><div id="quickRecent" class="activity-list"></div></div>
+</section>
+<section id="reports" class="page hidden"><div class="page-head"><div><span class="eyebrow">PROJECT REPORTS</span><h1>التقارير</h1><p>ملخصات فعلية من الحركات المسجلة، بدون حسابات تقديرية.</p></div><button id="printReport" class="btn btn-light">طباعة التقرير</button></div><div class="metric-grid mini" id="reportMetrics"></div><div class="two-col"><article class="surface"><h2>التكلفة حسب بند التنفيذ</h2><div id="reportItems"></div></article><article class="surface"><h2>المدفوع حسب الشخص / المورد</h2><div id="reportPeople"></div></article></div><article class="surface"><h2>تفاصيل الحركات</h2><div id="reportTransactions" class="table-wrap"></div></article></section>
+<section id="dashboard" class="page hidden">
  <div class="page-head"><div><span class="eyebrow">OVERVIEW</span><h1>لوحة التحكم</h1><p>نظرة سريعة على الوضع المالي للمشروع.</p></div></div>
  <div class="metric-grid">
   <article class="metric"><span>إجمالي التحصيل</span><strong id="totalCollected">0 ج.م</strong><small>من العميل</small></article>
@@ -82,7 +91,7 @@
 </div>
 </div>
 <nav class="mobile-nav">
-<button data-page="dashboard" class="active"><span>⌂</span>الرئيسية</button><button data-page="items"><span>▦</span>البنود</button><button data-page="contractors"><span>♙</span>المقاولون</button><button data-page="collections"><span>↙</span>التحصيل</button><button data-page="expenses"><span>↗</span>المصروفات</button>
+<button data-page="quick" class="active"><span>＋</span>تسجيل</button><button data-page="reports"><span>▤</span>التقارير</button><button data-page="dashboard"><span>⌂</span>الرئيسية</button><button data-page="items"><span>▦</span>البنود</button><button data-page="contractors"><span>♙</span>المقاولون</button><button data-page="collections"><span>↙</span>التحصيل</button><button data-page="expenses"><span>↗</span>المصروفات</button>
 </nav>
 <script src="app.js"></script>
 </body></html>
