@@ -115,7 +115,21 @@ $('collectionList').addEventListener('click',e=>{const btn=e.target.closest('[da
 $('expenseList').addEventListener('click',e=>{const btn=e.target.closest('[data-delete-expense]');if(!btn)return;const id=btn.dataset.deleteExpense;const record=state.expenses.find(x=>x.id===id&&x.projectId===state.current);if(!record)return;if(!confirm('هل أنت متأكد من حذف هذا المصروف بقيمة '+money(record.amount)+'؟ لا يمكن التراجع عن الحذف.'))return;state.expenses=state.expenses.filter(x=>x.id!==id);save()});
 $('settingsForm').onsubmit=e=>{e.preventDefault();project().name=$('projectName').value.trim();project().rate=Number($('profitRate').value);save();alert('تم حفظ إعدادات المشروع')};
 $('exportData').onclick=()=>{const payload={app:'execution-manager',schemaVersion:2,exportedAt:new Date().toISOString(),state};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='execution-manager-backup-'+today()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
-$('importData').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{const parsed=JSON.parse(await file.text()),imported=parsed.state||parsed;if(!imported||!Array.isArray(imported.projects)||!imported.projects.length||!Array.isArray(imported.collections))throw Error('invalid');for(const key of ['expenses','items','contractors','payments'])if(imported[key]!==undefined&&!Array.isArray(imported[key]))throw Error('invalid');imported.expenses=imported.expenses||[];imported.items=imported.items||[];imported.contractors=imported.contractors||[];imported.payments=imported.payments||[];imported.current=imported.projects.some(p=>p.id===imported.current)?imported.current:imported.projects[0].id;imported.collections=imported.collections.map(x=>({...x,amount:Number(x.amount)||0,reserved:Number(x.reserved??(Number(x.amount||0)*Number(x.rate||0)/100))||0,rate:Number(x.rate)||0}));imported.expenses=imported.expenses.map(x=>({...x,id:x.id||uid('ex'),projectId:x.projectId||x.project||imported.current,item:x.item||'',amount:Number(x.amount)||0,itemId:x.itemId||'',type:x.type==='خامات'?'materials':x.type==='مصنعية'?'labor':(x.type||'other')}));if(!confirm('سيتم استبدال البيانات الحالية بالنسخة الاحتياطية. يفضل تصدير نسخة من البيانات الحالية أولاً. هل تريد المتابعة؟'))return;state=imported;localStorage.setItem(KEY,JSON.stringify(state));render();renderQuickLists();renderReports();alert('تم استيراد النسخة الاحتياطية بنجاح')}catch{alert('ملف النسخة الاحتياطية غير صالح أو لا يتوافق مع بنية التطبيق الحالية')}e.target.value=''};
+$('importData').onchange=async e=>{
+ const file=e.target.files?.[0];if(!file)return;
+ try{
+  if(file.size>20*1024*1024)throw Error('size');
+  const parsed=JSON.parse(await file.text()),imported=parsed.state||parsed;
+  if(!imported||!Array.isArray(imported.projects)||!imported.projects.length||!Array.isArray(imported.collections))throw Error('shape');
+  for(const key of ['expenses','items','contractors','payments'])if(imported[key]!==undefined&&!Array.isArray(imported[key]))throw Error('shape');
+  if(!confirm('سيتم استبدال البيانات الحالية بالنسخة الاحتياطية. يفضل تصدير نسخة من البيانات الحالية أولاً. هل تريد المتابعة؟'))return;
+  const next=normalizeState(imported),serialized=JSON.stringify(next);
+  localStorage.setItem(KEY,serialized);
+  state=next;render();renderQuickLists();renderReports();
+  alert('تم استيراد النسخة الاحتياطية بنجاح');
+ }catch(err){alert('تعذر استيراد النسخة الاحتياطية. لم يتم استبدال بياناتك الحالية. تأكد من سلامة الملف وتوفر مساحة تخزين كافية.');}
+ finally{e.target.value=''}
+};
 render();
 
 
