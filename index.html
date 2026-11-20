@@ -2,17 +2,87 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#171a22"><link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#20242d"><link rel="manifest" href="manifest.webmanifest">
 <title>Execution Manager</title><link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<header class="top"><div><strong>Execution Manager</strong><small>إدارة حسابات تنفيذ التشطيبات</small></div><select id="projectSelect" aria-label="المشروع"></select></header>
-<nav><button data-page="dashboard" class="active">الرئيسية</button><button data-page="collections">التحصيل</button><button data-page="expenses">المصروفات</button><button data-page="settings">إعدادات المشروع</button></nav>
+<div class="app-shell">
+<aside class="sidebar">
+  <div class="brand"><div class="brand-mark">E</div><div><strong>Execution Manager</strong><small>إدارة تنفيذ التشطيبات</small></div></div>
+  <div class="project-switch"><label for="projectSelect">المشروع الحالي</label><select id="projectSelect"></select></div>
+  <div class="nav-label">مساحة العمل</div>
+  <nav class="side-nav">
+    <button data-page="dashboard" class="active"><span class="nav-icon">⌂</span>الرئيسية</button>
+    <button data-page="items"><span class="nav-icon">▦</span>بنود التنفيذ</button>
+    <button data-page="contractors"><span class="nav-icon">♙</span>المقاولون والصنايعية</button>
+    <button data-page="collections"><span class="nav-icon">↙</span>تحصيلات العميل</button>
+    <button data-page="expenses"><span class="nav-icon">↗</span>المصروفات</button>
+    <button data-page="settings"><span class="nav-icon">⚙</span>إعدادات المشروع</button>
+  </nav>
+  <div class="sidebar-foot"><span class="status-dot"></span>نسخة مستقلة · حفظ محلي</div>
+</aside>
+<div class="main-wrap">
+<header class="topbar"><div><span class="eyebrow">EXECUTION WORKSPACE</span><strong id="topProjectName">المشروع الحالي</strong></div><button id="addProject" class="btn btn-primary">＋ مشروع جديد</button></header>
 <main>
-<section id="dashboard" class="page"><div class="heading"><h1>لوحة التحكم</h1><button id="addProject">+ مشروع جديد</button></div>
-<div class="cards"><article><span>إجمالي التحصيل</span><b id="totalCollected">0 ج.م</b></article><article><span>الربح المحجوز</span><b id="reservedProfit">0 ج.م</b></article><article><span>مصروفات التنفيذ</span><b id="totalExpenses">0 ج.م</b></article><article><span>المتاح للتنفيذ</span><b id="available">0 ج.م</b></article></div>
-<div class="panel"><h2>ملخص المشروع</h2><p id="summary">أضف تحصيلاً أو مصروفاً لبدء متابعة المشروع.</p></div></section>
-<section id="collections" class="page hidden"><h1>تحصيلات العميل</h1><form id="collectionForm" class="panel form"><label>المبلغ<input type="number" min="0.01" step="0.01" id="collectionAmount" required></label><label>التاريخ<input type="date" id="collectionDate" required></label><label>ملاحظات<input id="collectionNote" placeholder="اختياري"></label><button>تسجيل التحصيل</button></form><div id="collectionList" class="list"></div></section>
-<section id="expenses" class="page hidden"><h1>مصروفات المشروع</h1><form id="expenseForm" class="panel form"><label>بند التنفيذ<input id="expenseItem" required placeholder="مثال: محارة"></label><label>نوع المصروف<select id="expenseType"><option>مصنعية</option><option>خامات</option><option>أخرى</option></select></label><label>المبلغ<input type="number" min="0.01" step="0.01" id="expenseAmount" required></label><label>المستلم / المورد<input id="expensePayee"></label><label>التاريخ<input type="date" id="expenseDate" required></label><label>وصف<input id="expenseNote"></label><button>تسجيل المصروف</button></form><div id="expenseList" class="list"></div></section>
-<section id="settings" class="page hidden"><h1>إعدادات المشروع</h1><form id="settingsForm" class="panel form"><label>اسم المشروع<input id="projectName" required></label><label>نسبة الربح المحجوزة %<input id="profitRate" type="number" min="0" max="100" step=".1" required></label><button>حفظ الإعدادات</button></form><p class="hint">يتم حفظ نسبة الربح مع كل تحصيل وقت تسجيله. تغيير النسبة يؤثر على التحصيلات الجديدة فقط.</p></section>
-</main><footer>البيانات محفوظة محلياً على هذا الجهاز — صدّر نسخة احتياطية بانتظام.</footer><script src="app.js"></script></body></html>
+<section id="dashboard" class="page">
+ <div class="page-head"><div><span class="eyebrow">OVERVIEW</span><h1>لوحة التحكم</h1><p>نظرة سريعة على الوضع المالي للمشروع.</p></div></div>
+ <div class="metric-grid">
+  <article class="metric"><span>إجمالي التحصيل</span><strong id="totalCollected">0 ج.م</strong><small>من العميل</small></article>
+  <article class="metric"><span>الربح المحجوز</span><strong id="reservedProfit">0 ج.م</strong><small>حسب نسب التحصيل وقت التسجيل</small></article>
+  <article class="metric"><span>مصروفات التنفيذ</span><strong id="totalExpenses">0 ج.م</strong><small>مدفوعات ومشتريات مسجلة</small></article>
+  <article class="metric metric-highlight"><span>المتاح المخصص للتنفيذ</span><strong id="available">0 ج.م</strong><small>ليس رصيد الخزنة النقدي</small></article>
+ </div>
+ <div class="two-col"><article class="surface"><div class="surface-head"><h2>ملخص التنفيذ</h2></div><div class="summary-list" id="dashboardSummary"></div></article><article class="surface"><div class="surface-head"><h2>آخر الحركات</h2></div><div id="recentActivity" class="activity-list"></div></article></div>
+</section>
+<section id="items" class="page hidden">
+ <div class="page-head"><div><span class="eyebrow">SCOPE & AGREEMENTS</span><h1>بنود التنفيذ</h1><p>سجل كل بند واتفاق المونة والأجرة بشكل مستقل.</p></div><button class="btn btn-primary" id="newItemBtn">＋ إضافة بند</button></div>
+ <div id="itemsList" class="record-grid"></div>
+ <div id="itemEditor" class="surface hidden"><div class="surface-head"><h2 id="itemFormTitle">إضافة بند جديد</h2><button class="icon-btn" type="button" data-close="itemEditor">✕</button></div>
+ <form id="itemForm" class="form-grid">
+  <input type="hidden" id="itemId">
+  <label>اسم البند<input id="itemName" required placeholder="مثال: محارة"></label>
+  <label>التصنيف<input id="itemCategory" placeholder="مثال: مباني وتشطيبات"></label>
+  <label>الكمية<input id="itemQty" type="number" min="0" step="0.01" value="1"></label>
+  <label>وحدة القياس<select id="itemUnit"><option>م²</option><option>م.ط</option><option>عدد</option><option>يومية</option><option>مقطوعية</option></select></label>
+  <label>طريقة الحساب<select id="itemMethod"><option>بالمتر / الوحدة</option><option>يومية</option><option>مقطوعية</option><option>مختلط</option></select></label>
+  <label>المقاول المسؤول<select id="itemContractor"><option value="">بدون مقاول محدد</option></select></label>
+  <label>حالة التنفيذ<select id="itemStatus"><option>لم يبدأ</option><option>جاري التنفيذ</option><option>مكتمل</option><option>متوقف</option></select></label>
+  <div class="subsection"><h3>حساب المونة والخامات</h3><p>اتفاق ومدفوعات مستقلة عن الأجرة.</p></div>
+  <label>قيمة اتفاق المونة<input id="itemMaterials" type="number" min="0" step="0.01" value="0"></label>
+  <label>المورد / المسؤول عن المونة<input id="itemSupplier" placeholder="اسم المورد أو المقاول"></label>
+  <div class="subsection"><h3>حساب الأجرة</h3><p>اتفاق ومدفوعات مستقلة عن المونة.</p></div>
+  <label>قيمة اتفاق الأجرة<input id="itemLabor" type="number" min="0" step="0.01" value="0"></label>
+  <label>ملاحظات<textarea id="itemNotes" rows="2" placeholder="تفاصيل الاتفاق..."></textarea></label>
+  <div class="form-actions"><button class="btn btn-primary">حفظ البند</button><button type="button" class="btn btn-light" data-close="itemEditor">إلغاء</button></div>
+ </form></div>
+ <div id="itemDetail" class="surface hidden"></div>
+</section>
+<section id="contractors" class="page hidden">
+ <div class="page-head"><div><span class="eyebrow">PEOPLE & LEDGERS</span><h1>المقاولون والصنايعية</h1><p>ملف مستقل ومستحقات واضحة لكل مقاول أو صنايعي.</p></div><button id="newContractorBtn" class="btn btn-primary">＋ إضافة مقاول</button></div>
+ <div id="contractorsList" class="record-grid"></div>
+ <div id="contractorEditor" class="surface hidden"><div class="surface-head"><h2>إضافة مقاول أو صنايعي</h2><button class="icon-btn" type="button" data-close="contractorEditor">✕</button></div><form id="contractorForm" class="form-grid"><label>الاسم<input id="contractorName" required></label><label>رقم الهاتف<input id="contractorPhone" inputmode="tel"></label><label>التخصص<input id="contractorTrade" placeholder="محارة، كهرباء، سباكة..."></label><label>ملاحظات<textarea id="contractorNotes" rows="2"></textarea></label><div class="form-actions"><button class="btn btn-primary">حفظ</button><button type="button" class="btn btn-light" data-close="contractorEditor">إلغاء</button></div></form></div>
+ <div id="contractorDetail" class="surface hidden"></div>
+</section>
+<section id="collections" class="page hidden">
+ <div class="page-head"><div><span class="eyebrow">CLIENT RECEIPTS</span><h1>تحصيلات العميل</h1><p>كل تحصيل يحتفظ بنسبة الربح التي كانت سارية وقت تسجيله.</p></div></div>
+ <form id="collectionForm" class="surface form-grid"><label>المبلغ<input type="number" min="0.01" step="0.01" id="collectionAmount" required></label><label>التاريخ<input type="date" id="collectionDate" required></label><label class="span-2">ملاحظات<input id="collectionNote" placeholder="اختياري"></label><div class="form-actions"><button class="btn btn-primary">تسجيل التحصيل</button></div></form><div id="collectionList" class="table-wrap"></div>
+</section>
+<section id="expenses" class="page hidden">
+ <div class="page-head"><div><span class="eyebrow">PROJECT COSTS</span><h1>المصروفات</h1><p>سجل المشتريات والمصروفات المباشرة غير المسجلة كدفعات مقاول.</p></div></div>
+ <form id="expenseForm" class="surface form-grid"><label>البند المرتبط<select id="expenseItem"><option value="">مصروف عام للمشروع</option></select></label><label>نوع المصروف<select id="expenseType"><option value="materials">مونة / خامات</option><option value="labor">مصنعية</option><option value="other">أخرى</option></select></label><label>المبلغ<input type="number" min="0.01" step="0.01" id="expenseAmount" required></label><label>المورد / المستلم<input id="expensePayee"></label><label>التاريخ<input type="date" id="expenseDate" required></label><label>وصف<input id="expenseNote"></label><div class="form-actions"><button class="btn btn-primary">تسجيل المصروف</button></div></form><div id="expenseList" class="table-wrap"></div>
+</section>
+<section id="settings" class="page hidden">
+ <div class="page-head"><div><span class="eyebrow">PROJECT CONFIGURATION</span><h1>إعدادات المشروع</h1><p>بيانات المشروع وقواعد توزيع التحصيلات.</p></div></div>
+ <form id="settingsForm" class="surface form-grid"><label>اسم المشروع<input id="projectName" required></label><label>نسبة الربح المحجوزة %<input id="profitRate" type="number" min="0" max="100" step=".1" required></label><div class="form-actions"><button class="btn btn-primary">حفظ الإعدادات</button></div></form>
+ <div class="surface"><h2>نسخة احتياطية</h2><p class="muted">احفظ نسخة من بياناتك أو استعد نسخة سابقة على هذا الجهاز.</p><div class="inline-actions"><button id="exportData" class="btn btn-light">تصدير نسخة احتياطية</button><label class="btn btn-light file-btn">استيراد نسخة<input id="importData" type="file" accept="application/json"></label></div></div>
+ <p class="hint">يتم حفظ البيانات محلياً في المتصفح. لا توجد مزامنة سحابية أو قاعدة بيانات مشتركة بين الأجهزة في هذه النسخة.</p>
+</section>
+</main>
+<footer>Execution Manager · نظام مستقل لإدارة تنفيذ التشطيبات</footer>
+</div>
+</div>
+<nav class="mobile-nav">
+<button data-page="dashboard" class="active"><span>⌂</span>الرئيسية</button><button data-page="items"><span>▦</span>البنود</button><button data-page="contractors"><span>♙</span>المقاولون</button><button data-page="collections"><span>↙</span>التحصيل</button><button data-page="expenses"><span>↗</span>المصروفات</button>
+</nav>
+<script src="app.js"></script>
+</body></html>
