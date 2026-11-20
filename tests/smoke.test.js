@@ -378,3 +378,12 @@ test('contractor account includes direct and payment movements linked to the con
   assert.equal(totals.paid, 300);
   assert.equal(totals.items.length, 1);
 });
+
+test('legacy item-name-only direct expenses remain visible in the item ledger', () => {
+  const app = createApp();
+  const state = app.getState();
+  state.items = [{ id: 'i1', projectId: 'p1', name: 'دهانات' }];
+  state.expenses = [{ id: 'e1', projectId: 'p1', item: 'دهانات', type: 'materials', amount: 75 }];
+  assert.equal(app.paidForItem('i1', 'materials'), 75);
+  assert.equal(app.itemMovements('i1').length, 1);
+});
