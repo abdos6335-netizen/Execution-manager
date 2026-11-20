@@ -1,4 +1,4 @@
-const CACHE_NAME = "wathiq-shell-v4";
+const CACHE_NAME = "wathiq-shell-v5";
 const APP_SHELL = [
   "./",
   "./index.html",
