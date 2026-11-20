@@ -277,19 +277,64 @@ test('expanded inline content keeps the exact outer project-card color', () => {
 
 test('each card palette derives readable foreground text for light and dark colors', () => {
   const app = fs.readFileSync(new URL('../app.js', 'file://' + __filename), 'utf8');
-  assert.match(app, /function contrastInk\(hex\)/);
-  assert.match(app, /SHEET_PALETTES=/);
-  assert.match(app, /sheetPalette\.forEach\(\(color,i\)=>root\.style\.setProperty\('--sheet-'\+\(i\+1\)\+'-ink',contrastInk\(color\)\)\)/);
-  assert.match(app, /l>\.179\?'#17191c':'#ffffff'/);
+  assert.ok(app.includes('function contrastInk(hex)'));
+  assert.ok(app.includes('SHEET_PALETTES='));
+  assert.ok(app.includes("root.style.setProperty('--sheet-'+(i+1)+'-color',color)"));
+  assert.ok(app.includes("root.style.setProperty('--sheet-'+(i+1)+'-ink',contrastInk(color))"));
+  assert.ok(app.includes("l>.179?'#17191c':'#ffffff'"));
 });
 
 test('expanded card content and nested surfaces stay on the card color family', () => {
   const css = fs.readFileSync(new URL('../styles.css', 'file://' + __filename), 'utf8');
   for (let i = 1; i <= 6; i++) {
-    assert.match(css, new RegExp('nth-child\\(' + i + '\\)\\{--sheet-ink:var\\(--sheet-' + i + '-ink\\)\\}'));
+    assert.ok(css.includes(`.project-sheet:nth-child(${i}){--sheet-ink:var(--sheet-${i}-ink);--sheet-bg:var(--sheet-${i}-color)}`));
   }
-  assert.match(css, /\.sheet-inline-content\{background:transparent!important/);
-  assert.match(css, /color-mix\(in srgb,var\(--sheet-ink\) 13%,white\)/);
-  assert.match(css, /\.sheet-inline-page \.form-grid input[\s\S]*color:var\(--sheet-ink\)!important/);
-  assert.match(css, /\.sheet-inline-page>\.surface[\s\S]*background:color-mix\(in srgb,var\(--sheet-ink\) 5%,transparent\)/);
+  assert.ok(css.includes('.sheet-inline-content{background:transparent!important'));
+  assert.ok(css.includes('background:color-mix(in srgb,var(--sheet-bg) 87%,white 13%)!important'));
+  assert.ok(css.includes('color:var(--sheet-ink)!important'));
+  assert.ok(css.includes('background:color-mix(in srgb,var(--sheet-ink) 5%,transparent)'));
+});
+
+test('input fields are tinted one shade lighter from each actual card color, not from the foreground ink', () => {
+  const app = fs.readFileSync(new URL('../app.js', 'file://' + __filename), 'utf8');
+  const css = fs.readFileSync(new URL('../styles.css', 'file://' + __filename), 'utf8');
+  assert.ok(app.includes("root.style.setProperty('--sheet-'+(i+1)+'-color',color)"));
+  for (let i = 1; i <= 6; i++) {
+    assert.ok(css.includes(`.project-sheet:nth-child(${i}){--sheet-ink:var(--sheet-${i}-ink);--sheet-bg:var(--sheet-${i}-color)}`));
+  }
+  assert.ok(css.includes('background:color-mix(in srgb,var(--sheet-bg) 87%,white 13%)!important'));
+  assert.ok(!css.includes('background:color-mix(in srgb,var(--sheet-ink) 13%,white)!important'));
+});
+
+// Mobile card input tint regression coverage.
+
+test('Android PWA cache version is bumped for the new mobile card styles', () => {
+  const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
+  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v8"'));
+});
+
+test('appearance preferences expose WeeklyPlanner-style controls and persist line spacing', () => {
+  const html = fs.readFileSync(new URL('../index.html', 'file://' + __filename), 'utf8');
+  const app = fs.readFileSync(new URL('../app.js', 'file://' + __filename), 'utf8');
+  const css = fs.readFileSync(new URL('../styles.css', 'file://' + __filename), 'utf8');
+  for (const id of ['appearanceMode','appearanceAccent','appearanceBackground','appearanceTextAuto','appearanceText','appearanceFont','appearanceScale','appearanceSaturation','appearanceSurface','appearanceGlass','appearanceBlur','appearanceIconStyle','appearanceLineHeight','appearanceHeading','appearanceSubheading','appearanceItem','appearanceMotionStyle','appearanceMotionSpeed','appearanceDoneColor']) {
+    assert.ok(html.includes('id="' + id + '"'), 'missing appearance control: ' + id);
+  }
+  assert.ok(app.includes("lineHeight:1.4"));
+  assert.ok(app.includes("'--line-height':String(Math.min(1.8,Math.max(1.2,Number(a.lineHeight)||1.4)))"));
+  assert.ok(css.includes('body{line-height:var(--line-height,1.4)}'));
+  assert.ok(html.includes('id="workspaceSettingsButton"'));
+  assert.ok(html.includes('id="settingsBackToSheets"'));
+});
+test('Android PWA cache is refreshed for expanded appearance settings', () => {
+  const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
+  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v8"'));
+});
+
+test('workspace settings shortcut remains visible in the full-width six-card layout', () => {
+  const css = fs.readFileSync(new URL('../styles.css', 'file://' + __filename), 'utf8');
+  const html = fs.readFileSync(new URL('../index.html', 'file://' + __filename), 'utf8');
+  assert.ok(html.includes('id="workspaceSettingsButton"'));
+  assert.ok(css.includes('#projectSheets .sheets-intro{display:flex!important'));
+  assert.ok(html.includes('id="settingsBackToSheets"'));
 });
