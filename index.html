@@ -6,7 +6,7 @@
 <title>وَثيق | إدارة تنفيذ التشطيبات</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap"><link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<div class="app-shell">
+<div class="app-shell" id="appShell">
 <aside class="sidebar">
   <div class="brand"><div class="brand-mark">و</div><div><strong>وَثيق</strong><small>إدارة تنفيذ التشطيبات</small></div></div>
   <div class="project-switch"><label for="projectSelect">المشروع الحالي</label><select id="projectSelect"></select></div>
@@ -23,7 +23,7 @@
   <div class="sidebar-foot"><span class="status-dot"></span>نسخة مستقلة · حفظ محلي</div>
 </aside>
 <div class="main-wrap">
-<header class="topbar"><div><span class="eyebrow">EXECUTION WORKSPACE</span><strong id="topProjectName">المشروع الحالي</strong></div><button id="addProject" class="btn btn-primary">＋ مشروع جديد</button></header>
+<header class="topbar"><div><span class="eyebrow">وَثيق · مساحة العمل</span><strong id="topProjectName">المشروع الحالي</strong></div><div class="topbar-actions"><button type="button" id="backToSheets" class="btn btn-light">← الشيتات</button><button id="addProject" class="btn btn-primary">＋ مشروع جديد</button></div></header>
 <main>
 <section id="projectHome" class="page hub-page">
  <div class="hub-heading"><span class="eyebrow">WATHIQ WORKSPACE</span><h1>مشاريعك</h1><p>اختر مشروعاً للانتقال إلى مساحة العمل الخاصة به.</p></div>
