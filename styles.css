@@ -131,7 +131,7 @@ body[data-hub="home"] .mobile-nav,body[data-hub="sheets"] .mobile-nav{display:no
 
 
 /* Interactive project-sheet stack and progressive in-place expansion */
-.project-sheet-grid{gap:0;border-radius:20px;overflow:hidden;position:relative;isolation:isolate;background:var(--paper);box-shadow:var(--shadow)}
+.project-sheet-grid{gap:0;border-radius:20px;overflow:visible;position:relative;isolation:isolate;background:transparent;box-shadow:none}.project-sheet-grid.has-selection:before,.project-sheet-grid.has-selection:after{content:"";position:absolute;z-index:-1;pointer-events:none;width:38%;height:42%;border-radius:50%;filter:blur(48px);opacity:.24;background:var(--sheet-3);top:8%;right:4%;animation:sheetAura 9s ease-in-out infinite alternate}.project-sheet-grid.has-selection:after{top:auto;right:auto;bottom:4%;left:3%;background:var(--sheet-1);animation-delay:-4s}
 .project-sheet{border-radius:0;min-height:88px;box-shadow:none;border-bottom:1px solid #ffffff35;transform-origin:center;will-change:transform,opacity,filter}
 .project-sheet:first-child{border-radius:20px 20px 0 0}.project-sheet:last-child{border-radius:0 0 20px 20px;border-bottom:0}
 .project-sheet:before{content:"";position:absolute;inset:0;background:linear-gradient(115deg,#ffffff20,transparent 48%,#00000008);opacity:.6;pointer-events:none}
