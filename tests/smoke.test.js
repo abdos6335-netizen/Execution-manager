@@ -48,7 +48,7 @@ function createApp(initialStorage = {}) {
     globalThis.__appTest = {
       getState: () => state, normalizeState, parseQuickText,
       contractorTotals, answerReportQuestion, today, spentForProject,
-      itemCard, save, elements: null, storage: null,
+      itemCard, itemMovements, paidForItem, findDuplicateMovement, save, elements: null, storage: null,
       failStorageWrites(value) { globalThis.__failWrites(value); }
     };
   `, context);
