@@ -1,0 +1,7 @@
+{
+  "name": "execution-manager",
+  "private": true,
+  "scripts": {
+    "test": "node --test"
+  }
+}
