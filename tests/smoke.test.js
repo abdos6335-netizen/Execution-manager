@@ -791,3 +791,17 @@ test('font scaling covers fixed-pixel declarations and dark mode themes common l
   assert.ok(css.includes('html[data-dark="1"] '+selector),'dark selector coverage: '+selector);
  }
 });
+
+test('backup validation rejects dangling invoice IDs even outside the supplier-payment category',()=>{
+ const app=createApp(),backup=validBackupState();
+ backup.payments.push({id:'pay1',projectId:'p1',contractorId:'',type:'materials',purpose:'legacy',invoiceId:'missing',amount:25});
+ assert.equal(app.validateImportedState(backup).ok,false);
+});
+test('backup validation rejects supplier invoice payments without an invoice link and impossible reserved amounts',()=>{
+ const app=createApp(),noInvoice=validBackupState();
+ noInvoice.payments.push({id:'pay1',projectId:'p1',contractorId:'',type:'materials',purpose:'supplier_invoice_payment',amount:25});
+ assert.equal(app.validateImportedState(noInvoice).ok,false);
+ const reserved=validBackupState();
+ reserved.collections.push({id:'c1',project:'p1',amount:100,rate:10,reserved:150});
+ assert.equal(app.validateImportedState(reserved).ok,false);
+});
