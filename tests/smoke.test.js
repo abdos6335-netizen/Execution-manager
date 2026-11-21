@@ -486,8 +486,8 @@ test('site diary entries without a quantity remain valid after normalization', (
 
 
 test('muted appearance defaults and legacy preference migration preserve custom settings', () => {
-  const app = fs.readFileSync(path.join(root, 'app.js'), 'utf8');
-  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const app = source;
+  const html = fs.readFileSync(new URL('../index.html', 'file://' + __filename), 'utf8');
   assert.ok(app.includes("accent:'#8cab99',background:'#e7eeea'"));
   assert.ok(app.includes('function migrateAppearance()'));
   assert.ok(app.includes('appearanceVersion:2'));
