@@ -7,6 +7,7 @@ const source = fs.readFileSync(new URL('../app.js', 'file://' + __filename), 'ut
 
 function createApp(initialStorage = {}) {
   const elements = new Map();
+  const cssVars = new Map();
   const makeElement = () => {
     const classes = new Set(), listeners = {};
     return {
@@ -34,7 +35,7 @@ function createApp(initialStorage = {}) {
     querySelector() { return { content: '', setAttribute() {} }; },
     createElement() { return makeElement(); },
     head: { appendChild() {} },
-    documentElement: { style: { setProperty() {} }, dataset: {}, set colorScheme(value) {} }
+    documentElement: { style: { setProperty(name, value) { cssVars.set(name, String(value)); }, getPropertyValue(name) { return cssVars.get(name) || ''; } }, dataset: {}, set colorScheme(value) {} }
   };
   const values = new Map(Object.entries(initialStorage));
   let failWrites = false;
@@ -56,13 +57,14 @@ function createApp(initialStorage = {}) {
   });
   vm.runInContext(source + `
     globalThis.__appTest = {
-      getState: () => state, normalizeState, parseQuickText, deriveSheetShades, getAppearance,
+      getState: () => state, normalizeState, parseQuickText, deriveSheetShades, getAppearance, saveAppearance, applyAppearance, toggleInvoiceSelector,
       contractorTotals, answerReportQuestion, today, spentForProject, SHEET_PALETTES, invoiceTotals, supplierLedgerTotals, laborTotalsForContractor, executionCostForProject, cashOutflowForProject, validateDailyLog, validateImportedState,
       itemCard, itemMovements, paidForItem, findDuplicateMovement, save, elements: null, storage: null,
       failStorageWrites(value) { globalThis.__failWrites(value); }
     };
   `, context);
   context.__appTest.elements = elements;
+  context.__appTest.cssVars = cssVars;
   context.__appTest.storage = values;
   context.__failWrites = value => { failWrites = value; };
   return context.__appTest;
@@ -625,6 +627,52 @@ test('card shade generator returns six visibly distinct colors for extreme and d
     assert.equal(new Set(shades).size, 6, 'six unique shades required for ' + base);
   }
   assert.equal(app.deriveSheetShades('#a8b7ad')[3], '#a8b7ad');
+});
+
+test('applying a black or white base palette preserves the exact base shade and produces six distinct rendered shades', () => {
+  const app = createApp();
+  for (const [base, baseIndex] of [['#000000', 0], ['#ffffff', 5]]) {
+    app.saveAppearance({ sheetBaseColor: base, sheetSpecialIndex: 'none', saturation: 100 });
+    const rendered = Array.from({ length: 6 }, (_, i) => app.cssVars.get('--sheet-' + (i + 1)).toLowerCase());
+    assert.equal(rendered[baseIndex], base);
+    assert.equal(new Set(rendered).size, 6, 'rendered shades must differ for ' + base);
+  }
+});
+
+test('special card uses the exact user color while the other five stay in the base palette', () => {
+  const app = createApp();
+  app.saveAppearance({ sheetBaseColor: '#202020', sheetSpecialIndex: '4', sheetSpecialColor: '#b45c32', saturation: 100 });
+  assert.equal(app.cssVars.get('--sheet-5'), '#b45c32');
+  const others = [1, 2, 3, 4, 6].map(i => app.cssVars.get('--sheet-' + i));
+  assert.equal(new Set(others).size, 5);
+  assert.ok(others.every(color => color !== '#b45c32'));
+});
+
+test('typed or dictated supplier payment identifies a named supplier and selects its only open invoice', () => {
+  const app = createApp();
+  const state = app.getState();
+  state.contractors = [{ id: 'supplier-1', projectId: 'p1', name: 'شركة النور', aliases: [], trade: 'مورد' }];
+  state.items = [{ id: 'item-1', projectId: 'p1', name: 'سيراميك' }];
+  state.purchases = [{ id: 'invoice-1', projectId: 'p1', supplierId: 'supplier-1', supplier: 'شركة النور', itemId: 'item-1', item: 'سيراميك', amount: 5000, date: '2026-11-20' }];
+  app.elements.get('quickText').value = 'سداد فاتورة شركة النور ١٥٠٠ جنيه';
+  app.parseQuickText();
+  assert.equal(app.elements.get('quickKind').value, 'supplier_payment');
+  assert.equal(app.elements.get('quickPerson').value, 'شركة النور');
+  assert.equal(app.elements.get('quickInvoice').value, 'invoice-1');
+  assert.equal(app.elements.get('quickInvoiceWrap').classList.contains('hidden'), false);
+});
+
+test('supplier payment does not guess when the supplier has multiple open invoices', () => {
+  const app = createApp();
+  const state = app.getState();
+  state.contractors = [{ id: 'supplier-1', projectId: 'p1', name: 'شركة النور', aliases: [], trade: 'مورد' }];
+  state.purchases = [
+    { id: 'invoice-1', projectId: 'p1', supplierId: 'supplier-1', supplier: 'شركة النور', amount: 5000, date: '2026-11-20' },
+    { id: 'invoice-2', projectId: 'p1', supplierId: 'supplier-1', supplier: 'شركة النور', amount: 3000, date: '2026-11-21' }
+  ];
+  app.elements.get('quickText').value = 'سداد فاتورة شركة النور ١٥٠٠ جنيه';
+  app.parseQuickText();
+  assert.equal(app.elements.get('quickInvoice').value, '');
 });
 
 test('expanded card keeps its original stack order so following cards can cover its lower edge', () => {
