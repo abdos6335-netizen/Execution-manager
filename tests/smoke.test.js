@@ -310,7 +310,7 @@ test('input fields are tinted one shade lighter from each actual card color, not
 
 test('Android PWA cache version is bumped for the new mobile card styles', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v11"'));
+  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v12"'));
 });
 
 test('appearance preferences expose WeeklyPlanner-style controls and persist line spacing', () => {
@@ -330,7 +330,7 @@ test('appearance preferences expose WeeklyPlanner-style controls and persist lin
 });
 test('Android PWA cache is refreshed for expanded appearance settings', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v11"'));
+  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v12"'));
 });
 
 test('workspace settings shortcut remains visible in the full-width six-card layout', () => {
@@ -482,4 +482,20 @@ test('site diary entries without a quantity remain valid after normalization', (
  const app=createApp();
  const normalized=app.normalizeState({projects:[{id:'p1',name:'P'}],current:'p1',collections:[],siteLogs:[{id:'l1',projectId:'p1',date:'2026-11-20',note:'ملاحظة موقع'}]});
  assert.equal(app.validateDailyLog(normalized.siteLogs[0]).ok,true);
+});
+
+
+test('muted appearance defaults and legacy preference migration preserve custom settings', () => {
+  const app = fs.readFileSync(path.join(root, 'app.js'), 'utf8');
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  assert.ok(app.includes("accent:'#8cab99',background:'#e7eeea'"));
+  assert.ok(app.includes('function migrateAppearance()'));
+  assert.ok(app.includes('appearanceVersion:2'));
+  assert.ok(app.includes("saved.accent===old.accent"));
+  assert.ok(app.includes("saved.background===old.background"));
+  assert.ok(html.includes('value="#8cab99"'));
+  assert.ok(html.includes('value="#e7eeea"'));
+  for (const color of ['#97b4a3','#b8a194','#b5a697','#96aeb6','#b497a6','#9ba6b0','#a4a0ab','#a3a2a9','#b3a998','#b3989d']) {
+    assert.ok(html.includes(color), 'missing muted theme swatch color '+color);
+  }
 });
