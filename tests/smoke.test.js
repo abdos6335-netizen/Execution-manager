@@ -310,7 +310,7 @@ test('input fields are tinted one shade lighter from each actual card color, not
 
 test('Android PWA cache version is bumped for the new mobile card styles', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v12"'));
+  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v13"'));
 });
 
 test('appearance preferences expose WeeklyPlanner-style controls and persist line spacing', () => {
@@ -330,7 +330,7 @@ test('appearance preferences expose WeeklyPlanner-style controls and persist lin
 });
 test('Android PWA cache is refreshed for expanded appearance settings', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v12"'));
+  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v13"'));
 });
 
 test('workspace settings shortcut remains visible in the full-width six-card layout', () => {
@@ -517,4 +517,18 @@ test('custom appearance colors are not overwritten by the legacy migration', () 
   assert.equal(migrated.background,'#abcdef');
   assert.equal(migrated.font,'tajawal');
   assert.equal(migrated.appearanceVersion,2);
+});
+
+
+test('appearance palette writes the exact legacy sheet variables consumed by card CSS', () => {
+  assert.match(source, /setProperty\('--sheet-'\+\(i\+1\),color\)/);
+  const css = fs.readFileSync(new URL('../styles.css', 'file://' + __filename), 'utf8');
+  for (let i = 1; i <= 6; i++) {
+    assert.ok(css.includes('background:var(--sheet-' + i), 'card ' + i + ' CSS must consume its sheet variable');
+  }
+});
+
+test('service worker cache is bumped when appearance assets change', () => {
+  const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
+  assert.match(sw, /wathiq-shell-v13/);
 });
