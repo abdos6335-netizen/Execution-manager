@@ -457,7 +457,7 @@ body{line-height:var(--line-height,1.4)}
 }
 #projectSheets .project-sheet.selected .project-sheet-trigger{height:124px;min-height:124px}
 #projectSheets .project-sheet.expanded{
-  z-index:45!important;
+  z-index:var(--sheet-stack-order)!important;
   margin:0 0 14px;
   overflow:visible;
   border-radius:18px;
@@ -501,7 +501,7 @@ body{line-height:var(--line-height,1.4)}
   min-height:0;
   overflow:visible;
   position:relative;
-  z-index:45!important;
+  z-index:var(--sheet-stack-order)!important;
   transform:translate3d(9px,-25px,36px) rotate(-1.2deg) scale(1.015);
   transition:transform .72s cubic-bezier(.18,.92,.24,1),box-shadow .58s ease,border-radius .38s ease;
 }
