@@ -491,7 +491,7 @@ test('muted appearance defaults and all theme swatches use the soft palettes', (
   assert.ok(source.includes("accent:'#8cab99',background:'#e7eeea'"));
   assert.ok(html.includes('value="#8cab99"'));
   assert.ok(html.includes('value="#e7eeea"'));
-  for (const color of ['#97b4a3','#b8a194','#b5a697','#96aeb6','#b497a6','#9ba6b0','#a4a0ab','#a3a2a9','#b3a998','#b3989d']) {
+  for (const color of ['#d9e8de','#e6dad3','#e5dcd1','#d9e7e9','#e9dce4','#dde4e9','#e2dfe8','#e2e2e6','#e8e2d6','#ebdde0']) {
     assert.ok(html.includes(color), 'missing muted theme swatch color '+color);
   }
 });
