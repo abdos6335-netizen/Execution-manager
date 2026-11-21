@@ -7,13 +7,24 @@ const source = fs.readFileSync(new URL('../app.js', 'file://' + __filename), 'ut
 
 function createApp(initialStorage = {}) {
   const elements = new Map();
-  const makeElement = () => ({
-    value: '', innerHTML: '', textContent: '', dataset: {},
-    style: { setProperty() {} },
-    classList: { add() {}, remove() {}, toggle() {}, contains() { return false; } },
-    addEventListener() {}, setAttribute() {}, querySelector() { return makeElement(); },
-    querySelectorAll() { return []; }, scrollIntoView() {}, reset() {}, click() {}
-  });
+  const cssVars = new Map();
+  const makeElement = () => {
+    const classes = new Set(), listeners = {};
+    return {
+      value: '', innerHTML: '', textContent: '', dataset: {},
+      style: { setProperty() {} },
+      classList: {
+        add(...names) { names.forEach(name => classes.add(name)); },
+        remove(...names) { names.forEach(name => classes.delete(name)); },
+        toggle(name, force) { const next = force === undefined ? !classes.has(name) : !!force; if (next) classes.add(name); else classes.delete(name); return next; },
+        contains(name) { return classes.has(name); }
+      },
+      addEventListener(name, fn) { (listeners[name] ||= []).push(fn); },
+      dispatch(name, event = {}) { const e = { target: this, ...event }; (listeners[name] || []).forEach(fn => fn(e)); },
+      setAttribute() {}, querySelector() { return makeElement(); },
+      querySelectorAll() { return []; }, scrollIntoView() {}, reset() {}, click() {}
+    };
+  };
   const document = {
     body: { dataset: {} },
     getElementById(id) {
@@ -24,7 +35,7 @@ function createApp(initialStorage = {}) {
     querySelector() { return { content: '', setAttribute() {} }; },
     createElement() { return makeElement(); },
     head: { appendChild() {} },
-    documentElement: { style: { setProperty() {} }, dataset: {}, set colorScheme(value) {} }
+    documentElement: { style: { setProperty(name, value) { cssVars.set(name, String(value)); }, getPropertyValue(name) { return cssVars.get(name) || ''; } }, dataset: {}, set colorScheme(value) {} }
   };
   const values = new Map(Object.entries(initialStorage));
   let failWrites = false;
@@ -46,13 +57,14 @@ function createApp(initialStorage = {}) {
   });
   vm.runInContext(source + `
     globalThis.__appTest = {
-      getState: () => state, normalizeState, parseQuickText,
-      contractorTotals, answerReportQuestion, today, spentForProject, SHEET_PALETTES, invoiceTotals, supplierLedgerTotals, laborTotalsForContractor, executionCostForProject, cashOutflowForProject, validateDailyLog, validateImportedState,
+      getState: () => state, normalizeState, parseQuickText, deriveSheetShades, getAppearance, saveAppearance, applyAppearance, toggleInvoiceSelector,
+      contractorTotals, answerReportQuestion, today, spentForProject, SHEET_PALETTES, invoiceTotals, supplierLedgerTotals, laborTotalsForContractor, executionCostForProject, cashOutflowForProject, validateDailyLog, validateBackupFile, validateImportedState,
       itemCard, itemMovements, paidForItem, findDuplicateMovement, save, elements: null, storage: null,
       failStorageWrites(value) { globalThis.__failWrites(value); }
     };
   `, context);
   context.__appTest.elements = elements;
+  context.__appTest.cssVars = cssVars;
   context.__appTest.storage = values;
   context.__failWrites = value => { failWrites = value; };
   return context.__appTest;
@@ -162,7 +174,7 @@ test('backup import writes successfully before replacing in-memory state', async
   const app = createApp();
   const input = app.elements.get('importData');
   const payload = { projects: [{ id: 'p2', name: 'New project', rate: 5 }], current: 'p2', collections: [], expenses: [], items: [], contractors: [], payments: [] };
-  const target = { files: [{ size: 100, text: async () => JSON.stringify(payload) }], value: 'selected' };
+  const target = { files: [{ name: 'backup.json', type: 'application/json', size: 100, text: async () => JSON.stringify(payload) }], value: 'selected' };
   await input.onchange({ target });
   assert.equal(app.getState().current, 'p2');
   assert.ok(app.storage.has('execution-manager-v02'));
@@ -310,7 +322,7 @@ test('input fields are tinted one shade lighter from each actual card color, not
 
 test('Android PWA cache version is bumped for the new mobile card styles', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v18"'));
+  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v22"'));
 });
 
 test('appearance preferences expose WeeklyPlanner-style controls and persist line spacing', () => {
@@ -330,7 +342,7 @@ test('appearance preferences expose WeeklyPlanner-style controls and persist lin
 });
 test('Android PWA cache is refreshed for expanded appearance settings', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v18"'));
+  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v22"'));
 });
 
 test('workspace settings shortcut remains visible in the full-width six-card layout', () => {
@@ -538,7 +550,7 @@ test('appearance palette writes the exact legacy sheet variables consumed by car
 
 test('service worker cache is bumped when appearance assets change', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.match(sw, /wathiq-shell-v18/);
+  assert.match(sw, /wathiq-shell-v22/);
 });
 
 
@@ -552,7 +564,7 @@ test('only the selected workspace card is pulled forward and tilted while the re
   assert.match(css, /#projectSheets \.project-sheet:nth-child\(2\)\{--sheet-stack-order:2;z-index:2\}/);
   assert.match(css, /@media\(max-width:720px\)[\s\S]*?rotate\(-2\.5deg\)/);
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.match(sw, /wathiq-shell-v18/);
+  assert.match(sw, /wathiq-shell-v22/);
 });
 
 test('workspace card palette supports six coordinated shades and one independently chosen standout card', () => {
@@ -566,15 +578,230 @@ test('workspace card palette supports six coordinated shades and one independent
   assert.ok(html.includes('id="sheetSpecialColor"'));
   for (const label of ['الماليات','الحركات اليومية','بنود التنفيذ','الصنايعية والموردين','التحصيلات','المصروفات']) assert.ok(html.includes('<option value="'+['الماليات','الحركات اليومية','بنود التنفيذ','الصنايعية والموردين','التحصيلات','المصروفات'].indexOf(label)+'">'+label+'</option>'));
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.match(sw, /wathiq-shell-v18/);
+  assert.match(sw, /wathiq-shell-v22/);
 });
 
 
 test('expanded workspace card grows to contain its inline content and reveals it with motion', () => {
   const css = fs.readFileSync(new URL('../styles.css', 'file://' + __filename), 'utf8');
   assert.match(css, /#projectSheets \.project-sheet\.expanded\{[\s\S]*?height:auto;[\s\S]*?min-height:0;[\s\S]*?overflow:visible/);
+  assert.match(css, /#projectSheets \.project-sheet\.expanded\{[\s\S]*?z-index:var\(--sheet-stack-order\)!important/);
+  assert.doesNotMatch(css, /#projectSheets \.project-sheet\.expanded\{[^}]*z-index:45!important/);
   assert.match(css, /#projectSheets \.project-sheet\.expanded \.sheet-inline-content\{[\s\S]*?animation:sheetContentUnfold \.62s/);
   assert.match(css, /@keyframes sheetContentUnfold\{[\s\S]*?clip-path:inset\(0 0 92% 0\)[\s\S]*?clip-path:inset\(0 0 0 0\)/);
   assert.match(css, /@media\(max-width:720px\)[\s\S]*?#projectSheets \.project-sheet\.expanded\{[\s\S]*?height:auto/);
   assert.match(css, /@media\(prefers-reduced-motion:reduce\)[\s\S]*?sheetContentUnfold|@media\(prefers-reduced-motion:reduce\)[\s\S]*?project-sheet\.expanded/);
+});
+
+
+test('custom card color controls persist their selected values', () => {
+  const app = createApp();
+  const base = app.elements.get('sheetBaseColor');
+  base.value = '#202020';
+  base.dispatch('input');
+  const standout = app.elements.get('sheetSpecialIndex');
+  standout.value = '4';
+  standout.dispatch('input');
+  const standoutColor = app.elements.get('sheetSpecialColor');
+  standoutColor.value = '#b45c32';
+  standoutColor.dispatch('input');
+  const saved = app.getAppearance();
+  assert.equal(saved.sheetBaseColor, '#202020');
+  assert.equal(saved.sheetSpecialIndex, '4');
+  assert.equal(saved.sheetSpecialColor, '#b45c32');
+});
+
+test('natural-language supplier invoice payment reveals invoice selector', () => {
+  const app = createApp();
+  app.elements.get('quickText').value = 'سداد فاتورة مورد ١٥٠٠ جنيه';
+  app.parseQuickText();
+  assert.equal(app.elements.get('quickKind').value, 'supplier_payment');
+  assert.equal(app.elements.get('quickInvoiceWrap').classList.contains('hidden'), false);
+});
+
+test('card shade generator returns six visibly distinct colors for extreme and dark inputs', () => {
+  const app = createApp();
+  for (const base of ['#000000', '#ffffff', '#101010', '#a8b7ad']) {
+    const shades = app.deriveSheetShades(base);
+    assert.equal(shades.length, 6);
+    assert.equal(new Set(shades).size, 6, 'six unique shades required for ' + base);
+  }
+  assert.equal(app.deriveSheetShades('#a8b7ad')[3], '#a8b7ad');
+});
+
+test('applying a black or white base palette preserves the exact base shade and produces six distinct rendered shades', () => {
+  const app = createApp();
+  for (const [base, baseIndex] of [['#000000', 0], ['#ffffff', 5]]) {
+    app.saveAppearance({ sheetBaseColor: base, sheetSpecialIndex: 'none', saturation: 100 });
+    const rendered = Array.from({ length: 6 }, (_, i) => app.cssVars.get('--sheet-' + (i + 1)).toLowerCase());
+    assert.equal(rendered[baseIndex], base);
+    assert.equal(new Set(rendered).size, 6, 'rendered shades must differ for ' + base);
+  }
+});
+
+test('special card uses the exact user color while the other five stay in the base palette', () => {
+  const app = createApp();
+  app.saveAppearance({ sheetBaseColor: '#202020', sheetSpecialIndex: '4', sheetSpecialColor: '#b45c32', saturation: 100 });
+  assert.equal(app.cssVars.get('--sheet-5'), '#b45c32');
+  const others = [1, 2, 3, 4, 6].map(i => app.cssVars.get('--sheet-' + i));
+  assert.equal(new Set(others).size, 5);
+  assert.ok(others.every(color => color !== '#b45c32'));
+});
+
+test('typed or dictated supplier payment identifies a named supplier and selects its only open invoice', () => {
+  const app = createApp();
+  const state = app.getState();
+  state.contractors = [{ id: 'supplier-1', projectId: 'p1', name: 'شركة النور', aliases: [], trade: 'مورد' }];
+  state.items = [{ id: 'item-1', projectId: 'p1', name: 'سيراميك' }];
+  state.purchases = [{ id: 'invoice-1', projectId: 'p1', supplierId: 'supplier-1', supplier: 'شركة النور', itemId: 'item-1', item: 'سيراميك', amount: 5000, date: '2026-11-20' }];
+  app.elements.get('quickText').value = 'سداد فاتورة شركة النور ١٥٠٠ جنيه';
+  app.parseQuickText();
+  assert.equal(app.elements.get('quickKind').value, 'supplier_payment');
+  assert.equal(app.elements.get('quickPerson').value, 'شركة النور');
+  assert.equal(app.elements.get('quickInvoice').value, 'invoice-1');
+  assert.equal(app.elements.get('quickInvoiceWrap').classList.contains('hidden'), false);
+});
+
+test('supplier payment does not guess when the supplier has multiple open invoices', () => {
+  const app = createApp();
+  const state = app.getState();
+  state.contractors = [{ id: 'supplier-1', projectId: 'p1', name: 'شركة النور', aliases: [], trade: 'مورد' }];
+  state.purchases = [
+    { id: 'invoice-1', projectId: 'p1', supplierId: 'supplier-1', supplier: 'شركة النور', amount: 5000, date: '2026-11-20' },
+    { id: 'invoice-2', projectId: 'p1', supplierId: 'supplier-1', supplier: 'شركة النور', amount: 3000, date: '2026-11-21' }
+  ];
+  app.elements.get('quickText').value = 'سداد فاتورة شركة النور ١٥٠٠ جنيه';
+  app.parseQuickText();
+  assert.equal(app.elements.get('quickInvoice').value, '');
+});
+
+test('expanded card keeps its original stack order so following cards can cover its lower edge', () => {
+  const css = fs.readFileSync(new URL('../styles.css', 'file://' + __filename), 'utf8');
+  assert.match(css, /#projectSheets \.project-sheet\.expanded\{[\s\S]*?z-index:var\(--sheet-stack-order\)!important/);
+  assert.doesNotMatch(css, /#projectSheets \.project-sheet\.expanded\{[^}]*z-index:45!important/);
+});
+
+test('dark appearance uses readable light text and dark surfaces throughout the main UI', () => {
+  const app = createApp();
+  app.saveAppearance({ mode: 'dark', text: '#333333' });
+  assert.equal(app.cssVars.get('--ink'), '#f1f1f2');
+  assert.equal(app.cssVars.get('--paper'), '#29292d');
+  assert.equal(app.cssVars.get('--muted'), '#a9a9b1');
+  const css = fs.readFileSync(new URL('../styles.css', 'file://' + __filename), 'utf8');
+  for (const selector of ['.surface', '.metric', '.record-card', '.table-wrap', '.form-grid input', '.appearance-grid select']) {
+    assert.ok(css.includes('html[data-dark="1"] ' + selector), 'dark mode must theme ' + selector);
+  }
+});
+test('global font scale is clamped and applied to shared typography groups', () => {
+  const app = createApp();
+  app.saveAppearance({ scale: 125 });
+  assert.equal(app.cssVars.get('--scale'), '1.25');
+  app.saveAppearance({ scale: 10 });
+  assert.equal(app.cssVars.get('--scale'), '0.8');
+  const css = fs.readFileSync(new URL('../styles.css', 'file://' + __filename), 'utf8');
+  assert.match(css, /html\{font-size:calc\(16px \* var\(--scale,1\)\)\}/);
+  assert.match(css, /--type-heading,1\) \* var\(--scale,1\)/);
+  assert.match(css, /--type-subheading,1\) \* var\(--scale,1\)/);
+  assert.match(css, /--type-item,1\) \* var\(--scale,1\)/);
+});
+test('backup import rejects malformed structures before asking to replace current data', async () => {
+  const app = createApp();
+  const before = app.getState();
+  const input = app.elements.get('importData');
+  const target = { files: [{ name: 'broken.json', type: 'application/json', size: 100, text: async () => JSON.stringify({ projects: [], collections: [] }) }], value: 'selected' };
+  await input.onchange({ target });
+  assert.equal(app.getState(), before);
+  assert.equal(app.getState().current, 'p1');
+  assert.equal(target.value, '');
+});
+test('backup validation rejects duplicate ids and broken project or item references', () => {
+  const app = createApp();
+  const duplicate = app.validateImportedState({ projects: [{ id: 'p1', name: 'P' }, { id: 'p1', name: 'P2' }], current: 'p1', collections: [] });
+  assert.equal(duplicate.ok, false);
+  const broken = app.validateImportedState({ projects: [{ id: 'p1', name: 'P' }], current: 'p1', collections: [], items: [{ id: 'i1', projectId: 'p1', name: 'X' }], expenses: [{ id: 'e1', projectId: 'missing', itemId: 'i1', amount: 10 }] });
+  assert.equal(broken.ok, false);
+});
+
+
+function validBackupState(){
+ return {projects:[{id:'p1',name:'Project',rate:10}],current:'p1',collections:[],expenses:[],items:[],contractors:[],payments:[],purchases:[],laborEntries:[],siteLogs:[]};
+}
+test('backup validation rejects every missing required core array before normalization',()=>{
+ const app=createApp();
+ for(const key of ['collections','expenses','items','contractors','payments']){
+  const backup=validBackupState();delete backup[key];
+  assert.equal(app.validateImportedState(backup).ok,false,'missing '+key+' must be rejected');
+ }
+});
+test('schema v2 backup requires all execution ledger arrays',()=>{
+ const app=createApp();
+ for(const key of ['purchases','laborEntries','siteLogs']){
+  const backup=validBackupState();delete backup[key];
+  assert.equal(app.validateImportedState(backup,{schemaVersion:2}).ok,false,'missing '+key+' must be rejected');
+ }
+});
+test('legacy schema v1 backup remains compatible when additive ledger arrays are absent',()=>{
+ const app=createApp(),backup=validBackupState();
+ delete backup.purchases;delete backup.laborEntries;delete backup.siteLogs;
+ const result=app.validateImportedState(backup,{schemaVersion:1});
+ assert.equal(result.ok,true);
+ assert.deepEqual(JSON.parse(JSON.stringify(result.state.purchases)),[]);
+});
+test('backup validation rejects null rows, missing IDs and nonnumeric financial amounts without normalizing them away',()=>{
+ const app=createApp();
+ for(const mutate of [
+  b=>b.collections.push(null),
+  b=>b.items.push({projectId:'p1',name:'No id'}),
+  b=>b.collections.push({id:'c1',project:'p1',amount:'120'}),
+  b=>b.expenses.push({id:'e1',projectId:'p1',amount:0})
+ ]){
+  const backup=validBackupState();mutate(backup);
+  assert.equal(app.validateImportedState(backup).ok,false);
+ }
+});
+test('backup validation rejects records linked to a different project and invalid current project',()=>{
+ const app=createApp(),backup=validBackupState();
+ backup.projects.push({id:'p2',name:'Second',rate:10});
+ backup.items.push({id:'i2',projectId:'p2',name:'Other project item'});
+ backup.expenses.push({id:'e1',projectId:'p1',itemId:'i2',amount:10});
+ assert.equal(app.validateImportedState(backup).ok,false);
+ const badCurrent=validBackupState();badCurrent.current='missing';
+ assert.equal(app.validateImportedState(badCurrent).ok,false);
+});
+test('backup file type and extension are checked, not inferred from JSON text alone',()=>{
+ const app=createApp();
+ assert.equal(app.validateBackupFile({name:'backup.json',type:'application/json',size:100}).ok,true);
+ assert.equal(app.validateBackupFile({name:'backup.txt',type:'application/json',size:100}).ok,false);
+ assert.equal(app.validateBackupFile({name:'backup.json',type:'text/plain',size:100}).ok,false);
+});
+test('failed backup storage write leaves both live state and stored app data unchanged',async()=>{
+ const app=createApp({'execution-manager-v02':JSON.stringify(validBackupState())});
+ const beforeState=app.getState(),beforeStored=app.storage.get('execution-manager-v02');
+ app.failStorageWrites(true);
+ const target={files:[{name:'valid.json',type:'application/json',size:500,text:async()=>JSON.stringify({app:'execution-manager',schemaVersion:2,state:{...validBackupState(),projects:[{id:'p2',name:'New',rate:10}],current:'p2'}})}],value:'selected'};
+ await app.elements.get('importData').onchange({target});
+ assert.equal(app.getState(),beforeState);
+ assert.equal(app.storage.get('execution-manager-v02'),beforeStored);
+ assert.equal(target.value,'');
+});
+test('font scaling covers fixed-pixel declarations and dark mode themes common legacy surfaces',()=>{
+ const css=fs.readFileSync(new URL('../styles.css','file://'+__filename),'utf8');
+ assert.doesNotMatch(css,/font-size:\s*\d+(?:\.\d+)?px\s*;/);
+ for(const selector of ['.surface-inset','.advanced-ledger-group','.mobile-nav','.site-log-row','input:not([type="color"])','textarea']){
+  assert.ok(css.includes('html[data-dark="1"] '+selector),'dark selector coverage: '+selector);
+ }
+});
+
+test('backup validation rejects dangling invoice IDs even outside the supplier-payment category',()=>{
+ const app=createApp(),backup=validBackupState();
+ backup.payments.push({id:'pay1',projectId:'p1',contractorId:'',type:'materials',purpose:'legacy',invoiceId:'missing',amount:25});
+ assert.equal(app.validateImportedState(backup).ok,false);
+});
+test('backup validation rejects supplier invoice payments without an invoice link and impossible reserved amounts',()=>{
+ const app=createApp(),noInvoice=validBackupState();
+ noInvoice.payments.push({id:'pay1',projectId:'p1',contractorId:'',type:'materials',purpose:'supplier_invoice_payment',amount:25});
+ assert.equal(app.validateImportedState(noInvoice).ok,false);
+ const reserved=validBackupState();
+ reserved.collections.push({id:'c1',project:'p1',amount:100,rate:10,reserved:150});
+ assert.equal(app.validateImportedState(reserved).ok,false);
 });
