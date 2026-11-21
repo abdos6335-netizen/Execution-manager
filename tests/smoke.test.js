@@ -310,7 +310,7 @@ test('input fields are tinted one shade lighter from each actual card color, not
 
 test('Android PWA cache version is bumped for the new mobile card styles', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v14"'));
+  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v15"'));
 });
 
 test('appearance preferences expose WeeklyPlanner-style controls and persist line spacing', () => {
@@ -330,7 +330,7 @@ test('appearance preferences expose WeeklyPlanner-style controls and persist lin
 });
 test('Android PWA cache is refreshed for expanded appearance settings', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v14"'));
+  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v15"'));
 });
 
 test('workspace settings shortcut remains visible in the full-width six-card layout', () => {
@@ -538,7 +538,7 @@ test('appearance palette writes the exact legacy sheet variables consumed by car
 
 test('service worker cache is bumped when appearance assets change', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.match(sw, /wathiq-shell-v14/);
+  assert.match(sw, /wathiq-shell-v15/);
 });
 
 
