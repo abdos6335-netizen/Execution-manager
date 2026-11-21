@@ -267,6 +267,11 @@ function parseQuickText(){
  else if(/اجره|مصنعيه|يوميه|صنايعي/.test(t))$('quickKind').value='labor';
  else if(/خامات|مونه|جردل|اسمنت|سيراميك/.test(t))$('quickKind').value='materials';
  else if(/نقاش|نجار|كهربائي|سباك|دفعت|مقاول/.test(t))$('quickKind').value='labor';
+ if($('quickKind').value==='supplier_payment'){
+  const matched=currentContractors().filter(c=>[c.name,...(c.aliases||[])].some(name=>{const n=normArabic(name);return n.length>=3&&t.includes(n)}));
+  const unique=[...new Map(matched.map(c=>[c.id,c])).values()];
+  if(unique.length===1)$('quickPerson').value=unique[0].name;
+ }
  toggleInvoiceSelector();
  $('quickNote').value=raw;
 }
