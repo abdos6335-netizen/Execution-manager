@@ -233,16 +233,22 @@ $('exportData').onclick=()=>{const payload={app:'execution-manager',schemaVersio
 $('importData').onchange=async e=>{
  const file=e.target.files?.[0];if(!file)return;
  try{
-  if(file.size>20*1024*1024)throw Error('size');
-  const parsed=JSON.parse(await file.text()),imported=parsed.state||parsed;
-  if(!imported||!Array.isArray(imported.projects)||!imported.projects.length||!Array.isArray(imported.collections))throw Error('shape');
-  for(const key of ['expenses','items','contractors','payments'])if(imported[key]!==undefined&&!Array.isArray(imported[key]))throw Error('shape');
-  if(!confirm('سيتم استبدال البيانات الحالية بالنسخة الاحتياطية. يفضل تصدير نسخة من البيانات الحالية أولاً. هل تريد المتابعة؟'))return;
-  const validation=validateImportedState(imported);if(!validation.ok)throw Error(validation.reason);const next=validation.state,serialized=JSON.stringify(next);
+  if(!file||!Number.isFinite(file.size)||file.size<=0||file.size>20*1024*1024)throw Error('size');
+  const parsed=JSON.parse(await file.text());
+  if(!parsed||typeof parsed!=='object'||Array.isArray(parsed))throw Error('shape');
+  if(parsed.app&&parsed.app!=='execution-manager')throw Error('app');
+  if(parsed.schemaVersion!=null&&(!Number.isInteger(Number(parsed.schemaVersion))||Number(parsed.schemaVersion)<1||Number(parsed.schemaVersion)>2))throw Error('version');
+  const imported=parsed.state||parsed;
+  if(!imported||typeof imported!=='object'||Array.isArray(imported)||!Array.isArray(imported.projects)||!imported.projects.length)throw Error('shape');
+  for(const key of ['collections','expenses','items','contractors','payments','purchases','laborEntries','siteLogs'])if(imported[key]!==undefined&&!Array.isArray(imported[key]))throw Error('shape');
+  const validation=validateImportedState(imported);if(!validation.ok)throw Error(validation.reason);
+  const next=validation.state,serialized=JSON.stringify(next);
+  if(!serialized||serialized.length>30*1024*1024)throw Error('size');
+  if(!confirm('تم فحص النسخة الاحتياطية. سيتم استبدال بيانات المشروع الحالية بها. يفضّل تصدير نسخة حالية أولاً. هل تريد المتابعة؟'))return;
   localStorage.setItem(KEY,serialized);
   state=next;closePanels();render();renderQuickLists();renderReports();
   alert('تم استيراد النسخة الاحتياطية بنجاح');
- }catch(err){alert('تعذر استيراد النسخة الاحتياطية. لم يتم استبدال بياناتك الحالية. تأكد من سلامة الملف وتوفر مساحة تخزين كافية.');}
+ }catch(err){console.error('Backup import rejected:',err);alert('تعذر استيراد النسخة الاحتياطية. لم يتم تغيير بياناتك الحالية. تأكد من سلامة الملف وإصداره وتوفر مساحة تخزين كافية.');}
  finally{e.target.value=''}
 };
 render();
@@ -443,10 +449,10 @@ function applyAppearance(){
  const a=getAppearance(),mode=a.mode==='system'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):a.mode,dark=mode==='dark',bg=dark?'#1b1b1d':a.background,accent=saturateHex(a.accent||'#294438',(Number(a.saturation)||0)/100);
  const mix=(x,y,t)=>{const p=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)],A=p(x),B=p(y);return '#'+A.map((v,i)=>Math.round(v+(B[i]-v)*t).toString(16).padStart(2,'0')).join('')};
  const rgb=accent.match(/[0-9a-f]{2}/gi)?.map(x=>parseInt(x,16)/255)||[.2,.2,.2],linear=rgb.map(v=>v<=.03928?v/12.92:((v+.055)/1.055)**2.4),accentInk=.2126*linear[0]+.7152*linear[1]+.0722*linear[2]>.45?'#14161a':'#fff';
- const textColor=['#ffffff','#333333','#000000'].includes(String(a.text).toLowerCase())?String(a.text).toLowerCase():'#333333';
+ const chosenText=['#ffffff','#333333','#000000'].includes(String(a.text).toLowerCase())?String(a.text).toLowerCase():'#333333',textColor=dark?(chosenText==='#ffffff'?'#ffffff':'#f1f1f2'):chosenText,mutedColor=dark?'#a9a9b1':(textColor==='#ffffff'?'#666666':'#777d86');
  const root=document.documentElement;root.dataset.theme=a.theme||'sage';const defaultSheetPalette=SHEET_PALETTES[a.theme]||SHEET_PALETTES.sage,baseHex=/^#[0-9a-f]{6}$/i.test(String(a.sheetBaseColor||''))?a.sheetBaseColor:'',sheetPalette=baseHex?deriveSheetShades(baseHex):defaultSheetPalette,specialIndex=a.sheetSpecialIndex==='none'?-1:Number(a.sheetSpecialIndex),specialHex=/^#[0-9a-f]{6}$/i.test(String(a.sheetSpecialColor||''))?a.sheetSpecialColor:'#c47b45';sheetPalette.forEach((raw,i)=>{const color=i===specialIndex?specialHex:saturateHex(raw,(Number(a.saturation)||0)/100),readableInk=contrastInk(color)==='#ffffff'?'#ffffff':(textColor==='#ffffff'?'#333333':textColor);root.style.setProperty('--sheet-'+(i+1),color);root.style.setProperty('--sheet-'+(i+1)+'-color',color);root.style.setProperty('--sheet-'+(i+1)+'-ink',readableInk);root.style.setProperty('--sheet-'+(i+1)+'-surface',a.surface==='same'?mix(color,'#ffffff',dark?.035:.055):mix(color,accent,dark?.14:.10))});
  const speed={slow:1.35,normal:1,fast:.7}[a.motionSpeed]||1,styleDuration={smooth:.48,subtle:.24,reduced:0}[a.motionStyle]??.48,motionDuration=styleDuration*speed;
- const vars={'--canvas':bg,'--paper':dark?'#232325':'#f0f1f0','--ink':textColor,'--muted':textColor,'--line':dark?'rgba(255,255,255,.08)':'rgba(0,0,0,.085)','--nav':dark?'#262628':'#ececed','--nav2':dark?'#303033':'#e4e5e4','--accent':accent,'--accent-ink':accentInk,'--accent-soft':dark?mix('#1b1b1d',accent,.22):mix(bg,accent,.14),'--shadow':dark?'0 1px 0 rgba(255,255,255,.06) inset,0 14px 30px -12px rgba(0,0,0,.65)':'0 1px 0 rgba(255,255,255,.95) inset,0 12px 28px -12px rgba(20,20,26,.20)','--scale':String((Number(a.scale)||100)/100),'--line-height':String(Math.min(1.8,Math.max(1.2,Number(a.lineHeight)||1.4))),'--type-heading':String((Number(a.heading)||100)/100),'--type-subheading':String((Number(a.subheading)||100)/100),'--type-item':String((Number(a.item)||100)/100),'--glass-blur':(a.glass?Math.min(32,Math.max(0,Number(a.blur)||0)):0)+'px','--glass-opacity':a.glass?'.28':'0','--icon-radius':a.iconStyle==='squircle'?'30%':'50%','--icon-bg':a.iconStyle==='squircle'?'color-mix(in srgb,var(--sheet-ink) 10%,transparent)':'transparent','--motion-duration':motionDuration+'s','--done-color':a.doneColor==='orange'?'#e58a32':'#1f9c70'};
+ const vars={'--canvas':bg,'--paper':dark?'#29292d':'#f0f1f0','--ink':textColor,'--muted':mutedColor,'--line':dark?'rgba(255,255,255,.08)':'rgba(0,0,0,.085)','--nav':dark?'#262628':'#ececed','--nav2':dark?'#303033':'#e4e5e4','--accent':accent,'--accent-ink':accentInk,'--accent-soft':dark?mix('#1b1b1d',accent,.22):mix(bg,accent,.14),'--shadow':dark?'0 1px 0 rgba(255,255,255,.06) inset,0 14px 30px -12px rgba(0,0,0,.65)':'0 1px 0 rgba(255,255,255,.95) inset,0 12px 28px -12px rgba(20,20,26,.20)','--scale':String(Math.min(1.3,Math.max(.8,(Number(a.scale)||100)/100))),'--line-height':String(Math.min(1.8,Math.max(1.2,Number(a.lineHeight)||1.4))),'--type-heading':String((Number(a.heading)||100)/100),'--type-subheading':String((Number(a.subheading)||100)/100),'--type-item':String((Number(a.item)||100)/100),'--glass-blur':(a.glass?Math.min(32,Math.max(0,Number(a.blur)||0)):0)+'px','--glass-opacity':a.glass?'.28':'0','--icon-radius':a.iconStyle==='squircle'?'30%':'50%','--icon-bg':a.iconStyle==='squircle'?'color-mix(in srgb,var(--sheet-ink) 10%,transparent)':'transparent','--motion-duration':motionDuration+'s','--done-color':a.doneColor==='orange'?'#e58a32':'#1f9c70'};
  Object.entries(vars).forEach(([k,v])=>root.style.setProperty(k,v));
  const fonts={ibm:['IBM Plex Sans Arabic','IBM+Plex+Sans+Arabic:wght@400;500;600;700'],alexandria:['Alexandria','Alexandria:wght@300;400;500;600'],readex:['Readex Pro','Readex+Pro:wght@300;400;500;600'],noto:['Noto Sans Arabic','Noto+Sans+Arabic:wght@300;400;500;600'],almarai:['Almarai','Almarai:wght@300;400;700'],cairo:['Cairo','Cairo:wght@300;400;500;600'],tajawal:['Tajawal','Tajawal:wght@300;400;500;700'],system:['system-ui','']};
  const f=fonts[a.font]||fonts.ibm;root.style.setProperty('--app-font','Inter,"'+f[0]+'",system-ui,sans-serif');root.dataset.dark=dark?'1':'0';root.style.colorScheme=dark?'dark':'light';
@@ -536,12 +542,20 @@ function validateDailyLog(data){
  return {ok:true};
 }
 function validateImportedState(raw){
+ if(!raw||typeof raw!=='object'||Array.isArray(raw)||!Array.isArray(raw.projects)||!raw.projects.length)return {ok:false,reason:'هيكل النسخة الاحتياطية غير صحيح'};
+ const arrayKeys=['collections','expenses','items','contractors','payments','purchases','laborEntries','siteLogs'];
+ for(const key of arrayKeys)if(raw[key]!==undefined&&!Array.isArray(raw[key]))return {ok:false,reason:'قائمة '+key+' غير صحيحة'};
  const next=normalizeState(raw),projectIds=new Set(next.projects.map(x=>x.id)),itemIds=new Set(next.items.map(x=>x.id)),personIds=new Set(next.contractors.map(x=>x.id));
- const validAmount=x=>Number.isFinite(Number(x.amount))&&Number(x.amount)>0;
+ const unique=(rows,key)=>{const seen=new Set();for(const x of rows){const id=String(x?.[key]||'');if(!id||seen.has(id))return false;seen.add(id)}return true};
+ if(!unique(next.projects,'id')||!unique(next.items,'id')||!unique(next.contractors,'id')||!unique(next.collections,'id')||!unique(next.expenses,'id')||!unique(next.payments,'id')||!unique(next.purchases,'id')||!unique(next.laborEntries,'id')||!unique(next.siteLogs,'id'))return {ok:false,reason:'يوجد رقم تعريف مفقود أو مكرر في النسخة'};
+ const validAmount=x=>Number.isFinite(Number(x?.amount))&&Number(x.amount)>0;
+ for(const x of next.collections){if(!validAmount(x)||!projectIds.has(x.project))return {ok:false,reason:'بيانات تحصيل غير صحيحة أو مرتبطة بمشروع غير موجود'};}
+ for(const x of next.expenses){if(!validAmount(x)||!projectIds.has(x.projectId)||(x.itemId&&!itemIds.has(x.itemId))||(x.payeeId&&!personIds.has(x.payeeId)))return {ok:false,reason:'بيانات مصروف غير صحيحة أو بها ربط مفقود'};}
+ for(const x of next.payments){if(!validAmount(x)||!projectIds.has(x.projectId)||(x.itemId&&!itemIds.has(x.itemId))||(x.contractorId&&!personIds.has(x.contractorId)))return {ok:false,reason:'بيانات دفعة غير صحيحة أو بها ربط مفقود'};}
  for(const x of next.purchases){if(!validAmount(x)||!projectIds.has(x.projectId)||(x.itemId&&!itemIds.has(x.itemId))||(x.supplierId&&!personIds.has(x.supplierId)))return {ok:false,reason:'بيانات فاتورة مشتريات غير مكتملة'};}
  for(const x of next.laborEntries){if(!validAmount(x)||!projectIds.has(x.projectId)||(x.itemId&&!itemIds.has(x.itemId))||(x.contractorId&&!personIds.has(x.contractorId)))return {ok:false,reason:'بيانات أجرة مستحقة غير مكتملة'};}
- for(const x of next.siteLogs){if(!validateDailyLog(x).ok||!projectIds.has(x.projectId))return {ok:false,reason:'بيانات يومية الموقع غير صحيحة'};}
- for(const x of next.payments.filter(p=>p.purpose==='supplier_invoice_payment')){const invoice=next.purchases.find(i=>i.id===x.invoiceId);if(!invoice||invoice.projectId!==x.projectId||!validAmount(x))return {ok:false,reason:'دفعة مورد مرتبطة بفاتورة غير موجودة'};}
+ for(const x of next.siteLogs){if(!validateDailyLog(x).ok||!projectIds.has(x.projectId)||(x.itemId&&!itemIds.has(x.itemId)))return {ok:false,reason:'بيانات يومية الموقع غير صحيحة'};}
+ for(const x of next.payments.filter(p=>p.purpose==='supplier_invoice_payment')){const invoice=next.purchases.find(i=>i.id===x.invoiceId);if(!invoice||invoice.projectId!==x.projectId||invoice.supplierId&&invoice.supplierId!==x.contractorId)return {ok:false,reason:'دفعة مورد مرتبطة بفاتورة أو مورد غير صحيح'};}
  for(const invoice of next.purchases){const paid=next.payments.filter(x=>x.invoiceId===invoice.id).reduce((s,x)=>s+Number(x.amount||0),0);if(paid>invoice.amount+.005)return {ok:false,reason:'دفعات إحدى الفواتير أكبر من قيمتها'};}
  return {ok:true,state:next};
 }
