@@ -93,7 +93,7 @@ html[data-dark="1"] .hint{color:var(--muted)}
 html[data-dark="1"] select option{background:#2a2a2d;color:var(--ink)}
 
 /* Wathiq editorial project hub and interactive sheets */
-:root{--sheet-1:#dce5df;--sheet-2:#e1e9e4;--sheet-3:#e6ede8;--sheet-4:#ebf1ed;--sheet-5:#f0f4f1;--sheet-6:#f5f7f5;--display-serif:Georgia,"Times New Roman",serif}
+:root{--sheet-1:#d9e8de;--sheet-2:#dfebe3;--sheet-3:#e5eee8;--sheet-4:#eaf2ed;--sheet-5:#eff5f1;--sheet-6:#f4f8f5;--display-serif:Georgia,"Times New Roman",serif}
 body{font-family:var(--app-font,Inter,"IBM Plex Sans Arabic",sans-serif)}
 .app-shell[data-hub="home"] .sidebar,.app-shell[data-hub="home"] .mobile-nav,.app-shell[data-hub="sheets"] .sidebar,.app-shell[data-hub="sheets"] .mobile-nav{display:none!important}
 .app-shell[data-hub="home"] .topbar,.app-shell[data-hub="sheets"] .topbar{display:none}
@@ -116,12 +116,12 @@ body{font-family:var(--app-font,Inter,"IBM Plex Sans Arabic",sans-serif)}
 .theme-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .theme-option{border:1px solid var(--line);border-radius:12px;padding:8px;background:var(--paper);color:var(--ink);text-align:right;display:flex;align-items:center;gap:10px}
 .theme-option.active{outline:2px solid var(--accent);outline-offset:1px}.theme-swatch{height:34px;width:54px;border-radius:8px;flex-shrink:0}.theme-option strong{font-size:12px}
-[data-theme="sage"]{--sheet-1:#dce5df;--sheet-2:#e1e9e4;--sheet-3:#e6ede8;--sheet-4:#ebf1ed;--sheet-5:#f0f4f1;--sheet-6:#f5f7f5}
-[data-theme="sunset"]{--sheet-1:#e2dbd7;--sheet-2:#e7e2df;--sheet-3:#ede8e5;--sheet-4:#f1edeb;--sheet-5:#f5f2f1;--sheet-6:#f9f7f6}
-[data-theme="earth"]{--sheet-1:#e1dcd6;--sheet-2:#e5e0db;--sheet-3:#eae7e3;--sheet-4:#efedea;--sheet-5:#f4f2f0;--sheet-6:#f8f7f6}
-[data-theme="ocean"]{--sheet-1:#dce5e6;--sheet-2:#e2e9ea;--sheet-3:#e7edee;--sheet-4:#ecf1f2;--sheet-5:#f2f5f5;--sheet-6:#f6f9f9}
-[data-theme="berry"]{--sheet-1:#e7dee4;--sheet-2:#ece5e9;--sheet-3:#f0ebed;--sheet-4:#f4f0f2;--sheet-5:#f7f5f6;--sheet-6:#faf9f9}
-[data-theme="slate"]{--sheet-1:#dfe4e7;--sheet-2:#e4e9ec;--sheet-3:#eaeef0;--sheet-4:#eff2f3;--sheet-5:#f3f6f7;--sheet-6:#f8fafa}
+[data-theme="sage"]{--sheet-1:#d9e8de;--sheet-2:#dfebe3;--sheet-3:#e5eee8;--sheet-4:#eaf2ed;--sheet-5:#eff5f1;--sheet-6:#f4f8f5}
+[data-theme="sunset"]{--sheet-1:#e6dad3;--sheet-2:#ebe0db;--sheet-3:#efe7e3;--sheet-4:#f3ede9;--sheet-5:#f6f2ef;--sheet-6:#f9f7f6}
+[data-theme="earth"]{--sheet-1:#e5dcd1;--sheet-2:#e9e1d7;--sheet-3:#ede8e0;--sheet-4:#f2ede7;--sheet-5:#f5f3ef;--sheet-6:#f9f8f5}
+[data-theme="ocean"]{--sheet-1:#d9e7e9;--sheet-2:#dfebed;--sheet-3:#e5eff0;--sheet-4:#ebf2f3;--sheet-5:#f1f6f6;--sheet-6:#f6f9f9}
+[data-theme="berry"]{--sheet-1:#e9dce4;--sheet-2:#eee3e9;--sheet-3:#f2e9ed;--sheet-4:#f5eff2;--sheet-5:#f8f4f6;--sheet-6:#fbf8f9}
+[data-theme="slate"]{--sheet-1:#dde4e9;--sheet-2:#e3e9ed;--sheet-3:#e9eef1;--sheet-4:#eef2f4;--sheet-5:#f3f6f7;--sheet-6:#f8fafa}
 @media(max-width:720px){.hub-page{padding:32px 16px 40px}.hub-heading h1{font-size:48px}.project-cards{grid-template-columns:1fr}.project-tile{min-height:170px}.sheets-intro{display:block}.sheets-intro p{line-height:1.8}.project-sheet{min-height:86px;padding:16px 18px}.project-sheet.selected{min-height:145px}.theme-options{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 .topbar-actions{display:flex;align-items:center;gap:9px}
