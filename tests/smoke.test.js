@@ -518,3 +518,17 @@ test('custom appearance colors are not overwritten by the legacy migration', () 
   assert.equal(migrated.font,'tajawal');
   assert.equal(migrated.appearanceVersion,2);
 });
+
+
+test('appearance palette writes the exact legacy sheet variables consumed by card CSS', () => {
+  assert.match(source, /setProperty\('--sheet-'\+\(i\+1\),color\)/);
+  const css = fs.readFileSync(new URL('../styles.css', 'file://' + __filename), 'utf8');
+  for (let i = 1; i <= 6; i++) {
+    assert.ok(css.includes('background:var(--sheet-' + i), 'card ' + i + ' CSS must consume its sheet variable');
+  }
+});
+
+test('service worker cache is bumped when appearance assets change', () => {
+  const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
+  assert.match(sw, /wathiq-shell-v13/);
+});
