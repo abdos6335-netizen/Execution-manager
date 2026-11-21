@@ -486,3 +486,10 @@ body{line-height:var(--line-height,1.4)}
 @media(prefers-reduced-motion:reduce){
   #projectSheets .project-sheet,#projectSheets .project-sheet-trigger{transition:none!important}
 }
+
+/* Custom card palette controls */
+.sheet-color-controls{margin:18px 0 22px;padding:18px;border:1px solid var(--line);border-radius:16px;background:var(--paper)}
+.sheet-color-controls .surface-head{margin-bottom:12px}
+.sheet-color-controls .hint{margin:10px 0 0}
+.sheet-color-controls input[type="color"]{min-height:42px;padding:4px;cursor:pointer}
+.sheet-color-controls input[type="color"]:disabled{opacity:.45;cursor:not-allowed}
