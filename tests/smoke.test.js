@@ -680,3 +680,44 @@ test('expanded card keeps its original stack order so following cards can cover 
   assert.match(css, /#projectSheets \.project-sheet\.expanded\{[\s\S]*?z-index:var\(--sheet-stack-order\)!important/);
   assert.doesNotMatch(css, /#projectSheets \.project-sheet\.expanded\{[^}]*z-index:45!important/);
 });
+
+test('dark appearance uses readable light text and dark surfaces throughout the main UI', () => {
+  const app = createApp();
+  app.saveAppearance({ mode: 'dark', text: '#333333' });
+  assert.equal(app.cssVars.get('--ink'), '#f1f1f2');
+  assert.equal(app.cssVars.get('--paper'), '#29292d');
+  assert.equal(app.cssVars.get('--muted'), '#a9a9b1');
+  const css = fs.readFileSync(new URL('../styles.css', 'file://' + __filename), 'utf8');
+  for (const selector of ['.surface', '.metric', '.record-card', '.table-wrap', '.form-grid input', '.appearance-grid select']) {
+    assert.ok(css.includes('html[data-dark="1"] ' + selector), 'dark mode must theme ' + selector);
+  }
+});
+test('global font scale is clamped and applied to shared typography groups', () => {
+  const app = createApp();
+  app.saveAppearance({ scale: 125 });
+  assert.equal(app.cssVars.get('--scale'), '1.25');
+  app.saveAppearance({ scale: 10 });
+  assert.equal(app.cssVars.get('--scale'), '0.8');
+  const css = fs.readFileSync(new URL('../styles.css', 'file://' + __filename), 'utf8');
+  assert.match(css, /html\{font-size:calc\(16px \* var\(--scale,1\)\)\}/);
+  assert.match(css, /--type-heading,1\) \* var\(--scale,1\)/);
+  assert.match(css, /--type-subheading,1\) \* var\(--scale,1\)/);
+  assert.match(css, /--type-item,1\) \* var\(--scale,1\)/);
+});
+test('backup import rejects malformed structures before asking to replace current data', async () => {
+  const app = createApp();
+  const before = app.getState();
+  const input = app.elements.get('importData');
+  const target = { files: [{ size: 100, text: async () => JSON.stringify({ projects: [], collections: [] }) }], value: 'selected' };
+  await input.onchange({ target });
+  assert.equal(app.getState(), before);
+  assert.equal(app.getState().current, 'p1');
+  assert.equal(target.value, '');
+});
+test('backup validation rejects duplicate ids and broken project or item references', () => {
+  const app = createApp();
+  const duplicate = app.validateImportedState({ projects: [{ id: 'p1', name: 'P' }, { id: 'p1', name: 'P2' }], current: 'p1', collections: [] });
+  assert.equal(duplicate.ok, false);
+  const broken = app.validateImportedState({ projects: [{ id: 'p1', name: 'P' }], current: 'p1', collections: [], items: [{ id: 'i1', projectId: 'p1', name: 'X' }], expenses: [{ id: 'e1', projectId: 'missing', itemId: 'i1', amount: 10 }] });
+  assert.equal(broken.ok, false);
+});
