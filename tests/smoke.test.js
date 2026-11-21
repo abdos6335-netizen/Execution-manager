@@ -556,3 +556,14 @@ test('lift interaction refreshes the installed app shell cache', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
   assert.match(sw, /wathiq-shell-v15/);
 });
+
+
+test('workspace sheets behave like an overlapping physical deck and animate extraction', () => {
+  const css = fs.readFileSync(new URL('../styles.css', 'file://' + __filename), 'utf8');
+  assert.match(css, /#projectSheets \.project-sheet\{position:relative;z-index:1;flex:0 0 auto;margin:0 0 -19px!important/);
+  assert.match(css, /#projectSheets \.project-sheet:nth-child\(6\)\{z-index:6;margin-bottom:0!important\}/);
+  assert.match(css, /#projectSheets \.project-sheet\.selected\{z-index:30!important[\s\S]*rotateZ\(-2\.6deg\)/);
+  assert.match(css, /@keyframes wathiqCardExtract[\s\S]*rotateZ\(2\.4deg\)[\s\S]*rotateZ\(-1\.7deg\)/);
+  assert.match(css, /@keyframes wathiqCardExtractMobile/);
+  assert.match(css, /prefers-reduced-motion:reduce/);
+});
