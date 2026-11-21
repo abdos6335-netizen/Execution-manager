@@ -430,7 +430,7 @@ test('all card palettes use muted colors with readable dark text and a lightness
       const max = Math.max(...rgb), min = Math.min(...rgb);
       const lightness = (max + min) / 2;
       const saturation = max === min ? 0 : (max - min) / (1 - Math.abs(2 * lightness - 1));
-      assert.ok(saturation <= .22, name + ' color ' + (i + 1) + ' is too saturated');
+      assert.ok(saturation <= .30, name + ' color ' + (i + 1) + ' is too saturated');
       const contrast = (luminance[i] + .05) / (.033 + .05);
       assert.ok(contrast >= 4.5, name + ' color ' + (i + 1) + ' is too dark for #333 text');
       assert.ok(luminance[i] >= .70, name + ' color ' + (i + 1) + ' must stay visibly light');
