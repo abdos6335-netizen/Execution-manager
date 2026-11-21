@@ -521,6 +521,13 @@ test('custom appearance colors are not overwritten by the legacy migration', () 
 });
 
 
+test('all six light workspace cards use their dark palette foreground', () => {
+  const css = fs.readFileSync(new URL('../styles.css', 'file://' + __filename), 'utf8');
+  for (let i = 1; i <= 6; i++) {
+    assert.ok(css.includes('.project-sheet:nth-child(' + i + '){background:var(--sheet-' + i + ');color:var(--sheet-' + i + '-ink,#333)}'), 'card ' + i + ' must use a dark readable foreground');
+  }
+});
+
 test('appearance palette writes the exact legacy sheet variables consumed by card CSS', () => {
   assert.match(source, /setProperty\('--sheet-'\+\(i\+1\),color\)/);
   const css = fs.readFileSync(new URL('../styles.css', 'file://' + __filename), 'utf8');
