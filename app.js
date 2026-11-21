@@ -578,7 +578,7 @@ function validateImportedState(raw,options={}){
  const validProjectRecord=(x)=>projectIds.has(projectOf(x));
  for(const x of raw.items)if(!validProjectRecord(x)||typeof x.name!=='string'||!x.name.trim())return {ok:false,reason:'بيانات بند غير مكتملة أو مرتبطة بمشروع غير موجود'};
  for(const x of raw.contractors)if(!validProjectRecord(x)||typeof x.name!=='string'||!x.name.trim())return {ok:false,reason:'بيانات مورد أو صنايعي غير مكتملة'};
- for(const x of raw.collections)if(!validAmount(x)||!projectIds.has(x.project||x.projectId|| (raw.projects.length===1?raw.projects[0].id:''))||(x.rate!=null&&(!Number.isFinite(Number(x.rate))||Number(x.rate)<0||Number(x.rate)>100))||(x.reserved!=null&&(!Number.isFinite(Number(x.reserved))||Number(x.reserved)<0)))return {ok:false,reason:'بيانات تحصيل غير صحيحة أو مرتبطة بمشروع غير موجود'};
+ for(const x of raw.collections)if(!validAmount(x)||!projectIds.has(x.project||x.projectId|| (raw.projects.length===1?raw.projects[0].id:''))||(x.rate!=null&&(!Number.isFinite(Number(x.rate))||Number(x.rate)<0||Number(x.rate)>100))||(x.reserved!=null&&(!Number.isFinite(Number(x.reserved))||Number(x.reserved)<0||Number(x.reserved)>x.amount+.005)))return {ok:false,reason:'بيانات تحصيل غير صحيحة أو مرتبطة بمشروع غير موجود'};
  const validItemRef=(x)=>!x.itemId||(itemMap.has(x.itemId)&&projectOf(itemMap.get(x.itemId))===projectOf(x));
  const validPersonRef=(x,idKey)=>!x[idKey]||(personMap.has(x[idKey])&&projectOf(personMap.get(x[idKey]))===projectOf(x));
  for(const x of raw.expenses)if(!validAmount(x)||!validProjectRecord(x)||!validItemRef(x)||!validPersonRef(x,'payeeId'))return {ok:false,reason:'بيانات مصروف غير صحيحة أو بها ربط مفقود'};
@@ -586,9 +586,12 @@ function validateImportedState(raw,options={}){
  for(const x of raw.purchases||[])if(!validAmount(x)||!validProjectRecord(x)||!validItemRef(x)||!validPersonRef(x,'supplierId'))return {ok:false,reason:'بيانات فاتورة مشتريات غير مكتملة'};
  for(const x of raw.laborEntries||[])if(!validAmount(x)||!validProjectRecord(x)||!validItemRef(x)||!validPersonRef(x,'contractorId'))return {ok:false,reason:'بيانات أجرة مستحقة غير مكتملة'};
  for(const x of raw.siteLogs||[])if(!validateDailyLog(x).ok||!validProjectRecord(x)||!validItemRef(x))return {ok:false,reason:'بيانات يومية الموقع غير صحيحة'};
- for(const x of raw.payments.filter(p=>p.purpose==='supplier_invoice_payment')){
-  const invoice=(raw.purchases||[]).find(i=>i.id===x.invoiceId);
-  if(!invoice||projectOf(invoice)!==projectOf(x)||(invoice.supplierId&&invoice.supplierId!==x.contractorId))return {ok:false,reason:'دفعة مورد مرتبطة بفاتورة أو مورد غير صحيح'};
+ for(const x of raw.payments){
+  if(x.purpose==='supplier_invoice_payment'&&!x.invoiceId)return {ok:false,reason:'دفعة مورد بدون فاتورة مرتبطة'};
+  if(x.invoiceId){
+   const invoice=(raw.purchases||[]).find(i=>i.id===x.invoiceId);
+   if(!invoice||projectOf(invoice)!==projectOf(x)||(invoice.supplierId&&invoice.supplierId!==x.contractorId))return {ok:false,reason:'دفعة مرتبطة بفاتورة أو مورد غير صحيح'};
+  }
  }
  for(const invoice of raw.purchases||[]){
   const paid=raw.payments.filter(x=>x.invoiceId===invoice.id).reduce((sum,x)=>sum+x.amount,0);
