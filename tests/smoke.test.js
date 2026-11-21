@@ -546,7 +546,7 @@ test('only the selected workspace card is pulled forward and tilted while the re
   const css = fs.readFileSync(new URL('../styles.css', 'file://' + __filename), 'utf8');
   assert.match(css, /#projectSheets \.project-sheet-grid\.has-selection \.project-sheet:not\(\.selected\)\{\s*transform:none;\s*opacity:1;\s*filter:none;/);
   assert.match(css, /#projectSheets \.project-sheet\.selected\{[\s\S]*?rotate\(-2\.5deg\)/);
-  assert.match(css, /#projectSheets \.project-sheet \+ \.project-sheet\{margin-top:-70px/);
+  assert.match(css, /#projectSheets \.project-sheet \+ \.project-sheet\{margin-top:-56px/);
   assert.match(css, /#projectSheets \.project-sheet:nth-child\(6\)\{z-index:6\}/);
   assert.match(css, /@media\(max-width:720px\)[\s\S]*?rotate\(-2\.5deg\)/);
   assert.match(css, /wathiq-shell-v15/);
