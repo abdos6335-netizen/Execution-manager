@@ -310,7 +310,7 @@ test('input fields are tinted one shade lighter from each actual card color, not
 
 test('Android PWA cache version is bumped for the new mobile card styles', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v13"'));
+  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v14"'));
 });
 
 test('appearance preferences expose WeeklyPlanner-style controls and persist line spacing', () => {
@@ -330,7 +330,7 @@ test('appearance preferences expose WeeklyPlanner-style controls and persist lin
 });
 test('Android PWA cache is refreshed for expanded appearance settings', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v13"'));
+  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v14"'));
 });
 
 test('workspace settings shortcut remains visible in the full-width six-card layout', () => {
@@ -433,6 +433,7 @@ test('all card palettes use muted colors with readable dark text and a lightness
       assert.ok(saturation <= .22, name + ' color ' + (i + 1) + ' is too saturated');
       const contrast = (luminance[i] + .05) / (.033 + .05);
       assert.ok(contrast >= 4.5, name + ' color ' + (i + 1) + ' is too dark for #333 text');
+      assert.ok(luminance[i] >= .70, name + ' color ' + (i + 1) + ' must stay visibly light');
       if (i) assert.ok(luminance[i] > luminance[i - 1], name + ' must brighten from card to card');
     }
   }
@@ -530,5 +531,5 @@ test('appearance palette writes the exact legacy sheet variables consumed by car
 
 test('service worker cache is bumped when appearance assets change', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.match(sw, /wathiq-shell-v13/);
+  assert.match(sw, /wathiq-shell-v14/);
 });
