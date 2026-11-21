@@ -485,17 +485,36 @@ test('site diary entries without a quantity remain valid after normalization', (
 });
 
 
-test('muted appearance defaults and legacy preference migration preserve custom settings', () => {
-  const app = source;
+test('muted appearance defaults and all theme swatches use the soft palettes', () => {
   const html = fs.readFileSync(new URL('../index.html', 'file://' + __filename), 'utf8');
-  assert.ok(app.includes("accent:'#8cab99',background:'#e7eeea'"));
-  assert.ok(app.includes('function migrateAppearance()'));
-  assert.ok(app.includes('appearanceVersion:2'));
-  assert.ok(app.includes("saved.accent===old.accent"));
-  assert.ok(app.includes("saved.background===old.background"));
+  assert.ok(source.includes("accent:'#8cab99',background:'#e7eeea'"));
   assert.ok(html.includes('value="#8cab99"'));
   assert.ok(html.includes('value="#e7eeea"'));
   for (const color of ['#97b4a3','#b8a194','#b5a697','#96aeb6','#b497a6','#9ba6b0','#a4a0ab','#a3a2a9','#b3a998','#b3989d']) {
     assert.ok(html.includes(color), 'missing muted theme swatch color '+color);
   }
+});
+
+test('legacy built-in appearance colors migrate while preserving other preferences and app data', () => {
+  const appData = JSON.stringify({projects:[{id:'p1',name:'Existing project',rate:12}],current:'p1',collections:[{id:'c1',amount:500}]});
+  const appearance = JSON.stringify({theme:'sage',accent:'#294438',background:'#f1f0e8',font:'cairo',scale:110,saturation:85});
+  const app = createApp({'execution-manager-v02':appData,'em:appearance':appearance});
+  const migrated = JSON.parse(app.storage.get('em:appearance'));
+  assert.equal(migrated.accent,'#8cab99');
+  assert.equal(migrated.background,'#e7eeea');
+  assert.equal(migrated.font,'cairo');
+  assert.equal(migrated.scale,110);
+  assert.equal(migrated.saturation,85);
+  assert.equal(migrated.appearanceVersion,2);
+  assert.equal(app.storage.get('execution-manager-v02'),appData);
+});
+
+test('custom appearance colors are not overwritten by the legacy migration', () => {
+  const appearance = JSON.stringify({theme:'sage',accent:'#123456',background:'#abcdef',font:'tajawal'});
+  const app = createApp({'em:appearance':appearance});
+  const migrated = JSON.parse(app.storage.get('em:appearance'));
+  assert.equal(migrated.accent,'#123456');
+  assert.equal(migrated.background,'#abcdef');
+  assert.equal(migrated.font,'tajawal');
+  assert.equal(migrated.appearanceVersion,2);
 });
