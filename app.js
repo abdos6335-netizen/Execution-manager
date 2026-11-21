@@ -544,9 +544,10 @@ function validateDailyLog(data){
 function validateBackupFile(file){
  if(!file||!Number.isFinite(file.size)||file.size<=0||file.size>20*1024*1024)return {ok:false,reason:'حجم الملف غير صحيح'};
  const name=String(file.name||'').trim().toLowerCase(),type=String(file.type||'').trim().toLowerCase();
+ const jsonMime=type==='application/json'||(type.startsWith('application/')&&type.endsWith('+json'));
  if(name&&!name.endsWith('.json'))return {ok:false,reason:'امتداد الملف يجب أن يكون JSON'};
- if(type&&type!=='application/json'&&!/^application\\/[a-z0-9.+-]+\\+json$/.test(type))return {ok:false,reason:'نوع الملف ليس JSON'};
- if(!name&&type!=='application/json'&&!/^application\\/[a-z0-9.+-]+\\+json$/.test(type))return {ok:false,reason:'تعذر التأكد من نوع ملف النسخة الاحتياطية'};
+ if(type&&!jsonMime)return {ok:false,reason:'نوع الملف ليس JSON'};
+ if(!name&&!jsonMime)return {ok:false,reason:'تعذر التأكد من نوع ملف النسخة الاحتياطية'};
  return {ok:true};
 }
 function validateImportedState(raw,options={}){
