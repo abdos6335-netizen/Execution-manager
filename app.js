@@ -392,10 +392,22 @@ renderQuickLists();
 // WeeklyPlanner-inspired navigation, contextual reports and persistent appearance preferences.
 
 $('moreNavButton')?.addEventListener('click',()=>$('moreNavMenu').classList.toggle('hidden'));
-const APPEARANCE_KEY='em:appearance',APPEARANCE_DEFAULT={mode:'light',accent:'#294438',background:'#f1f0e8',text:'#333333',theme:'sage',font:'ibm',scale:100,saturation:100,surface:'tint',glass:true,blur:16,iconStyle:'plain',lineHeight:1.4,heading:100,subheading:100,item:100,motionStyle:'smooth',motionSpeed:'normal',doneColor:'green'};
+const APPEARANCE_KEY='em:appearance',APPEARANCE_DEFAULT={mode:'light',accent:'#8cab99',background:'#e7eeea',text:'#333333',theme:'sage',font:'ibm',scale:100,saturation:100,surface:'tint',glass:true,blur:16,iconStyle:'plain',lineHeight:1.4,heading:100,subheading:100,item:100,motionStyle:'smooth',motionSpeed:'normal',doneColor:'green'};
 const APPEARANCE_PRESETS={sage:{accent:'#8cab99',background:'#e7eeea'},sunset:{accent:'#af9688',background:'#efeae7'},earth:{accent:'#ac9c8b',background:'#eeebe7'},ocean:{accent:'#8aa5ad',background:'#e7ecee'},berry:{accent:'#ab8c9c',background:'#eee7eb'},slate:{accent:'#909ca7',background:'#e8ebed'},glass:{accent:'#9a96a2',background:'#eae9ec'},soft:{accent:'#9998a0',background:'#eaeaeb'},sand:{accent:'#aaa08d',background:'#eeebe8'},rose:{accent:'#aa8d92',background:'#eee8e9'}};
 const SHEET_PALETTES={sage:['#97b4a3','#a6bfb0','#b5c9be','#c4d4cb','#d3dfd8','#e7eeea'],sunset:['#b8a194','#c2aea3','#ccbcb3','#d6c9c2','#e0d7d1','#efeae7'],earth:['#b5a697','#c0b2a5','#cabfb4','#d5ccc3','#dfd9d2','#eeebe7'],ocean:['#96aeb6','#a5b9c0','#b4c5cb','#c3d1d5','#d2dce0','#e7ecee'],berry:['#b497a6','#bfa6b2','#c9b5bf','#d4c4cc','#dfd3d9','#eee7eb'],slate:['#9ba6b0','#a9b2bc','#b8bfc7','#c6ccd2','#d4d9dd','#e8ebed'],glass:['#a4a0ab','#b1aeb7','#bebbc3','#cbc9cf','#d8d6db','#eae9ec'],soft:['#a3a2a9','#b0afb6','#bebdc2','#cbcace','#d8d7da','#eaeaeb'],sand:['#b3a998','#beb6a7','#c9c2b6','#d4cec4','#dedad3','#eeebe8'],rose:['#b3989d','#bea7ab','#c9b6b9','#d4c4c7','#ded3d5','#eee8e9']};
 function contrastInk(hex){const rgb=String(hex).match(/[0-9a-f]{2}/gi)?.slice(-3).map(x=>parseInt(x,16)/255)||[0,0,0],linear=rgb.map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4),l=.2126*linear[0]+.7152*linear[1]+.0722*linear[2];return l>.179?'#17191c':'#ffffff';}
+function migrateAppearance(){
+ try{
+  const raw=localStorage.getItem(APPEARANCE_KEY);if(!raw)return;
+  const saved=JSON.parse(raw);if(!saved||typeof saved!=='object'||Array.isArray(saved)||Number(saved.appearanceVersion)>=2)return;
+  const legacy={sage:{accent:'#294438',background:'#f1f0e8'},sunset:{accent:'#b94d31',background:'#f5d78c'},earth:{accent:'#594332',background:'#e6d4b8'},ocean:{accent:'#244b5b',background:'#d4e4df'},berry:{accent:'#653b55',background:'#ead5d9'},slate:{accent:'#394653',background:'#e0e4e5'},glass:{accent:'#302e32',background:'#e3e3e4'},soft:{accent:'#2c2c30',background:'#e8e8ea'},sand:{accent:'#6b5a43',background:'#ebe4d8'},rose:{accent:'#7a3b4f',background:'#ede2e5'}};
+  const old=legacy[saved.theme||'sage'],next=APPEARANCE_PRESETS[saved.theme||'sage'];
+  const migrated={...saved,appearanceVersion:2};
+  if(old&&next){if(saved.accent===old.accent)migrated.accent=next.accent;if(saved.background===old.background)migrated.background=next.background;}
+  localStorage.setItem(APPEARANCE_KEY,JSON.stringify(migrated));
+ }catch(error){console.warn('Wathiq appearance migration skipped:',error)}
+}
+migrateAppearance();
 function getAppearance(){try{return {...APPEARANCE_DEFAULT,...JSON.parse(localStorage.getItem(APPEARANCE_KEY)||'{}')}}catch{return {...APPEARANCE_DEFAULT}}}
 function hexToHsl(hex){const n=String(hex).replace('#',''),r=parseInt(n.slice(0,2),16)/255,g=parseInt(n.slice(2,4),16)/255,b=parseInt(n.slice(4,6),16)/255,max=Math.max(r,g,b),min=Math.min(r,g,b),d=max-min,l=(max+min)/2;let h=0,s=0;if(d){s=d/(1-Math.abs(2*l-1));if(max===r)h=60*(((g-b)/d)%6);else if(max===g)h=60*((b-r)/d+2);else h=60*((r-g)/d+4)}return [((h+360)%360),s,l]}
 function hslToHex(h,s,l){const c=(1-Math.abs(2*l-1))*s,x=c*(1-Math.abs((h/60)%2-1)),m=l-c/2;let r=0,g=0,b=0;if(h<60)[r,g,b]=[c,x,0];else if(h<120)[r,g,b]=[x,c,0];else if(h<180)[r,g,b]=[0,c,x];else if(h<240)[r,g,b]=[0,x,c];else if(h<300)[r,g,b]=[x,0,c];else[r,g,b]=[c,0,x];return '#'+[r,g,b].map(v=>Math.round((v+m)*255).toString(16).padStart(2,'0')).join('')}
