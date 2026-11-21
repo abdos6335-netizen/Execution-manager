@@ -174,7 +174,7 @@ test('backup import writes successfully before replacing in-memory state', async
   const app = createApp();
   const input = app.elements.get('importData');
   const payload = { projects: [{ id: 'p2', name: 'New project', rate: 5 }], current: 'p2', collections: [], expenses: [], items: [], contractors: [], payments: [] };
-  const target = { files: [{ size: 100, text: async () => JSON.stringify(payload) }], value: 'selected' };
+  const target = { files: [{ name: 'backup.json', type: 'application/json', size: 100, text: async () => JSON.stringify(payload) }], value: 'selected' };
   await input.onchange({ target });
   assert.equal(app.getState().current, 'p2');
   assert.ok(app.storage.has('execution-manager-v02'));
@@ -322,7 +322,7 @@ test('input fields are tinted one shade lighter from each actual card color, not
 
 test('Android PWA cache version is bumped for the new mobile card styles', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v21"'));
+  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v22"'));
 });
 
 test('appearance preferences expose WeeklyPlanner-style controls and persist line spacing', () => {
@@ -342,7 +342,7 @@ test('appearance preferences expose WeeklyPlanner-style controls and persist lin
 });
 test('Android PWA cache is refreshed for expanded appearance settings', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v21"'));
+  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v22"'));
 });
 
 test('workspace settings shortcut remains visible in the full-width six-card layout', () => {
@@ -550,7 +550,7 @@ test('appearance palette writes the exact legacy sheet variables consumed by car
 
 test('service worker cache is bumped when appearance assets change', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.match(sw, /wathiq-shell-v21/);
+  assert.match(sw, /wathiq-shell-v22/);
 });
 
 
@@ -564,7 +564,7 @@ test('only the selected workspace card is pulled forward and tilted while the re
   assert.match(css, /#projectSheets \.project-sheet:nth-child\(2\)\{--sheet-stack-order:2;z-index:2\}/);
   assert.match(css, /@media\(max-width:720px\)[\s\S]*?rotate\(-2\.5deg\)/);
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.match(sw, /wathiq-shell-v21/);
+  assert.match(sw, /wathiq-shell-v22/);
 });
 
 test('workspace card palette supports six coordinated shades and one independently chosen standout card', () => {
@@ -578,7 +578,7 @@ test('workspace card palette supports six coordinated shades and one independent
   assert.ok(html.includes('id="sheetSpecialColor"'));
   for (const label of ['الماليات','الحركات اليومية','بنود التنفيذ','الصنايعية والموردين','التحصيلات','المصروفات']) assert.ok(html.includes('<option value="'+['الماليات','الحركات اليومية','بنود التنفيذ','الصنايعية والموردين','التحصيلات','المصروفات'].indexOf(label)+'">'+label+'</option>'));
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.match(sw, /wathiq-shell-v21/);
+  assert.match(sw, /wathiq-shell-v22/);
 });
 
 
