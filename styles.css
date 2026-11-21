@@ -425,7 +425,7 @@ body{line-height:var(--line-height,1.4)}
   transition:transform .68s cubic-bezier(.2,1.18,.32,1),box-shadow .58s ease,border-radius .38s ease;
   will-change:transform;
 }
-#projectSheets .project-sheet + .project-sheet{margin-top:-70px;border-top:1px solid rgba(255,255,255,.55)}
+#projectSheets .project-sheet + .project-sheet{margin-top:-56px;border-top:1px solid rgba(255,255,255,.55)}
 #projectSheets .project-sheet:nth-child(1){z-index:1}
 #projectSheets .project-sheet:nth-child(2){z-index:2}
 #projectSheets .project-sheet:nth-child(3){z-index:3}
@@ -471,7 +471,7 @@ body{line-height:var(--line-height,1.4)}
 @media(max-width:720px){
   #projectSheets .project-sheet-grid{padding:20px 8px 34px}
   #projectSheets .project-sheet{height:112px;min-height:112px;border-radius:14px}
-  #projectSheets .project-sheet + .project-sheet{margin-top:-62px}
+  #projectSheets .project-sheet + .project-sheet{margin-top:-52px}
   #projectSheets .project-sheet-trigger{height:112px;min-height:112px;padding:15px 17px}
   #projectSheets .project-sheet-grid.has-selection .project-sheet:not(.selected) .project-sheet-trigger{height:112px;min-height:112px;padding:15px 17px}
   #projectSheets .project-sheet.selected{
