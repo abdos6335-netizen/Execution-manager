@@ -568,8 +568,9 @@ function validateImportedState(raw,options={}){
   if(new Set(ids).size!==ids.length)return {ok:false,reason:'يوجد رقم تعريف مكرر في '+key};
  }
  const projectIds=new Set(raw.projects.map(x=>x.id));
- if(raw.projects.some(x=>typeof x.name!=='string'||!x.name.trim()||!Number.isFinite(Number(x.rate))||Number(x.rate)<0||Number(x.rate)>100))return {ok:false,reason:'بيانات مشروع غير مكتملة'};
- if(!projectIds.has(raw.current))return {ok:false,reason:'المشروع الحالي غير موجود في النسخة'};
+ if(raw.projects.some(x=>typeof x.name!=='string'||!x.name.trim()||(x.rate!=null&&(!Number.isFinite(Number(x.rate))||Number(x.rate)<0||Number(x.rate)>100))))return {ok:false,reason:'بيانات مشروع غير مكتملة'};
+ if(raw.current!=null&&!projectIds.has(raw.current))return {ok:false,reason:'المشروع الحالي غير موجود في النسخة'};
+ if(raw.current==null&&raw.projects.length>1)return {ok:false,reason:'المشروع الحالي غير محدد في النسخة'};
  const projectOf=(x)=>x.projectId||x.project||x.project_id||(raw.projects.length===1?raw.projects[0].id:'');
  const validAmount=x=>typeof x.amount==='number'&&Number.isFinite(x.amount)&&x.amount>0;
  const itemMap=new Map(raw.items.map(x=>[x.id,x])),personMap=new Map(raw.contractors.map(x=>[x.id,x]));
