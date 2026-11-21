@@ -708,7 +708,7 @@ test('backup import rejects malformed structures before asking to replace curren
   const app = createApp();
   const before = app.getState();
   const input = app.elements.get('importData');
-  const target = { files: [{ size: 100, text: async () => JSON.stringify({ projects: [], collections: [] }) }], value: 'selected' };
+  const target = { files: [{ name: 'broken.json', type: 'application/json', size: 100, text: async () => JSON.stringify({ projects: [], collections: [] }) }], value: 'selected' };
   await input.onchange({ target });
   assert.equal(app.getState(), before);
   assert.equal(app.getState().current, 'p1');
@@ -720,4 +720,74 @@ test('backup validation rejects duplicate ids and broken project or item referen
   assert.equal(duplicate.ok, false);
   const broken = app.validateImportedState({ projects: [{ id: 'p1', name: 'P' }], current: 'p1', collections: [], items: [{ id: 'i1', projectId: 'p1', name: 'X' }], expenses: [{ id: 'e1', projectId: 'missing', itemId: 'i1', amount: 10 }] });
   assert.equal(broken.ok, false);
+});
+
+
+function validBackupState(){
+ return {projects:[{id:'p1',name:'Project',rate:10}],current:'p1',collections:[],expenses:[],items:[],contractors:[],payments:[],purchases:[],laborEntries:[],siteLogs:[]};
+}
+test('backup validation rejects every missing required core array before normalization',()=>{
+ const app=createApp();
+ for(const key of ['collections','expenses','items','contractors','payments']){
+  const backup=validBackupState();delete backup[key];
+  assert.equal(app.validateImportedState(backup).ok,false,'missing '+key+' must be rejected');
+ }
+});
+test('schema v2 backup requires all execution ledger arrays',()=>{
+ const app=createApp();
+ for(const key of ['purchases','laborEntries','siteLogs']){
+  const backup=validBackupState();delete backup[key];
+  assert.equal(app.validateImportedState(backup,{schemaVersion:2}).ok,false,'missing '+key+' must be rejected');
+ }
+});
+test('legacy schema v1 backup remains compatible when additive ledger arrays are absent',()=>{
+ const app=createApp(),backup=validBackupState();
+ delete backup.purchases;delete backup.laborEntries;delete backup.siteLogs;
+ const result=app.validateImportedState(backup,{schemaVersion:1});
+ assert.equal(result.ok,true);
+ assert.deepEqual(JSON.parse(JSON.stringify(result.state.purchases)),[]);
+});
+test('backup validation rejects null rows, missing IDs and nonnumeric financial amounts without normalizing them away',()=>{
+ const app=createApp();
+ for(const mutate of [
+  b=>b.collections.push(null),
+  b=>b.items.push({projectId:'p1',name:'No id'}),
+  b=>b.collections.push({id:'c1',project:'p1',amount:'120'}),
+  b=>b.expenses.push({id:'e1',projectId:'p1',amount:0})
+ ]){
+  const backup=validBackupState();mutate(backup);
+  assert.equal(app.validateImportedState(backup).ok,false);
+ }
+});
+test('backup validation rejects records linked to a different project and invalid current project',()=>{
+ const app=createApp(),backup=validBackupState();
+ backup.projects.push({id:'p2',name:'Second',rate:10});
+ backup.items.push({id:'i2',projectId:'p2',name:'Other project item'});
+ backup.expenses.push({id:'e1',projectId:'p1',itemId:'i2',amount:10});
+ assert.equal(app.validateImportedState(backup).ok,false);
+ const badCurrent=validBackupState();badCurrent.current='missing';
+ assert.equal(app.validateImportedState(badCurrent).ok,false);
+});
+test('backup file type and extension are checked, not inferred from JSON text alone',()=>{
+ const app=createApp();
+ assert.equal(app.validateBackupFile({name:'backup.json',type:'application/json',size:100}).ok,true);
+ assert.equal(app.validateBackupFile({name:'backup.txt',type:'application/json',size:100}).ok,false);
+ assert.equal(app.validateBackupFile({name:'backup.json',type:'text/plain',size:100}).ok,false);
+});
+test('failed backup storage write leaves both live state and stored app data unchanged',async()=>{
+ const app=createApp({'execution-manager-v02':JSON.stringify(validBackupState())});
+ const beforeState=app.getState(),beforeStored=app.storage.get('execution-manager-v02');
+ app.failStorageWrites(true);
+ const target={files:[{name:'valid.json',type:'application/json',size:500,text:async()=>JSON.stringify({app:'execution-manager',schemaVersion:2,state:{...validBackupState(),projects:[{id:'p2',name:'New',rate:10}],current:'p2'}})}],value:'selected'};
+ await app.elements.get('importData').onchange({target});
+ assert.equal(app.getState(),beforeState);
+ assert.equal(app.storage.get('execution-manager-v02'),beforeStored);
+ assert.equal(target.value,'');
+});
+test('font scaling covers fixed-pixel declarations and dark mode themes common legacy surfaces',()=>{
+ const css=fs.readFileSync(new URL('../styles.css','file://'+__filename),'utf8');
+ assert.doesNotMatch(css,/font-size:\s*\d+(?:\.\d+)?px\s*;/);
+ for(const selector of ['.surface-inset','.advanced-ledger-group','.mobile-nav','.site-log-row','input:not([type="color"])','textarea']){
+  assert.ok(css.includes('html[data-dark="1"] '+selector),'dark selector coverage: '+selector);
+ }
 });
