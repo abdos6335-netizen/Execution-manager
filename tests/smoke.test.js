@@ -58,7 +58,7 @@ function createApp(initialStorage = {}) {
   vm.runInContext(source + `
     globalThis.__appTest = {
       getState: () => state, normalizeState, parseQuickText, deriveSheetShades, getAppearance, saveAppearance, applyAppearance, toggleInvoiceSelector,
-      contractorTotals, answerReportQuestion, today, spentForProject, SHEET_PALETTES, invoiceTotals, supplierLedgerTotals, laborTotalsForContractor, executionCostForProject, cashOutflowForProject, validateDailyLog, validateImportedState,
+      contractorTotals, answerReportQuestion, today, spentForProject, SHEET_PALETTES, invoiceTotals, supplierLedgerTotals, laborTotalsForContractor, executionCostForProject, cashOutflowForProject, validateDailyLog, validateBackupFile, validateImportedState,
       itemCard, itemMovements, paidForItem, findDuplicateMovement, save, elements: null, storage: null,
       failStorageWrites(value) { globalThis.__failWrites(value); }
     };
