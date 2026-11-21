@@ -430,7 +430,7 @@ function applyAppearance(){
 function syncAppearanceControls(){
  const a=getAppearance();document.querySelectorAll('.theme-option').forEach(b=>b.classList.toggle('active',b.dataset.theme===(a.theme||'sage')));
  const fields=[['appearanceMode','mode'],['appearanceAccent','accent'],['appearanceBackground','background'],['appearanceText','text'],['appearanceFont','font'],['appearanceScale','scale'],['appearanceSaturation','saturation'],['appearanceSurface','surface'],['appearanceBlur','blur'],['appearanceIconStyle','iconStyle'],['appearanceLineHeight','lineHeight'],['appearanceHeading','heading'],['appearanceSubheading','subheading'],['appearanceItem','item'],['appearanceMotionStyle','motionStyle'],['appearanceMotionSpeed','motionSpeed'],['appearanceDoneColor','doneColor'],['sheetBaseColor','sheetBaseColor'],['sheetSpecialIndex','sheetSpecialIndex'],['sheetSpecialColor','sheetSpecialColor']];
- fields.forEach(([id,key])=>{const el=$(id);if(el)el.value=a[key]});
+ fields.forEach(([id,key])=>{const el=$(id);if(el)el.value=a[key]});if($('sheetBaseColor'))$('sheetBaseColor').value=/^#[0-9a-f]{6}$/i.test(String(a.sheetBaseColor||''))?a.sheetBaseColor:(SHEET_PALETTES[a.theme]||SHEET_PALETTES.sage)[3];
  if($('appearanceGlass'))$('appearanceGlass').checked=!!a.glass;
  const labels=[['appearanceScaleValue',a.scale+'%'],['appearanceSaturationValue',a.saturation+'%'],['appearanceBlurValue',a.blur+'px'],['appearanceLineHeightValue',Number(a.lineHeight).toFixed(2)],['appearanceHeadingValue',a.heading+'%'],['appearanceSubheadingValue',a.subheading+'%'],['appearanceItemValue',a.item+'%']];
  labels.forEach(([id,value])=>{if($(id))$(id).textContent=value});
