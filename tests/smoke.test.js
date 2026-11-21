@@ -310,7 +310,7 @@ test('input fields are tinted one shade lighter from each actual card color, not
 
 test('Android PWA cache version is bumped for the new mobile card styles', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v12"'));
+  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v13"'));
 });
 
 test('appearance preferences expose WeeklyPlanner-style controls and persist line spacing', () => {
@@ -330,7 +330,7 @@ test('appearance preferences expose WeeklyPlanner-style controls and persist lin
 });
 test('Android PWA cache is refreshed for expanded appearance settings', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v12"'));
+  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v13"'));
 });
 
 test('workspace settings shortcut remains visible in the full-width six-card layout', () => {
