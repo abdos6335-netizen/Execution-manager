@@ -538,3 +538,69 @@ body{line-height:var(--line-height,1.4)}
   #projectSheets .project-sheet.expanded .sheet-inline-content{animation:none!important;transition:none!important}
   #projectSheets .project-sheet.expanded .sheet-inline-content{clip-path:none;opacity:1;transform:none}
 }
+
+/* Appearance completion: scale typography consistently and theme remaining legacy surfaces. */
+html{font-size:calc(16px * var(--scale,1))}
+body{font-size:calc(14px * var(--scale,1));line-height:var(--line-height,1.4)}
+.project-cover h1,.hub-heading h1{font-size:calc(clamp(42px,8vw,76px) * var(--type-heading,1) * var(--scale,1))}
+.project-tile strong{font-size:calc(30px * var(--type-heading,1) * var(--scale,1))}
+.project-sheet strong{font-size:calc(clamp(23px,4vw,34px) * var(--type-heading,1) * var(--scale,1))}
+.sheet-inline-page>.page-head h1,.page-head h1{font-size:calc(25px * var(--type-heading,1) * var(--scale,1))}
+.sheet-inline-page .surface h2,.sheet-inline-page .subsection h3,.surface h2,.surface h3{font-size:calc(15px * var(--type-subheading,1) * var(--scale,1))}
+.sheet-inline-page .table-row,.sheet-inline-page .summary-row,.sheet-inline-page .activity-row,.sheet-inline-page .muted,.table-row,.summary-row,.activity-row,.muted,.hint{font-size:calc(12px * var(--type-item,1) * var(--scale,1))}
+.btn,.form-grid label,.form-grid input,.form-grid select,.form-grid textarea,.appearance-grid label,.record-search input{font-size:calc(12px * var(--scale,1))}
+.project-sheet small,.sheet-hint,.eyebrow{font-size:calc(9px * var(--scale,1))}
+html[data-dark="1"] .topbar{background:rgba(35,35,39,.94);border-color:var(--line);color:var(--ink)}
+html[data-dark="1"] .surface,
+html[data-dark="1"] .metric,
+html[data-dark="1"] .record-card,
+html[data-dark="1"] .table-wrap,
+html[data-dark="1"] .appearance-panel,
+html[data-dark="1"] .quick-entry,
+html[data-dark="1"] .contextual-report,
+html[data-dark="1"] .surface-inset,
+html[data-dark="1"] .report-lower article{background:#29292d!important;color:var(--ink);border-color:var(--line)!important}
+html[data-dark="1"] .metric-highlight{background:#303b34!important;border-color:#46564b!important}
+html[data-dark="1"] .metric-highlight strong{color:#c2dfca!important}
+html[data-dark="1"] .summary-row,
+html[data-dark="1"] .activity-row,
+html[data-dark="1"] .table-row,
+html[data-dark="1"] .advanced-ledger-group,
+html[data-dark="1"] .site-log-row{border-color:var(--line)!important}
+html[data-dark="1"] .summary-row span,
+html[data-dark="1"] .activity-row small,
+html[data-dark="1"] .table-row small,
+html[data-dark="1"] .site-log-row small,
+html[data-dark="1"] .surface p,
+html[data-dark="1"] .surface label{color:var(--muted)}
+html[data-dark="1"] .surface h2,
+html[data-dark="1"] .surface h3,
+html[data-dark="1"] .table-row strong,
+html[data-dark="1"] .table-row b,
+html[data-dark="1"] .record-card h3{color:var(--ink)}
+html[data-dark="1"] .form-grid input,
+html[data-dark="1"] .form-grid select,
+html[data-dark="1"] .form-grid textarea,
+html[data-dark="1"] .appearance-grid input:not([type=color]),
+html[data-dark="1"] .appearance-grid select,
+html[data-dark="1"] .record-search input,
+html[data-dark="1"] .quick-entry textarea,
+html[data-dark="1"] .quick-entry input,
+html[data-dark="1"] .quick-entry select{background:#202024!important;color:var(--ink)!important;border-color:#48484f!important}
+html[data-dark="1"] .btn-light,
+html[data-dark="1"] .icon-btn,
+html[data-dark="1"] .file-btn{background:#38383e!important;color:#ededf0!important;border-color:#505057!important}
+html[data-dark="1"] .btn-primary{background:#718f7d;color:#101712}
+html[data-dark="1"] .btn-primary:hover{background:#83a18e}
+html[data-dark="1"] .pill{background:#343b36;color:#c4d8ca}
+html[data-dark="1"] .text-btn{color:#b7d0bf}
+html[data-dark="1"] .delete-btn{background:#382a2a;color:#efb5b0;border-color:#593b3b}
+html[data-dark="1"] .empty{background:#29292d!important;color:var(--muted);border-color:var(--line)!important}
+html[data-dark="1"] .more-nav-menu{background:#242427;border-color:var(--line)}
+html[data-dark="1"] .more-nav-menu button{color:var(--ink)}
+html[data-dark="1"] .project-cover{color:var(--ink)}
+html[data-dark="1"] .back-link{color:#c2d8ca}
+html[data-dark="1"] ::placeholder{color:#92929b!important;opacity:1}
+html[data-dark="1"] select option{background:#29292d;color:#f1f1f2}
+html[data-dark="1"] input[type="date"]{color-scheme:dark}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
