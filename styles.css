@@ -420,3 +420,48 @@ body{line-height:var(--line-height,1.4)}
 @media(prefers-reduced-motion:reduce){
  .project-sheet,.project-sheet-trigger,.sheet-inline-content{transition:none!important;animation:none!important}
 }
+
+
+/* Physical card-deck behavior: each sheet sits partly beneath the next one. */
+#projectSheets .project-sheet-grid{perspective:1500px;perspective-origin:50% 25%;transform-style:preserve-3d;isolation:isolate;padding:22px 9px 34px}
+#projectSheets .project-sheet{position:relative;z-index:1;flex:0 0 auto;margin:0 0 -19px!important;overflow:hidden;transform:rotateZ(0deg) translateZ(0);transform-origin:50% 45%;transform-style:preserve-3d;backface-visibility:hidden;transition:transform .68s cubic-bezier(.18,.82,.2,1),margin .55s cubic-bezier(.18,.82,.2,1),box-shadow .55s,border-radius .4s,filter .4s,opacity .4s;will-change:transform,box-shadow}
+#projectSheets .project-sheet:nth-child(1){z-index:1}
+#projectSheets .project-sheet:nth-child(2){z-index:2}
+#projectSheets .project-sheet:nth-child(3){z-index:3}
+#projectSheets .project-sheet:nth-child(4){z-index:4}
+#projectSheets .project-sheet:nth-child(5){z-index:5}
+#projectSheets .project-sheet:nth-child(6){z-index:6;margin-bottom:0!important}
+#projectSheets .project-sheet-trigger{height:clamp(96px,10vw,116px);min-height:0;transition:height .56s cubic-bezier(.18,.82,.2,1),padding .5s}
+#projectSheets .project-sheet.selected{z-index:30!important;margin:14px 0 8px!important;border-radius:18px;overflow:hidden;transform:translate3d(0,-15px,72px) rotateZ(-2.6deg) scale(1.025);box-shadow:0 5px 12px #1e29201a,0 22px 42px #1e292035,0 42px 78px #1e292026;filter:none;animation:wathiqCardExtract .82s cubic-bezier(.16,.86,.22,1) both}
+#projectSheets .project-sheet.selected .project-sheet-trigger{height:clamp(142px,16vw,178px);padding:23px 29px}
+#projectSheets .project-sheet-grid.has-selection .project-sheet:not(.selected){transform:translate3d(0,0,-5px) rotateZ(-.25deg) scale(.995);opacity:1;filter:none}
+#projectSheets .project-sheet-grid.has-selection .project-sheet:not(.selected) .project-sheet-trigger{height:clamp(78px,8.5vw,96px);padding-block:12px}
+#projectSheets .project-sheet.expanded{z-index:31!important;margin:12px 0 18px!important;transform:translate3d(0,-8px,52px) rotateZ(-.6deg) scale(1.012);border-radius:20px;overflow:visible;box-shadow:0 9px 18px #1e292018,0 30px 62px #1e29203a}
+#projectSheets .project-sheet.expanded .project-sheet-trigger{height:clamp(116px,13vw,148px)}
+#projectSheets .project-sheet-grid.has-expanded .project-sheet:not(.expanded){transform:translate3d(0,0,-8px) scale(.99);opacity:.94;filter:none}
+@keyframes wathiqCardExtract{
+  0%{transform:translate3d(0,9px,0) rotateZ(-2.8deg) scale(.985);box-shadow:0 2px 5px #1e292010}
+  24%{transform:translate3d(0,-19px,44px) rotateZ(2.4deg) scale(1.035);box-shadow:0 10px 20px #1e292022,0 30px 54px #1e292033}
+  48%{transform:translate3d(0,-12px,78px) rotateZ(-1.7deg) scale(1.04)}
+  72%{transform:translate3d(0,-18px,68px) rotateZ(1deg) scale(1.028)}
+  100%{transform:translate3d(0,-15px,72px) rotateZ(-2.6deg) scale(1.025);box-shadow:0 5px 12px #1e29201a,0 22px 42px #1e292035,0 42px 78px #1e292026}
+}
+@media(max-width:720px){
+ #projectSheets .project-sheet-grid{perspective:1100px;padding:16px 5px 28px}
+ #projectSheets .project-sheet{margin-bottom:-16px!important}
+ #projectSheets .project-sheet-trigger{height:clamp(82px,10vh,102px);padding-inline:17px}
+ #projectSheets .project-sheet.selected{margin:11px 0 7px!important;transform:translate3d(0,-12px,56px) rotateZ(-2.3deg) scale(1.018);animation:wathiqCardExtractMobile .78s cubic-bezier(.16,.86,.22,1) both}
+ #projectSheets .project-sheet.selected .project-sheet-trigger{height:clamp(124px,17vh,152px);padding:18px 20px}
+ #projectSheets .project-sheet-grid.has-selection .project-sheet:not(.selected) .project-sheet-trigger{height:clamp(64px,8vh,78px);padding-block:8px}
+ #projectSheets .project-sheet.expanded{transform:translate3d(0,-6px,42px) rotateZ(-.5deg) scale(1.008)}
+}
+@keyframes wathiqCardExtractMobile{
+  0%{transform:translate3d(0,7px,0) rotateZ(-2.5deg) scale(.985)}
+  28%{transform:translate3d(0,-16px,36px) rotateZ(2.2deg) scale(1.028)}
+  55%{transform:translate3d(0,-9px,60px) rotateZ(-1.5deg) scale(1.032)}
+  78%{transform:translate3d(0,-14px,52px) rotateZ(.8deg) scale(1.02)}
+  100%{transform:translate3d(0,-12px,56px) rotateZ(-2.3deg) scale(1.018)}
+}
+@media(prefers-reduced-motion:reduce){
+ #projectSheets .project-sheet{animation:none!important;transition:none!important}
+}
