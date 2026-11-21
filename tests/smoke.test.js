@@ -559,7 +559,7 @@ test('workspace card palette supports six coordinated shades and one independent
   const app = fs.readFileSync(new URL('../app.js', 'file://' + __filename), 'utf8');
   const html = fs.readFileSync(new URL('../index.html', 'file://' + __filename), 'utf8');
   assert.match(app, /function deriveSheetShades\(hex\)/);
-  assert.match(app, /sheetSpecialIndex=a\.sheetSpecialIndex==='none'\?-1:Number\(a\.sheetSpecialIndex\)/);
+  assert.match(app, /specialIndex=a.sheetSpecialIndex==='none'\?-1:Number\(a\.sheetSpecialIndex\)/);
   assert.match(app, /i===specialIndex\?specialHex:saturateHex\(raw/);
   assert.ok(html.includes('id="sheetBaseColor"'));
   assert.ok(html.includes('id="sheetSpecialIndex"'));
