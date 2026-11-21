@@ -310,7 +310,7 @@ test('input fields are tinted one shade lighter from each actual card color, not
 
 test('Android PWA cache version is bumped for the new mobile card styles', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v17"'));
+  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v18"'));
 });
 
 test('appearance preferences expose WeeklyPlanner-style controls and persist line spacing', () => {
@@ -330,7 +330,7 @@ test('appearance preferences expose WeeklyPlanner-style controls and persist lin
 });
 test('Android PWA cache is refreshed for expanded appearance settings', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v17"'));
+  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v18"'));
 });
 
 test('workspace settings shortcut remains visible in the full-width six-card layout', () => {
@@ -538,7 +538,7 @@ test('appearance palette writes the exact legacy sheet variables consumed by car
 
 test('service worker cache is bumped when appearance assets change', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.match(sw, /wathiq-shell-v17/);
+  assert.match(sw, /wathiq-shell-v18/);
 });
 
 
@@ -552,7 +552,7 @@ test('only the selected workspace card is pulled forward and tilted while the re
   assert.match(css, /#projectSheets \.project-sheet:nth-child\(2\)\{--sheet-stack-order:2;z-index:2\}/);
   assert.match(css, /@media\(max-width:720px\)[\s\S]*?rotate\(-2\.5deg\)/);
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.match(sw, /wathiq-shell-v17/);
+  assert.match(sw, /wathiq-shell-v18/);
 });
 
 test('workspace card palette supports six coordinated shades and one independently chosen standout card', () => {
@@ -566,5 +566,15 @@ test('workspace card palette supports six coordinated shades and one independent
   assert.ok(html.includes('id="sheetSpecialColor"'));
   for (const label of ['الماليات','الحركات اليومية','بنود التنفيذ','الصنايعية والموردين','التحصيلات','المصروفات']) assert.ok(html.includes('<option value="'+['الماليات','الحركات اليومية','بنود التنفيذ','الصنايعية والموردين','التحصيلات','المصروفات'].indexOf(label)+'">'+label+'</option>'));
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.match(sw, /wathiq-shell-v17/);
+  assert.match(sw, /wathiq-shell-v18/);
+});
+
+
+test('expanded workspace card grows to contain its inline content and reveals it with motion', () => {
+  const css = fs.readFileSync(new URL('../styles.css', 'file://' + __filename), 'utf8');
+  assert.match(css, /#projectSheets \.project-sheet\.expanded\{[\s\S]*?height:auto;[\s\S]*?min-height:0;[\s\S]*?overflow:visible/);
+  assert.match(css, /#projectSheets \.project-sheet\.expanded \.sheet-inline-content\{[\s\S]*?animation:sheetContentUnfold \.62s/);
+  assert.match(css, /@keyframes sheetContentUnfold\{[\s\S]*?clip-path:inset\(0 0 92% 0\)[\s\S]*?clip-path:inset\(0 0 0 0\)/);
+  assert.match(css, /@media\(max-width:720px\)[\s\S]*?#projectSheets \.project-sheet\.expanded\{[\s\S]*?height:auto/);
+  assert.match(css, /@media\(prefers-reduced-motion:reduce\)[\s\S]*?sheetContentUnfold|@media\(prefers-reduced-motion:reduce\)[\s\S]*?project-sheet\.expanded/);
 });
