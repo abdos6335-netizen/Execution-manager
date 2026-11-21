@@ -7,13 +7,24 @@ const source = fs.readFileSync(new URL('../app.js', 'file://' + __filename), 'ut
 
 function createApp(initialStorage = {}) {
   const elements = new Map();
-  const makeElement = () => ({
-    value: '', innerHTML: '', textContent: '', dataset: {},
-    style: { setProperty() {} },
-    classList: { add() {}, remove() {}, toggle() {}, contains() { return false; } },
-    addEventListener() {}, setAttribute() {}, querySelector() { return makeElement(); },
-    querySelectorAll() { return []; }, scrollIntoView() {}, reset() {}, click() {}
-  });
+  const cssVars = new Map();
+  const makeElement = () => {
+    const classes = new Set(), listeners = {};
+    return {
+      value: '', innerHTML: '', textContent: '', dataset: {},
+      style: { setProperty() {} },
+      classList: {
+        add(...names) { names.forEach(name => classes.add(name)); },
+        remove(...names) { names.forEach(name => classes.delete(name)); },
+        toggle(name, force) { const next = force === undefined ? !classes.has(name) : !!force; if (next) classes.add(name); else classes.delete(name); return next; },
+        contains(name) { return classes.has(name); }
+      },
+      addEventListener(name, fn) { (listeners[name] ||= []).push(fn); },
+      dispatch(name, event = {}) { const e = { target: this, ...event }; (listeners[name] || []).forEach(fn => fn(e)); },
+      setAttribute() {}, querySelector() { return makeElement(); },
+      querySelectorAll() { return []; }, scrollIntoView() {}, reset() {}, click() {}
+    };
+  };
   const document = {
     body: { dataset: {} },
     getElementById(id) {
@@ -24,7 +35,7 @@ function createApp(initialStorage = {}) {
     querySelector() { return { content: '', setAttribute() {} }; },
     createElement() { return makeElement(); },
     head: { appendChild() {} },
-    documentElement: { style: { setProperty() {} }, dataset: {}, set colorScheme(value) {} }
+    documentElement: { style: { setProperty(name, value) { cssVars.set(name, String(value)); }, getPropertyValue(name) { return cssVars.get(name) || ''; } }, dataset: {}, set colorScheme(value) {} }
   };
   const values = new Map(Object.entries(initialStorage));
   let failWrites = false;
@@ -46,13 +57,14 @@ function createApp(initialStorage = {}) {
   });
   vm.runInContext(source + `
     globalThis.__appTest = {
-      getState: () => state, normalizeState, parseQuickText,
+      getState: () => state, normalizeState, parseQuickText, deriveSheetShades, getAppearance, saveAppearance, applyAppearance, toggleInvoiceSelector,
       contractorTotals, answerReportQuestion, today, spentForProject, SHEET_PALETTES, invoiceTotals, supplierLedgerTotals, laborTotalsForContractor, executionCostForProject, cashOutflowForProject, validateDailyLog, validateImportedState,
       itemCard, itemMovements, paidForItem, findDuplicateMovement, save, elements: null, storage: null,
       failStorageWrites(value) { globalThis.__failWrites(value); }
     };
   `, context);
   context.__appTest.elements = elements;
+  context.__appTest.cssVars = cssVars;
   context.__appTest.storage = values;
   context.__failWrites = value => { failWrites = value; };
   return context.__appTest;
@@ -310,7 +322,7 @@ test('input fields are tinted one shade lighter from each actual card color, not
 
 test('Android PWA cache version is bumped for the new mobile card styles', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v18"'));
+  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v20"'));
 });
 
 test('appearance preferences expose WeeklyPlanner-style controls and persist line spacing', () => {
@@ -330,7 +342,7 @@ test('appearance preferences expose WeeklyPlanner-style controls and persist lin
 });
 test('Android PWA cache is refreshed for expanded appearance settings', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v18"'));
+  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v20"'));
 });
 
 test('workspace settings shortcut remains visible in the full-width six-card layout', () => {
@@ -538,7 +550,7 @@ test('appearance palette writes the exact legacy sheet variables consumed by car
 
 test('service worker cache is bumped when appearance assets change', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.match(sw, /wathiq-shell-v18/);
+  assert.match(sw, /wathiq-shell-v20/);
 });
 
 
@@ -552,7 +564,7 @@ test('only the selected workspace card is pulled forward and tilted while the re
   assert.match(css, /#projectSheets \.project-sheet:nth-child\(2\)\{--sheet-stack-order:2;z-index:2\}/);
   assert.match(css, /@media\(max-width:720px\)[\s\S]*?rotate\(-2\.5deg\)/);
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.match(sw, /wathiq-shell-v18/);
+  assert.match(sw, /wathiq-shell-v20/);
 });
 
 test('workspace card palette supports six coordinated shades and one independently chosen standout card', () => {
@@ -566,15 +578,105 @@ test('workspace card palette supports six coordinated shades and one independent
   assert.ok(html.includes('id="sheetSpecialColor"'));
   for (const label of ['الماليات','الحركات اليومية','بنود التنفيذ','الصنايعية والموردين','التحصيلات','المصروفات']) assert.ok(html.includes('<option value="'+['الماليات','الحركات اليومية','بنود التنفيذ','الصنايعية والموردين','التحصيلات','المصروفات'].indexOf(label)+'">'+label+'</option>'));
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.match(sw, /wathiq-shell-v18/);
+  assert.match(sw, /wathiq-shell-v20/);
 });
 
 
 test('expanded workspace card grows to contain its inline content and reveals it with motion', () => {
   const css = fs.readFileSync(new URL('../styles.css', 'file://' + __filename), 'utf8');
   assert.match(css, /#projectSheets \.project-sheet\.expanded\{[\s\S]*?height:auto;[\s\S]*?min-height:0;[\s\S]*?overflow:visible/);
+  assert.match(css, /#projectSheets \.project-sheet\.expanded\{[\s\S]*?z-index:var\(--sheet-stack-order\)!important/);
+  assert.doesNotMatch(css, /#projectSheets \.project-sheet\.expanded\{[^}]*z-index:45!important/);
   assert.match(css, /#projectSheets \.project-sheet\.expanded \.sheet-inline-content\{[\s\S]*?animation:sheetContentUnfold \.62s/);
   assert.match(css, /@keyframes sheetContentUnfold\{[\s\S]*?clip-path:inset\(0 0 92% 0\)[\s\S]*?clip-path:inset\(0 0 0 0\)/);
   assert.match(css, /@media\(max-width:720px\)[\s\S]*?#projectSheets \.project-sheet\.expanded\{[\s\S]*?height:auto/);
   assert.match(css, /@media\(prefers-reduced-motion:reduce\)[\s\S]*?sheetContentUnfold|@media\(prefers-reduced-motion:reduce\)[\s\S]*?project-sheet\.expanded/);
+});
+
+
+test('custom card color controls persist their selected values', () => {
+  const app = createApp();
+  const base = app.elements.get('sheetBaseColor');
+  base.value = '#202020';
+  base.dispatch('input');
+  const standout = app.elements.get('sheetSpecialIndex');
+  standout.value = '4';
+  standout.dispatch('input');
+  const standoutColor = app.elements.get('sheetSpecialColor');
+  standoutColor.value = '#b45c32';
+  standoutColor.dispatch('input');
+  const saved = app.getAppearance();
+  assert.equal(saved.sheetBaseColor, '#202020');
+  assert.equal(saved.sheetSpecialIndex, '4');
+  assert.equal(saved.sheetSpecialColor, '#b45c32');
+});
+
+test('natural-language supplier invoice payment reveals invoice selector', () => {
+  const app = createApp();
+  app.elements.get('quickText').value = 'سداد فاتورة مورد ١٥٠٠ جنيه';
+  app.parseQuickText();
+  assert.equal(app.elements.get('quickKind').value, 'supplier_payment');
+  assert.equal(app.elements.get('quickInvoiceWrap').classList.contains('hidden'), false);
+});
+
+test('card shade generator returns six visibly distinct colors for extreme and dark inputs', () => {
+  const app = createApp();
+  for (const base of ['#000000', '#ffffff', '#101010', '#a8b7ad']) {
+    const shades = app.deriveSheetShades(base);
+    assert.equal(shades.length, 6);
+    assert.equal(new Set(shades).size, 6, 'six unique shades required for ' + base);
+  }
+  assert.equal(app.deriveSheetShades('#a8b7ad')[3], '#a8b7ad');
+});
+
+test('applying a black or white base palette preserves the exact base shade and produces six distinct rendered shades', () => {
+  const app = createApp();
+  for (const [base, baseIndex] of [['#000000', 0], ['#ffffff', 5]]) {
+    app.saveAppearance({ sheetBaseColor: base, sheetSpecialIndex: 'none', saturation: 100 });
+    const rendered = Array.from({ length: 6 }, (_, i) => app.cssVars.get('--sheet-' + (i + 1)).toLowerCase());
+    assert.equal(rendered[baseIndex], base);
+    assert.equal(new Set(rendered).size, 6, 'rendered shades must differ for ' + base);
+  }
+});
+
+test('special card uses the exact user color while the other five stay in the base palette', () => {
+  const app = createApp();
+  app.saveAppearance({ sheetBaseColor: '#202020', sheetSpecialIndex: '4', sheetSpecialColor: '#b45c32', saturation: 100 });
+  assert.equal(app.cssVars.get('--sheet-5'), '#b45c32');
+  const others = [1, 2, 3, 4, 6].map(i => app.cssVars.get('--sheet-' + i));
+  assert.equal(new Set(others).size, 5);
+  assert.ok(others.every(color => color !== '#b45c32'));
+});
+
+test('typed or dictated supplier payment identifies a named supplier and selects its only open invoice', () => {
+  const app = createApp();
+  const state = app.getState();
+  state.contractors = [{ id: 'supplier-1', projectId: 'p1', name: 'شركة النور', aliases: [], trade: 'مورد' }];
+  state.items = [{ id: 'item-1', projectId: 'p1', name: 'سيراميك' }];
+  state.purchases = [{ id: 'invoice-1', projectId: 'p1', supplierId: 'supplier-1', supplier: 'شركة النور', itemId: 'item-1', item: 'سيراميك', amount: 5000, date: '2026-11-20' }];
+  app.elements.get('quickText').value = 'سداد فاتورة شركة النور ١٥٠٠ جنيه';
+  app.parseQuickText();
+  assert.equal(app.elements.get('quickKind').value, 'supplier_payment');
+  assert.equal(app.elements.get('quickPerson').value, 'شركة النور');
+  assert.equal(app.elements.get('quickInvoice').value, 'invoice-1');
+  assert.equal(app.elements.get('quickInvoiceWrap').classList.contains('hidden'), false);
+});
+
+test('supplier payment does not guess when the supplier has multiple open invoices', () => {
+  const app = createApp();
+  const state = app.getState();
+  state.contractors = [{ id: 'supplier-1', projectId: 'p1', name: 'شركة النور', aliases: [], trade: 'مورد' }];
+  state.purchases = [
+    { id: 'invoice-1', projectId: 'p1', supplierId: 'supplier-1', supplier: 'شركة النور', amount: 5000, date: '2026-11-20' },
+    { id: 'invoice-2', projectId: 'p1', supplierId: 'supplier-1', supplier: 'شركة النور', amount: 3000, date: '2026-11-21' }
+  ];
+  app.elements.get('quickText').value = 'سداد فاتورة شركة النور ١٥٠٠ جنيه';
+  app.parseQuickText();
+  assert.equal(app.elements.get('quickInvoice').value, '');
+});
+
+test('expanded card keeps its original stack order so following cards can cover its lower edge', () => {
+  const css = fs.readFileSync(new URL('../styles.css', 'file://' + __filename), 'utf8');
+  assert.match(css, /#projectSheets \.project-sheet\.expanded\{[\s\S]*?z-index:var\(--sheet-stack-order\)!important/);
+  assert.doesNotMatch(css, /#projectSheets \.project-sheet\.expanded\{[^}]*z-index:45!important/);
 });

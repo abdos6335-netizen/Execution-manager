@@ -267,6 +267,12 @@ function parseQuickText(){
  else if(/اجره|مصنعيه|يوميه|صنايعي/.test(t))$('quickKind').value='labor';
  else if(/خامات|مونه|جردل|اسمنت|سيراميك/.test(t))$('quickKind').value='materials';
  else if(/نقاش|نجار|كهربائي|سباك|دفعت|مقاول/.test(t))$('quickKind').value='labor';
+ if($('quickKind').value==='supplier_payment'){
+  const matched=currentContractors().filter(c=>[c.name,...(c.aliases||[])].some(name=>{const n=normArabic(name);return n.length>=3&&t.includes(n)}));
+  const unique=[...new Map(matched.map(c=>[c.id,c])).values()];
+  if(unique.length===1)$('quickPerson').value=unique[0].name;
+ }
+ toggleInvoiceSelector();
  $('quickNote').value=raw;
 }
 function renderQuickLists(){
@@ -412,7 +418,27 @@ function getAppearance(){try{return {...APPEARANCE_DEFAULT,...JSON.parse(localSt
 function hexToHsl(hex){const n=String(hex).replace('#',''),r=parseInt(n.slice(0,2),16)/255,g=parseInt(n.slice(2,4),16)/255,b=parseInt(n.slice(4,6),16)/255,max=Math.max(r,g,b),min=Math.min(r,g,b),d=max-min,l=(max+min)/2;let h=0,s=0;if(d){s=d/(1-Math.abs(2*l-1));if(max===r)h=60*(((g-b)/d)%6);else if(max===g)h=60*((b-r)/d+2);else h=60*((r-g)/d+4)}return [((h+360)%360),s,l]}
 function hslToHex(h,s,l){const c=(1-Math.abs(2*l-1))*s,x=c*(1-Math.abs((h/60)%2-1)),m=l-c/2;let r=0,g=0,b=0;if(h<60)[r,g,b]=[c,x,0];else if(h<120)[r,g,b]=[x,c,0];else if(h<180)[r,g,b]=[0,c,x];else if(h<240)[r,g,b]=[0,x,c];else if(h<300)[r,g,b]=[x,0,c];else[r,g,b]=[c,0,x];return '#'+[r,g,b].map(v=>Math.round((v+m)*255).toString(16).padStart(2,'0')).join('')}
 function saturateHex(hex,amount){const [h,s,l]=hexToHsl(hex);return hslToHex(h,Math.min(1,Math.max(0,s*amount)),l)}
-function deriveSheetShades(hex){const [h,s,l]=hexToHsl(hex);return [.55,.72,.88,1,1.12,1.24].map(f=>hslToHex(h,s,Math.min(.92,Math.max(.035,l*f))))}
+function deriveSheetShades(hex){
+ const safeHex=/^#[0-9a-f]{6}$/i.test(String(hex||''))?String(hex):'#a8b7ad';
+ const [h,s,l]=hexToHsl(safeHex);
+ let levels;
+ if(l<=.22){
+  const step=Math.max(.085,Math.min(.12,(.965-l)/5));
+  levels=Array.from({length:6},(_,i)=>Math.min(.965,l+step*i));
+  levels[0]=l;
+ }else if(l>=.78){
+  const step=Math.max(.085,Math.min(.12,l/5));
+  levels=Array.from({length:6},(_,i)=>Math.max(.035,l-step*(5-i)));
+  levels[5]=l;
+ }else{
+  const step=Math.min(.105,(l-.035)/3,(.965-l)/2);
+  levels=[l-3*step,l-2*step,l-step,l,l+step,l+2*step];
+ }
+ const shades=levels.map(level=>hslToHex(h,s,Math.min(.965,Math.max(.035,level))));
+ const baseIndex=l<=.22?0:l>=.78?5:3;
+ shades[baseIndex]=safeHex.toLowerCase();
+ return shades;
+}
 function applyAppearance(){
  const a=getAppearance(),mode=a.mode==='system'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):a.mode,dark=mode==='dark',bg=dark?'#1b1b1d':a.background,accent=saturateHex(a.accent||'#294438',(Number(a.saturation)||0)/100);
  const mix=(x,y,t)=>{const p=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)],A=p(x),B=p(y);return '#'+A.map((v,i)=>Math.round(v+(B[i]-v)*t).toString(16).padStart(2,'0')).join('')};
@@ -437,8 +463,12 @@ function syncAppearanceControls(){
  if($('appearanceBlur'))$('appearanceBlur').disabled=!a.glass;if($('sheetSpecialColor'))$('sheetSpecialColor').disabled=a.sheetSpecialIndex==='none';
 }
 function saveAppearance(patch){localStorage.setItem(APPEARANCE_KEY,JSON.stringify({...getAppearance(),...patch}));applyAppearance();syncAppearanceControls()}
-const appearanceFields=[['appearanceMode','mode','string'],['appearanceAccent','accent','string'],['appearanceBackground','background','string'],['appearanceText','text','string'],['appearanceFont','font','string'],['appearanceScale','scale','number'],['appearanceSaturation','saturation','number'],['appearanceSurface','surface','string'],['appearanceBlur','blur','number'],['appearanceIconStyle','iconStyle','string'],['appearanceLineHeight','lineHeight','number'],['appearanceHeading','heading','number'],['appearanceSubheading','subheading','number'],['appearanceItem','item','number'],['appearanceMotionStyle','motionStyle','string'],['appearanceMotionSpeed','motionSpeed','string'],['appearanceDoneColor','doneColor','string']];
-appearanceFields.forEach(([id,key,type])=>$(id)?.addEventListener('input',e=>saveAppearance({[key]:type==='number'?Number(e.target.value):e.target.value})));
+const appearanceFields=[['appearanceMode','mode','string'],['appearanceAccent','accent','string'],['appearanceBackground','background','string'],['appearanceText','text','string'],['appearanceFont','font','string'],['appearanceScale','scale','number'],['appearanceSaturation','saturation','number'],['appearanceSurface','surface','string'],['appearanceBlur','blur','number'],['appearanceIconStyle','iconStyle','string'],['appearanceLineHeight','lineHeight','number'],['appearanceHeading','heading','number'],['appearanceSubheading','subheading','number'],['appearanceItem','item','number'],['appearanceMotionStyle','motionStyle','string'],['appearanceMotionSpeed','motionSpeed','string'],['appearanceDoneColor','doneColor','string'],['sheetBaseColor','sheetBaseColor','string'],['sheetSpecialIndex','sheetSpecialIndex','string'],['sheetSpecialColor','sheetSpecialColor','string']];
+appearanceFields.forEach(([id,key,type])=>{
+ const update=e=>saveAppearance({[key]:type==='number'?Number(e.target.value):e.target.value});
+ $(id)?.addEventListener('input',update);
+ if(id==='sheetSpecialIndex')$(id)?.addEventListener('change',update);
+});
 $('appearanceGlass')?.addEventListener('change',e=>saveAppearance({glass:e.target.checked}));
 document.querySelectorAll('[data-theme]').forEach(b=>b.addEventListener('click',()=>{const theme=b.dataset.theme,p=APPEARANCE_PRESETS[theme];if(p)saveAppearance({...p,theme,sheetBaseColor:'',sheetSpecialIndex:'none'})}));
 $('resetAppearance')?.addEventListener('click',()=>{localStorage.removeItem(APPEARANCE_KEY);applyAppearance();syncAppearanceControls()});
@@ -525,7 +555,19 @@ function renderAdvancedLedger(){
  $('siteLogList').innerHTML=logs.length?logs.map(x=>'<div class="site-log-row"><div><strong>'+esc(x.note)+'</strong><small>'+esc(x.date)+' · '+esc(x.type==='delivery'?'توريد / استلام':x.type==='issue'?'مشكلة / معوق':x.type==='note'?'ملاحظة موقع':'تنفيذ')+'</small><div class="site-log-meta">'+(x.item?'<span>البند: '+esc(x.item)+'</span>':'')+(x.quantity?'<span>الكمية: '+esc(x.quantity)+' '+esc(x.unit)+'</span>':'')+(x.crew?'<span>الطاقم: '+esc(x.crew)+'</span>':'')+'</div></div><div class="ledger-row-actions"><button class="text-btn" data-edit-transaction="siteLog" data-id="'+esc(x.id)+'">تعديل</button><button class="delete-btn" data-delete-transaction="siteLog" data-id="'+esc(x.id)+'">حذف</button></div></div>').join(''):'<div class="empty">لا توجد تدوينات موقع حتى الآن.</div>';
  const invoiceSelect=$('quickInvoice');if(invoiceSelect){const selected=invoiceSelect.value;invoiceSelect.innerHTML='<option value="">اختر فاتورة مورد</option>'+invoices.filter(x=>invoiceTotals(x).outstanding>0.005).map(x=>'<option value="'+esc(x.id)+'">'+esc(x.supplier||'مورد')+' · '+esc(x.date)+' · متبقي '+money(invoiceTotals(x).outstanding)+'</option>').join('');if(invoiceSelect.options&&[...invoiceSelect.options].some(o=>o.value===selected))invoiceSelect.value=selected;}
 }
-function toggleInvoiceSelector(){const wrap=$('quickInvoiceWrap'),kind=$('quickKind').value;if(wrap)wrap.classList.toggle('hidden',kind!=='supplier_payment');}
+function toggleInvoiceSelector(){
+ const wrap=$('quickInvoiceWrap'),select=$('quickInvoice'),isPayment=$('quickKind').value==='supplier_payment';
+ if(wrap)wrap.classList.toggle('hidden',!isPayment);
+ if(!isPayment||!select)return;
+ renderAdvancedLedger();
+ const outstanding=projectPurchases().filter(x=>invoiceTotals(x).outstanding>.005);
+ const personName=$('quickPerson').value.trim(),person=personName?findNamedRecord(currentContractors(),personName):null;
+ const candidates=person?outstanding.filter(x=>x.supplierId===person.id||normArabic(x.supplier)===normArabic(person.name)):outstanding;
+ if(select.value&&!candidates.some(x=>x.id===select.value))select.value='';
+ if(!select.value&&candidates.length===1)select.value=candidates[0].id;
+ const invoice=candidates.find(x=>x.id===select.value);
+ if(invoice){$('quickPerson').value=invoice.supplier||contractorById(invoice.supplierId)?.name||'';$('quickItem').value=itemById(invoice.itemId)?.name||invoice.item||'';}
+}
 const baseRenderQuickLists=renderQuickLists;
 renderQuickLists=function(){baseRenderQuickLists();renderAdvancedLedger();};
 const baseRenderApp=render;

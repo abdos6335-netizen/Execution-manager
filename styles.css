@@ -452,16 +452,16 @@ body{line-height:var(--line-height,1.4)}
   filter:none;
   overflow:hidden;
   border-radius:17px;
-  transform:translate3d(9px,-19px,28px) rotate(-2.5deg) scale(1.012);
+  transform:translate3d(9px,-19px,0) rotate(-2.5deg) scale(1.012);
   box-shadow:0 30px 48px -18px rgba(18,24,22,.42),0 12px 20px -10px rgba(18,24,22,.25),0 2px 4px rgba(18,24,22,.12);
 }
 #projectSheets .project-sheet.selected .project-sheet-trigger{height:124px;min-height:124px}
 #projectSheets .project-sheet.expanded{
-  z-index:45!important;
+  z-index:var(--sheet-stack-order)!important;
   margin:0 0 14px;
   overflow:visible;
   border-radius:18px;
-  transform:translate3d(6px,-13px,30px) rotate(-1.6deg);
+  transform:translate3d(6px,-13px,0) rotate(-1.6deg);
   box-shadow:0 28px 52px -18px rgba(18,24,22,.38),0 10px 18px -9px rgba(18,24,22,.2);
 }
 #projectSheets .project-sheet.expanded .project-sheet-trigger{height:124px;min-height:124px}
@@ -476,11 +476,11 @@ body{line-height:var(--line-height,1.4)}
   #projectSheets .project-sheet-trigger{height:112px;min-height:112px;padding:15px 17px}
   #projectSheets .project-sheet-grid.has-selection .project-sheet:not(.selected) .project-sheet-trigger{height:112px;min-height:112px;padding:15px 17px}
   #projectSheets .project-sheet.selected{
-    transform:translate3d(5px,-14px,22px) rotate(-2.5deg) scale(1.012);
+    transform:translate3d(5px,-14px,0) rotate(-2.5deg) scale(1.012);
     border-radius:15px;
     box-shadow:0 24px 38px -16px rgba(18,24,22,.42),0 9px 16px -8px rgba(18,24,22,.24);
   }
-  #projectSheets .project-sheet.expanded{transform:translate3d(4px,-10px,24px) rotate(-1.6deg);margin-bottom:10px}
+  #projectSheets .project-sheet.expanded{transform:translate3d(4px,-10px,0) rotate(-1.6deg);margin-bottom:10px}
   #projectSheets .project-sheet.expanded .project-sheet-trigger{height:112px;min-height:112px}
 }
 @media(prefers-reduced-motion:reduce){
@@ -501,8 +501,8 @@ body{line-height:var(--line-height,1.4)}
   min-height:0;
   overflow:visible;
   position:relative;
-  z-index:45!important;
-  transform:translate3d(9px,-25px,36px) rotate(-1.2deg) scale(1.015);
+  z-index:var(--sheet-stack-order)!important;
+  transform:translate3d(9px,-25px,0) rotate(-1.2deg) scale(1.015);
   transition:transform .72s cubic-bezier(.18,.92,.24,1),box-shadow .58s ease,border-radius .38s ease;
 }
 #projectSheets .project-sheet.expanded .project-sheet-trigger{
@@ -526,7 +526,7 @@ body{line-height:var(--line-height,1.4)}
   #projectSheets .project-sheet.expanded{
     height:auto;
     min-height:0;
-    transform:translate3d(6px,-19px,30px) rotate(-1.2deg) scale(1.01);
+    transform:translate3d(6px,-19px,0) rotate(-1.2deg) scale(1.01);
   }
   #projectSheets .project-sheet.expanded .project-sheet-trigger{
     height:112px;
