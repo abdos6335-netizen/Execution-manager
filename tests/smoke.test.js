@@ -310,7 +310,7 @@ test('input fields are tinted one shade lighter from each actual card color, not
 
 test('Android PWA cache version is bumped for the new mobile card styles', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v15"'));
+  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v17"'));
 });
 
 test('appearance preferences expose WeeklyPlanner-style controls and persist line spacing', () => {
@@ -330,7 +330,7 @@ test('appearance preferences expose WeeklyPlanner-style controls and persist lin
 });
 test('Android PWA cache is refreshed for expanded appearance settings', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v15"'));
+  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v17"'));
 });
 
 test('workspace settings shortcut remains visible in the full-width six-card layout', () => {
@@ -538,7 +538,7 @@ test('appearance palette writes the exact legacy sheet variables consumed by car
 
 test('service worker cache is bumped when appearance assets change', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.match(sw, /wathiq-shell-v15/);
+  assert.match(sw, /wathiq-shell-v17/);
 });
 
 
@@ -547,8 +547,24 @@ test('only the selected workspace card is pulled forward and tilted while the re
   assert.match(css, /#projectSheets \.project-sheet-grid\.has-selection \.project-sheet:not\(\.selected\)\{\s*transform:none;\s*opacity:1;\s*filter:none;/);
   assert.match(css, /#projectSheets \.project-sheet\.selected\{[\s\S]*?rotate\(-2\.5deg\)/);
   assert.match(css, /#projectSheets \.project-sheet \+ \.project-sheet\{margin-top:-56px/);
-  assert.match(css, /#projectSheets \.project-sheet:nth-child\(6\)\{z-index:6\}/);
+  assert.match(css, /#projectSheets \.project-sheet:nth-child\(6\)\{--sheet-stack-order:6;z-index:6\}/);
+  assert.match(css, /#projectSheets \.project-sheet\.selected\{[\s\S]*?z-index:var\(--sheet-stack-order\)!important/);
+  assert.match(css, /#projectSheets \.project-sheet:nth-child\(2\)\{--sheet-stack-order:2;z-index:2\}/);
   assert.match(css, /@media\(max-width:720px\)[\s\S]*?rotate\(-2\.5deg\)/);
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.match(sw, /wathiq-shell-v15/);
+  assert.match(sw, /wathiq-shell-v17/);
+});
+
+test('workspace card palette supports six coordinated shades and one independently chosen standout card', () => {
+  const app = fs.readFileSync(new URL('../app.js', 'file://' + __filename), 'utf8');
+  const html = fs.readFileSync(new URL('../index.html', 'file://' + __filename), 'utf8');
+  assert.match(app, /function deriveSheetShades\(hex\)/);
+  assert.match(app, /specialIndex=a.sheetSpecialIndex==='none'\?-1:Number\(a\.sheetSpecialIndex\)/);
+  assert.match(app, /i===specialIndex\?specialHex:saturateHex\(raw/);
+  assert.ok(html.includes('id="sheetBaseColor"'));
+  assert.ok(html.includes('id="sheetSpecialIndex"'));
+  assert.ok(html.includes('id="sheetSpecialColor"'));
+  for (const label of ['الماليات','الحركات اليومية','بنود التنفيذ','الصنايعية والموردين','التحصيلات','المصروفات']) assert.ok(html.includes('<option value="'+['الماليات','الحركات اليومية','بنود التنفيذ','الصنايعية والموردين','التحصيلات','المصروفات'].indexOf(label)+'">'+label+'</option>'));
+  const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
+  assert.match(sw, /wathiq-shell-v17/);
 });

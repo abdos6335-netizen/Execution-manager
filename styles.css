@@ -426,12 +426,12 @@ body{line-height:var(--line-height,1.4)}
   will-change:transform;
 }
 #projectSheets .project-sheet + .project-sheet{margin-top:-56px;border-top:1px solid rgba(255,255,255,.55)}
-#projectSheets .project-sheet:nth-child(1){z-index:1}
-#projectSheets .project-sheet:nth-child(2){z-index:2}
-#projectSheets .project-sheet:nth-child(3){z-index:3}
-#projectSheets .project-sheet:nth-child(4){z-index:4}
-#projectSheets .project-sheet:nth-child(5){z-index:5}
-#projectSheets .project-sheet:nth-child(6){z-index:6}
+#projectSheets .project-sheet:nth-child(1){--sheet-stack-order:1;z-index:1}
+#projectSheets .project-sheet:nth-child(2){--sheet-stack-order:2;z-index:2}
+#projectSheets .project-sheet:nth-child(3){--sheet-stack-order:3;z-index:3}
+#projectSheets .project-sheet:nth-child(4){--sheet-stack-order:4;z-index:4}
+#projectSheets .project-sheet:nth-child(5){--sheet-stack-order:5;z-index:5}
+#projectSheets .project-sheet:nth-child(6){--sheet-stack-order:6;z-index:6}
 #projectSheets .project-sheet-trigger{height:124px;min-height:124px;padding:18px clamp(18px,4vw,56px)}
 #projectSheets .project-sheet-grid.has-selection .project-sheet:not(.selected){
   transform:none;
@@ -445,7 +445,8 @@ body{line-height:var(--line-height,1.4)}
   padding-block:18px;
 }
 #projectSheets .project-sheet.selected{
-  z-index:40!important;
+  /* Keep its original stack level: cards after it must cover its lower edge. */
+  z-index:var(--sheet-stack-order)!important;
   margin:0;
   opacity:1;
   filter:none;
@@ -485,3 +486,10 @@ body{line-height:var(--line-height,1.4)}
 @media(prefers-reduced-motion:reduce){
   #projectSheets .project-sheet,#projectSheets .project-sheet-trigger{transition:none!important}
 }
+
+/* Custom card palette controls */
+.sheet-color-controls{margin:18px 0 22px;padding:18px;border:1px solid var(--line);border-radius:16px;background:var(--paper)}
+.sheet-color-controls .surface-head{margin-bottom:12px}
+.sheet-color-controls .hint{margin:10px 0 0}
+.sheet-color-controls input[type="color"]{min-height:42px;padding:4px;cursor:pointer}
+.sheet-color-controls input[type="color"]:disabled{opacity:.45;cursor:not-allowed}
