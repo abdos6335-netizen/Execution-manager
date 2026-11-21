@@ -540,3 +540,19 @@ test('service worker cache is bumped when appearance assets change', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
   assert.match(sw, /wathiq-shell-v14/);
 });
+
+
+test('selected workspace card visibly lifts out of the stack with depth on desktop and mobile', () => {
+  const css = fs.readFileSync(new URL('../styles.css', 'file://' + __filename), 'utf8');
+  assert.match(css, /\.project-sheet-grid\{perspective:1400px/);
+  assert.match(css, /\.project-sheet\.selected\{transform:translate3d\(0,-15px,34px\) scale\(1\.022\)/);
+  assert.match(css, /\.project-sheet-grid\.has-selection \.project-sheet:not\(\.selected\)\{transform:translate3d\(0,0,-9px\) scale\(\.986\)/);
+  assert.match(css, /\.project-sheet\.expanded\{transform:translate3d\(0,-7px,28px\) scale\(1\.012\)/);
+  assert.match(css, /@media\(max-width:720px\)[\s\S]*\.project-sheet\.selected\{transform:translate3d\(0,-10px,24px\)/);
+  assert.match(css, /@media\(prefers-reduced-motion:reduce\)/);
+});
+
+test('lift interaction refreshes the installed app shell cache', () => {
+  const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
+  assert.match(sw, /wathiq-shell-v15/);
+});
