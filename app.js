@@ -233,15 +233,15 @@ $('exportData').onclick=()=>{const payload={app:'execution-manager',schemaVersio
 $('importData').onchange=async e=>{
  const file=e.target.files?.[0];if(!file)return;
  try{
-  if(!file||!Number.isFinite(file.size)||file.size<=0||file.size>20*1024*1024)throw Error('size');
+  const fileCheck=validateBackupFile(file);if(!fileCheck.ok)throw Error(fileCheck.reason);
   const parsed=JSON.parse(await file.text());
   if(!parsed||typeof parsed!=='object'||Array.isArray(parsed))throw Error('shape');
-  if(parsed.app&&parsed.app!=='execution-manager')throw Error('app');
-  if(parsed.schemaVersion!=null&&(!Number.isInteger(Number(parsed.schemaVersion))||Number(parsed.schemaVersion)<1||Number(parsed.schemaVersion)>2))throw Error('version');
+  if(parsed.app!==undefined&&parsed.app!=='execution-manager')throw Error('app');
+  const schemaVersion=parsed.schemaVersion==null?1:Number(parsed.schemaVersion);
+  if(parsed.schemaVersion!=null&&(!Number.isInteger(schemaVersion)||schemaVersion<1||schemaVersion>2))throw Error('version');
+  if(schemaVersion>=2&&parsed.app!=='execution-manager')throw Error('app');
   const imported=parsed.state||parsed;
-  if(!imported||typeof imported!=='object'||Array.isArray(imported)||!Array.isArray(imported.projects)||!imported.projects.length)throw Error('shape');
-  for(const key of ['collections','expenses','items','contractors','payments','purchases','laborEntries','siteLogs'])if(imported[key]!==undefined&&!Array.isArray(imported[key]))throw Error('shape');
-  const validation=validateImportedState(imported);if(!validation.ok)throw Error(validation.reason);
+  const validation=validateImportedState(imported,{schemaVersion});if(!validation.ok)throw Error(validation.reason);
   const next=validation.state,serialized=JSON.stringify(next);
   if(!serialized||serialized.length>30*1024*1024)throw Error('size');
   if(!confirm('تم فحص النسخة الاحتياطية. سيتم استبدال بيانات المشروع الحالية بها. يفضّل تصدير نسخة حالية أولاً. هل تريد المتابعة؟'))return;
@@ -541,22 +541,58 @@ function validateDailyLog(data){
  if(data.quantity!==''&&data.quantity!=null&&(!Number.isFinite(Number(data.quantity))||Number(data.quantity)<=0))return {ok:false,reason:'الكمية يجب أن تكون أكبر من صفر'};
  return {ok:true};
 }
-function validateImportedState(raw){
+function validateBackupFile(file){
+ if(!file||!Number.isFinite(file.size)||file.size<=0||file.size>20*1024*1024)return {ok:false,reason:'حجم الملف غير صحيح'};
+ const name=String(file.name||'').trim().toLowerCase(),type=String(file.type||'').trim().toLowerCase();
+ if(name&&!name.endsWith('.json'))return {ok:false,reason:'امتداد الملف يجب أن يكون JSON'};
+ if(type&&type!=='application/json'&&!/^application\\/[a-z0-9.+-]+\\+json$/.test(type))return {ok:false,reason:'نوع الملف ليس JSON'};
+ if(!name&&type!=='application/json'&&!/^application\\/[a-z0-9.+-]+\\+json$/.test(type))return {ok:false,reason:'تعذر التأكد من نوع ملف النسخة الاحتياطية'};
+ return {ok:true};
+}
+function validateImportedState(raw,options={}){
+ const schemaVersion=Number(options.schemaVersion||1);
  if(!raw||typeof raw!=='object'||Array.isArray(raw)||!Array.isArray(raw.projects)||!raw.projects.length)return {ok:false,reason:'هيكل النسخة الاحتياطية غير صحيح'};
- const arrayKeys=['collections','expenses','items','contractors','payments','purchases','laborEntries','siteLogs'];
- for(const key of arrayKeys)if(raw[key]!==undefined&&!Array.isArray(raw[key]))return {ok:false,reason:'قائمة '+key+' غير صحيحة'};
- const next=normalizeState(raw),projectIds=new Set(next.projects.map(x=>x.id)),itemIds=new Set(next.items.map(x=>x.id)),personIds=new Set(next.contractors.map(x=>x.id));
- const unique=(rows,key)=>{const seen=new Set();for(const x of rows){const id=String(x?.[key]||'');if(!id||seen.has(id))return false;seen.add(id)}return true};
- if(!unique(next.projects,'id')||!unique(next.items,'id')||!unique(next.contractors,'id')||!unique(next.collections,'id')||!unique(next.expenses,'id')||!unique(next.payments,'id')||!unique(next.purchases,'id')||!unique(next.laborEntries,'id')||!unique(next.siteLogs,'id'))return {ok:false,reason:'يوجد رقم تعريف مفقود أو مكرر في النسخة'};
- const validAmount=x=>Number.isFinite(Number(x?.amount))&&Number(x.amount)>0;
- for(const x of next.collections){if(!validAmount(x)||!projectIds.has(x.project))return {ok:false,reason:'بيانات تحصيل غير صحيحة أو مرتبطة بمشروع غير موجود'};}
- for(const x of next.expenses){if(!validAmount(x)||!projectIds.has(x.projectId)||(x.itemId&&!itemIds.has(x.itemId))||(x.payeeId&&!personIds.has(x.payeeId)))return {ok:false,reason:'بيانات مصروف غير صحيحة أو بها ربط مفقود'};}
- for(const x of next.payments){if(!validAmount(x)||!projectIds.has(x.projectId)||(x.itemId&&!itemIds.has(x.itemId))||(x.contractorId&&!personIds.has(x.contractorId)))return {ok:false,reason:'بيانات دفعة غير صحيحة أو بها ربط مفقود'};}
- for(const x of next.purchases){if(!validAmount(x)||!projectIds.has(x.projectId)||(x.itemId&&!itemIds.has(x.itemId))||(x.supplierId&&!personIds.has(x.supplierId)))return {ok:false,reason:'بيانات فاتورة مشتريات غير مكتملة'};}
- for(const x of next.laborEntries){if(!validAmount(x)||!projectIds.has(x.projectId)||(x.itemId&&!itemIds.has(x.itemId))||(x.contractorId&&!personIds.has(x.contractorId)))return {ok:false,reason:'بيانات أجرة مستحقة غير مكتملة'};}
- for(const x of next.siteLogs){if(!validateDailyLog(x).ok||!projectIds.has(x.projectId)||(x.itemId&&!itemIds.has(x.itemId)))return {ok:false,reason:'بيانات يومية الموقع غير صحيحة'};}
- for(const x of next.payments.filter(p=>p.purpose==='supplier_invoice_payment')){const invoice=next.purchases.find(i=>i.id===x.invoiceId);if(!invoice||invoice.projectId!==x.projectId||invoice.supplierId&&invoice.supplierId!==x.contractorId)return {ok:false,reason:'دفعة مورد مرتبطة بفاتورة أو مورد غير صحيح'};}
- for(const invoice of next.purchases){const paid=next.payments.filter(x=>x.invoiceId===invoice.id).reduce((s,x)=>s+Number(x.amount||0),0);if(paid>invoice.amount+.005)return {ok:false,reason:'دفعات إحدى الفواتير أكبر من قيمتها'};}
+ const requiredArrays=['collections','expenses','items','contractors','payments'];
+ const ledgerArrays=['purchases','laborEntries','siteLogs'];
+ for(const key of requiredArrays)if(!Array.isArray(raw[key]))return {ok:false,reason:'قائمة '+key+' مفقودة أو غير صحيحة'};
+ for(const key of ledgerArrays){
+  if(schemaVersion>=2&&!Array.isArray(raw[key]))return {ok:false,reason:'قائمة '+key+' مفقودة من النسخة الحديثة'};
+  if(raw[key]!==undefined&&!Array.isArray(raw[key]))return {ok:false,reason:'قائمة '+key+' غير صحيحة'};
+ }
+ const allArrays=['projects',...requiredArrays,...ledgerArrays];
+ for(const key of allArrays){
+  const rows=raw[key]===undefined?[]:raw[key];
+  if(!Array.isArray(rows)||rows.some(x=>!x||typeof x!=='object'||Array.isArray(x)))return {ok:false,reason:'يوجد سجل تالف أو فارغ في '+key};
+  if(rows.some(x=>typeof x.id!=='string'||!x.id.trim()))return {ok:false,reason:'يوجد سجل بدون رقم تعريف في '+key};
+  const ids=rows.map(x=>x.id.trim());
+  if(new Set(ids).size!==ids.length)return {ok:false,reason:'يوجد رقم تعريف مكرر في '+key};
+ }
+ const projectIds=new Set(raw.projects.map(x=>x.id));
+ if(raw.projects.some(x=>typeof x.name!=='string'||!x.name.trim()||!Number.isFinite(Number(x.rate))||Number(x.rate)<0||Number(x.rate)>100))return {ok:false,reason:'بيانات مشروع غير مكتملة'};
+ if(!projectIds.has(raw.current))return {ok:false,reason:'المشروع الحالي غير موجود في النسخة'};
+ const projectOf=(x)=>x.projectId||x.project||x.project_id||(raw.projects.length===1?raw.projects[0].id:'');
+ const validAmount=x=>typeof x.amount==='number'&&Number.isFinite(x.amount)&&x.amount>0;
+ const itemMap=new Map(raw.items.map(x=>[x.id,x])),personMap=new Map(raw.contractors.map(x=>[x.id,x]));
+ const validProjectRecord=(x)=>projectIds.has(projectOf(x));
+ for(const x of raw.items)if(!validProjectRecord(x)||typeof x.name!=='string'||!x.name.trim())return {ok:false,reason:'بيانات بند غير مكتملة أو مرتبطة بمشروع غير موجود'};
+ for(const x of raw.contractors)if(!validProjectRecord(x)||typeof x.name!=='string'||!x.name.trim())return {ok:false,reason:'بيانات مورد أو صنايعي غير مكتملة'};
+ for(const x of raw.collections)if(!validAmount(x)||!projectIds.has(x.project||x.projectId|| (raw.projects.length===1?raw.projects[0].id:''))||(x.rate!=null&&(!Number.isFinite(Number(x.rate))||Number(x.rate)<0||Number(x.rate)>100))||(x.reserved!=null&&(!Number.isFinite(Number(x.reserved))||Number(x.reserved)<0)))return {ok:false,reason:'بيانات تحصيل غير صحيحة أو مرتبطة بمشروع غير موجود'};
+ const validItemRef=(x)=>!x.itemId||(itemMap.has(x.itemId)&&projectOf(itemMap.get(x.itemId))===projectOf(x));
+ const validPersonRef=(x,idKey)=>!x[idKey]||(personMap.has(x[idKey])&&projectOf(personMap.get(x[idKey]))===projectOf(x));
+ for(const x of raw.expenses)if(!validAmount(x)||!validProjectRecord(x)||!validItemRef(x)||!validPersonRef(x,'payeeId'))return {ok:false,reason:'بيانات مصروف غير صحيحة أو بها ربط مفقود'};
+ for(const x of raw.payments)if(!validAmount(x)||!validProjectRecord(x)||!validItemRef(x)||!validPersonRef(x,'contractorId'))return {ok:false,reason:'بيانات دفعة غير صحيحة أو بها ربط مفقود'};
+ for(const x of raw.purchases||[])if(!validAmount(x)||!validProjectRecord(x)||!validItemRef(x)||!validPersonRef(x,'supplierId'))return {ok:false,reason:'بيانات فاتورة مشتريات غير مكتملة'};
+ for(const x of raw.laborEntries||[])if(!validAmount(x)||!validProjectRecord(x)||!validItemRef(x)||!validPersonRef(x,'contractorId'))return {ok:false,reason:'بيانات أجرة مستحقة غير مكتملة'};
+ for(const x of raw.siteLogs||[])if(!validateDailyLog(x).ok||!validProjectRecord(x)||!validItemRef(x))return {ok:false,reason:'بيانات يومية الموقع غير صحيحة'};
+ for(const x of raw.payments.filter(p=>p.purpose==='supplier_invoice_payment')){
+  const invoice=(raw.purchases||[]).find(i=>i.id===x.invoiceId);
+  if(!invoice||projectOf(invoice)!==projectOf(x)||(invoice.supplierId&&invoice.supplierId!==x.contractorId))return {ok:false,reason:'دفعة مورد مرتبطة بفاتورة أو مورد غير صحيح'};
+ }
+ for(const invoice of raw.purchases||[]){
+  const paid=raw.payments.filter(x=>x.invoiceId===invoice.id).reduce((sum,x)=>sum+x.amount,0);
+  if(paid>invoice.amount+.005)return {ok:false,reason:'دفعات إحدى الفواتير أكبر من قيمتها'};
+ }
+ const next=normalizeState(raw);
  return {ok:true,state:next};
 }
 function renderAdvancedLedger(){
