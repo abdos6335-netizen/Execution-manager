@@ -334,7 +334,7 @@ test('appearance preferences expose WeeklyPlanner-style controls and persist lin
     assert.ok(html.includes('id="' + id + '"'), 'missing appearance control: ' + id);
   }
   assert.ok(app.includes("lineHeight:1.4"));
-  assert.ok(app.includes("['#ffffff','#333333','#000000','#1f2419']"));
+  assert.ok(app.includes("['#ffffff','#333333','#000000','#121606']"));
   assert.doesNotMatch(html, /appearanceTextAuto/);
   assert.ok(app.includes("'--line-height':String(Math.min(1.8,Math.max(1.2,Number(a.lineHeight)||1.4)))"));
   assert.ok(css.includes('body{line-height:var(--line-height,1.4)}'));
@@ -502,8 +502,8 @@ test('site diary entries without a quantity remain valid after normalization', (
 test('muted appearance defaults and all theme swatches use the soft palettes', () => {
   const html = fs.readFileSync(new URL('../index.html', 'file://' + __filename), 'utf8');
   assert.ok(source.includes("accent:'#8cab99',background:'#e7eeea'"));
-  assert.ok(html.includes('value="#dcc653"'));
-  assert.ok(html.includes('value="#c2c6b1"'));
+  assert.ok(html.includes('value="#dec956"'));
+  assert.ok(html.includes('value="#c0c3b0"'));
   for (const color of ['#d9e8de','#e6dad3','#e5dcd1','#d9e7e9','#e9dce4','#dde4e9','#e2dfe8','#e2e2e6','#e8e2d6','#ebdde0']) {
     assert.ok(html.includes(color), 'missing muted theme swatch color '+color);
   }
@@ -515,12 +515,12 @@ test('legacy built-in appearance colors migrate while preserving other preferenc
   const app = createApp({'execution-manager-v02':appData,'em:appearance':appearance});
   const migrated = JSON.parse(app.storage.get('em:appearance'));
   assert.equal(migrated.theme,'olive');
-  assert.equal(migrated.accent,'#dcc653');
-  assert.equal(migrated.background,'#c2c6b1');
+  assert.equal(migrated.accent,'#dec956');
+  assert.equal(migrated.background,'#c0c3b0');
   assert.equal(migrated.font,'cairo');
   assert.equal(migrated.scale,110);
   assert.equal(migrated.saturation,85);
-  assert.equal(migrated.appearanceVersion,3);
+  assert.equal(migrated.appearanceVersion,4);
   assert.equal(app.storage.get('execution-manager-v02'),appData);
 });
 
@@ -833,10 +833,10 @@ test('olive is the default theme: yellow finance card, olive card stack and dark
   const appearance = app.getAppearance();
   assert.equal(appearance.theme, 'olive');
   assert.equal(appearance.sheetSpecialIndex, '0');
-  assert.equal(app.cssVars.get('--ink'), '#1f2419');
-  assert.equal(app.cssVars.get('--canvas'), '#c2c6b1');
-  assert.equal(app.cssVars.get('--sheet-1'), '#dfc855');
-  assert.equal(app.cssVars.get('--sheet-1-ink'), '#1f2419');
+  assert.equal(app.cssVars.get('--ink'), '#121606');
+  assert.equal(app.cssVars.get('--canvas'), '#c0c3b0');
+  assert.equal(app.cssVars.get('--sheet-1'), '#dec956');
+  assert.equal(app.cssVars.get('--sheet-1-ink'), '#121606');
   for (let i = 2; i <= 6; i++) assert.equal(app.cssVars.get('--sheet-' + i + '-ink'), '#ffffff', 'olive card ' + i + ' needs light text');
 });
 
@@ -845,7 +845,7 @@ test('olive theme migration only touches untouched built-in themes and never the
   const builtIn = createApp({ 'execution-manager-v02': appData, 'em:appearance': JSON.stringify({ theme: 'ocean', accent: '#8aa5ad', background: '#e7ecee', appearanceVersion: 2, scale: 105 }) });
   const migrated = JSON.parse(builtIn.storage.get('em:appearance'));
   assert.equal(migrated.theme, 'olive');
-  assert.equal(migrated.appearanceVersion, 3);
+  assert.equal(migrated.appearanceVersion, 4);
   assert.equal(migrated.scale, 105);
   assert.equal(builtIn.storage.get('execution-manager-v02'), appData);
 
