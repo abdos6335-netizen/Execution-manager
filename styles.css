@@ -648,3 +648,46 @@ html[data-dark="1"] .btn-primary{color:#101712}
 html[data-dark="1"] .btn-light:hover,
 html[data-dark="1"] .icon-btn:hover,
 html[data-dark="1"] .file-btn:hover{background:#45454d!important}
+
+
+/* ===== Olive theme — flat olive screens, bold grotesk type and a single yellow accent ===== */
+html[data-theme="olive"]{--display-serif:var(--app-font)}
+html[data-theme="olive"] body{font-variant-numeric:tabular-nums}
+html[data-theme="olive"] .main-wrap{background:var(--canvas);box-shadow:none;border:1px solid var(--line)}
+html[data-theme="olive"] .topbar{background:transparent}
+html[data-theme="olive"] .hub-heading h1,
+html[data-theme="olive"] .project-cover h1,
+html[data-theme="olive"] .page-head h1{font-weight:600;letter-spacing:-.035em;color:var(--ink)}
+html[data-theme="olive"] .eyebrow{font-size:calc(11px * var(--scale,1));font-weight:500;letter-spacing:.14em;color:var(--muted);text-transform:uppercase}
+html[data-theme="olive"] .surface,
+html[data-theme="olive"] .metric,
+html[data-theme="olive"] .record-card{background:var(--paper);border:1px solid var(--line);border-radius:16px;box-shadow:none}
+html[data-theme="olive"] .metric strong,
+html[data-theme="olive"] .summary-row strong,
+html[data-theme="olive"] .table-row b,
+html[data-theme="olive"] .activity-row b{font-weight:600}
+html[data-theme="olive"] .metric-highlight{background:var(--accent);border-color:transparent;color:var(--accent-ink,#14161a)}
+html[data-theme="olive"] .metric-highlight span,
+html[data-theme="olive"] .metric-highlight small{color:inherit;opacity:.78}
+html[data-theme="olive"] .btn{border-radius:12px;font-weight:600}
+html[data-theme="olive"] .btn-primary{background:var(--accent);color:var(--accent-ink,#14161a)}
+html[data-theme="olive"] .btn-light{background:transparent;border:1px solid color-mix(in srgb,var(--ink) 28%,transparent);color:var(--ink)}
+html[data-theme="olive"] input,
+html[data-theme="olive"] select,
+html[data-theme="olive"] textarea{background:color-mix(in srgb,#fff 28%,var(--paper));border-radius:12px}
+html[data-theme="olive"] .sidebar{box-shadow:none;border:1px solid var(--line)}
+html[data-theme="olive"] .side-nav button.active{background:var(--accent);color:var(--accent-ink,#14161a);box-shadow:none}
+html[data-theme="olive"] .side-nav button::after{color:var(--accent-ink,#14161a)}
+html[data-theme="olive"] .brand-mark{background:var(--accent);color:var(--accent-ink,#14161a)}
+html[data-theme="olive"] .mobile-nav{background:#2f3a2c}
+html[data-theme="olive"] .mobile-nav button.active{background:var(--accent);color:var(--accent-ink,#14161a)}
+html[data-theme="olive"] .project-tile{border-radius:18px;box-shadow:none}
+html[data-theme="olive"] .project-tile strong,
+html[data-theme="olive"] .project-sheet strong{font-weight:600;letter-spacing:-.03em}
+html[data-theme="olive"] .project-sheet small{text-transform:uppercase;letter-spacing:.14em;font-weight:500;opacity:.8}
+
+/* Card names stay readable: the stack overlaps each card by ~56px, so top-align the label inside the strip that stays visible. */
+#projectSheets .project-sheet-trigger{align-items:flex-start;padding-top:12px;padding-bottom:0}
+#projectSheets .project-sheet .sheet-copy{gap:2px}
+#projectSheets .project-sheet strong{font-size:clamp(20px,3vw,28px);line-height:1.25}
+#projectSheets .project-sheet .sheet-arrow{margin-top:8px}
