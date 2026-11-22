@@ -21,7 +21,7 @@ function createApp(initialStorage = {}) {
       },
       addEventListener(name, fn) { (listeners[name] ||= []).push(fn); },
       dispatch(name, event = {}) { const e = { target: this, ...event }; (listeners[name] || []).forEach(fn => fn(e)); },
-      setAttribute() {}, querySelector() { return makeElement(); },
+      setAttribute() {}, insertAdjacentHTML(position, html) { this.innerHTML += html; }, querySelector() { return makeElement(); },
       querySelectorAll() { return []; }, scrollIntoView() {}, reset() {}, click() {}
     };
   };
@@ -59,7 +59,8 @@ function createApp(initialStorage = {}) {
     globalThis.__appTest = {
       getState: () => state, normalizeState, parseQuickText, deriveSheetShades, getAppearance, saveAppearance, applyAppearance, toggleInvoiceSelector,
       contractorTotals, answerReportQuestion, today, spentForProject, SHEET_PALETTES, invoiceTotals, supplierLedgerTotals, laborTotalsForContractor, executionCostForProject, cashOutflowForProject, validateDailyLog, validateBackupFile, validateImportedState,
-      itemCard, itemMovements, paidForItem, findDuplicateMovement, save, elements: null, storage: null,
+      itemCard, itemMovements, paidForItem, findDuplicateMovement, save, editTransaction, elements: null, storage: null,
+      setPromptAnswers(answers) { const queue = [...answers]; window.prompt = () => queue.shift(); },
       failStorageWrites(value) { globalThis.__failWrites(value); }
     };
   `, context);
@@ -322,7 +323,7 @@ test('input fields are tinted one shade lighter from each actual card color, not
 
 test('Android PWA cache version is bumped for the new mobile card styles', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v22"'));
+  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v23"'));
 });
 
 test('appearance preferences expose WeeklyPlanner-style controls and persist line spacing', () => {
@@ -333,7 +334,7 @@ test('appearance preferences expose WeeklyPlanner-style controls and persist lin
     assert.ok(html.includes('id="' + id + '"'), 'missing appearance control: ' + id);
   }
   assert.ok(app.includes("lineHeight:1.4"));
-  assert.ok(app.includes("['#ffffff','#333333','#000000']"));
+  assert.ok(app.includes("['#ffffff','#333333','#000000','#1f2419']"));
   assert.doesNotMatch(html, /appearanceTextAuto/);
   assert.ok(app.includes("'--line-height':String(Math.min(1.8,Math.max(1.2,Number(a.lineHeight)||1.4)))"));
   assert.ok(css.includes('body{line-height:var(--line-height,1.4)}'));
@@ -342,7 +343,7 @@ test('appearance preferences expose WeeklyPlanner-style controls and persist lin
 });
 test('Android PWA cache is refreshed for expanded appearance settings', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v22"'));
+  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v23"'));
 });
 
 test('workspace settings shortcut remains visible in the full-width six-card layout', () => {
@@ -501,8 +502,8 @@ test('site diary entries without a quantity remain valid after normalization', (
 test('muted appearance defaults and all theme swatches use the soft palettes', () => {
   const html = fs.readFileSync(new URL('../index.html', 'file://' + __filename), 'utf8');
   assert.ok(source.includes("accent:'#8cab99',background:'#e7eeea'"));
-  assert.ok(html.includes('value="#8cab99"'));
-  assert.ok(html.includes('value="#e7eeea"'));
+  assert.ok(html.includes('value="#dcc653"'));
+  assert.ok(html.includes('value="#c2c6b1"'));
   for (const color of ['#d9e8de','#e6dad3','#e5dcd1','#d9e7e9','#e9dce4','#dde4e9','#e2dfe8','#e2e2e6','#e8e2d6','#ebdde0']) {
     assert.ok(html.includes(color), 'missing muted theme swatch color '+color);
   }
@@ -513,12 +514,13 @@ test('legacy built-in appearance colors migrate while preserving other preferenc
   const appearance = JSON.stringify({theme:'sage',accent:'#294438',background:'#f1f0e8',font:'cairo',scale:110,saturation:85});
   const app = createApp({'execution-manager-v02':appData,'em:appearance':appearance});
   const migrated = JSON.parse(app.storage.get('em:appearance'));
-  assert.equal(migrated.accent,'#8cab99');
-  assert.equal(migrated.background,'#e7eeea');
+  assert.equal(migrated.theme,'olive');
+  assert.equal(migrated.accent,'#dcc653');
+  assert.equal(migrated.background,'#c2c6b1');
   assert.equal(migrated.font,'cairo');
   assert.equal(migrated.scale,110);
   assert.equal(migrated.saturation,85);
-  assert.equal(migrated.appearanceVersion,2);
+  assert.equal(migrated.appearanceVersion,3);
   assert.equal(app.storage.get('execution-manager-v02'),appData);
 });
 
@@ -550,7 +552,7 @@ test('appearance palette writes the exact legacy sheet variables consumed by car
 
 test('service worker cache is bumped when appearance assets change', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.match(sw, /wathiq-shell-v22/);
+  assert.match(sw, /wathiq-shell-v23/);
 });
 
 
@@ -564,7 +566,7 @@ test('only the selected workspace card is pulled forward and tilted while the re
   assert.match(css, /#projectSheets \.project-sheet:nth-child\(2\)\{--sheet-stack-order:2;z-index:2\}/);
   assert.match(css, /@media\(max-width:720px\)[\s\S]*?rotate\(-2\.5deg\)/);
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.match(sw, /wathiq-shell-v22/);
+  assert.match(sw, /wathiq-shell-v23/);
 });
 
 test('workspace card palette supports six coordinated shades and one independently chosen standout card', () => {
@@ -578,7 +580,7 @@ test('workspace card palette supports six coordinated shades and one independent
   assert.ok(html.includes('id="sheetSpecialColor"'));
   for (const label of ['الماليات','الحركات اليومية','بنود التنفيذ','الصنايعية والموردين','التحصيلات','المصروفات']) assert.ok(html.includes('<option value="'+['الماليات','الحركات اليومية','بنود التنفيذ','الصنايعية والموردين','التحصيلات','المصروفات'].indexOf(label)+'">'+label+'</option>'));
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.match(sw, /wathiq-shell-v22/);
+  assert.match(sw, /wathiq-shell-v23/);
 });
 
 
@@ -804,4 +806,59 @@ test('backup validation rejects supplier invoice payments without an invoice lin
  const reserved=validBackupState();
  reserved.collections.push({id:'c1',project:'p1',amount:100,rate:10,reserved:150});
  assert.equal(app.validateImportedState(reserved).ok,false);
+});
+
+
+test('detail panels append their ledger sections without re-parsing the panel, so buttons and forms keep their handlers', () => {
+  // `el.innerHTML += html` rebuilds every child and silently drops handlers assigned with onclick/onsubmit
+  // (the payment form, delete, edit and close buttons). The fake DOM cannot see this, so guard the source.
+  assert.doesNotMatch(source, /\.innerHTML\s*\+=/);
+  assert.match(source, /d\.insertAdjacentHTML\('beforeend','<div class="advanced-ledger-group"><h3>ملخص الأجرة والسُلف/);
+  assert.match(source, /d\.insertAdjacentHTML\('beforeend','<div class="advanced-ledger-group"><h3>فواتير المشتريات المرتبطة/);
+});
+
+test('clearing a site-log quantity while editing stores null, so an exported backup still imports', () => {
+  const app = createApp();
+  const s = app.getState();
+  s.siteLogs = [{ id: 'log1', projectId: 'p1', date: '2026-11-20', itemId: '', item: '', quantity: 35, unit: 'م²', crew: '', type: 'execution', note: 'محارة الدور الأول' }];
+  // prompts in order: date, note, quantity (cleared), crew, unit
+  app.setPromptAnswers(['2026-11-20', 'محارة الدور الأول', '', '', 'م²']);
+  app.editTransaction('siteLog', 'log1');
+  assert.equal(s.siteLogs[0].quantity, null);
+  assert.equal(app.validateDailyLog(s.siteLogs[0]).ok, true);
+});
+
+test('olive is the default theme: yellow finance card, olive card stack and dark olive ink', () => {
+  const app = createApp();
+  const appearance = app.getAppearance();
+  assert.equal(appearance.theme, 'olive');
+  assert.equal(appearance.sheetSpecialIndex, '0');
+  assert.equal(app.cssVars.get('--ink'), '#1f2419');
+  assert.equal(app.cssVars.get('--canvas'), '#c2c6b1');
+  assert.equal(app.cssVars.get('--sheet-1'), '#dfc855');
+  assert.equal(app.cssVars.get('--sheet-1-ink'), '#1f2419');
+  for (let i = 2; i <= 6; i++) assert.equal(app.cssVars.get('--sheet-' + i + '-ink'), '#ffffff', 'olive card ' + i + ' needs light text');
+});
+
+test('olive theme migration only touches untouched built-in themes and never the project data', () => {
+  const appData = JSON.stringify({ projects: [{ id: 'p1', name: 'Existing project', rate: 12 }], current: 'p1' });
+  const builtIn = createApp({ 'execution-manager-v02': appData, 'em:appearance': JSON.stringify({ theme: 'ocean', accent: '#8aa5ad', background: '#e7ecee', appearanceVersion: 2, scale: 105 }) });
+  const migrated = JSON.parse(builtIn.storage.get('em:appearance'));
+  assert.equal(migrated.theme, 'olive');
+  assert.equal(migrated.appearanceVersion, 3);
+  assert.equal(migrated.scale, 105);
+  assert.equal(builtIn.storage.get('execution-manager-v02'), appData);
+
+  const custom = createApp({ 'em:appearance': JSON.stringify({ theme: 'ocean', accent: '#112233', background: '#445566', appearanceVersion: 2 }) });
+  const kept = JSON.parse(custom.storage.get('em:appearance'));
+  assert.equal(kept.theme, 'ocean');
+  assert.equal(kept.accent, '#112233');
+  assert.equal(kept.appearanceVersion, 2);
+
+  const customPalette = createApp({ 'em:appearance': JSON.stringify({ theme: 'sage', accent: '#8cab99', background: '#e7eeea', appearanceVersion: 2, sheetBaseColor: '#202020', sheetSpecialIndex: '4', sheetSpecialColor: '#b45c32' }) });
+  const preservedPalette = JSON.parse(customPalette.storage.get('em:appearance'));
+  assert.equal(preservedPalette.theme, 'sage');
+  assert.equal(preservedPalette.sheetBaseColor, '#202020');
+  assert.equal(preservedPalette.sheetSpecialIndex, '4');
+  assert.equal(preservedPalette.sheetSpecialColor, '#b45c32');
 });
