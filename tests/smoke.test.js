@@ -59,7 +59,7 @@ function createApp(initialStorage = {}) {
     globalThis.__appTest = {
       getState: () => state, normalizeState, parseQuickText, deriveSheetShades, getAppearance, saveAppearance, applyAppearance, toggleInvoiceSelector,
       contractorTotals, answerReportQuestion, today, spentForProject, SHEET_PALETTES, invoiceTotals, supplierLedgerTotals, laborTotalsForContractor, executionCostForProject, cashOutflowForProject, validateDailyLog, validateBackupFile, validateImportedState,
-      itemCard, itemMovements, paidForItem, findDuplicateMovement, save, editTransaction, elements: null, storage: null,
+      itemCard, itemMovements, paidForItem, findDuplicateMovement, parseAmountFromText, withDupCache, save, editTransaction, elements: null, storage: null,
       setPromptAnswers(answers) { const queue = [...answers]; window.prompt = () => queue.shift(); },
       failStorageWrites(value) { globalThis.__failWrites(value); }
     };
@@ -323,7 +323,7 @@ test('input fields are tinted one shade lighter from each actual card color, not
 
 test('Android PWA cache version is bumped for the new mobile card styles', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v24"'));
+  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v25"'));
 });
 
 test('appearance preferences expose WeeklyPlanner-style controls and persist line spacing', () => {
@@ -343,7 +343,7 @@ test('appearance preferences expose WeeklyPlanner-style controls and persist lin
 });
 test('Android PWA cache is refreshed for expanded appearance settings', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v24"'));
+  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v25"'));
 });
 
 test('workspace settings shortcut remains visible in the full-width six-card layout', () => {
@@ -552,7 +552,7 @@ test('appearance palette writes the exact legacy sheet variables consumed by car
 
 test('service worker cache is bumped when appearance assets change', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.match(sw, /wathiq-shell-v24/);
+  assert.match(sw, /wathiq-shell-v25/);
 });
 
 
@@ -566,7 +566,7 @@ test('only the selected workspace card is pulled forward and tilted while the re
   assert.match(css, /#projectSheets \.project-sheet:nth-child\(2\)\{--sheet-stack-order:2;z-index:2\}/);
   assert.match(css, /@media\(max-width:720px\)[\s\S]*?rotate\(-2\.5deg\)/);
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.match(sw, /wathiq-shell-v24/);
+  assert.match(sw, /wathiq-shell-v25/);
 });
 
 test('workspace card palette supports six coordinated shades and one independently chosen standout card', () => {
@@ -580,7 +580,7 @@ test('workspace card palette supports six coordinated shades and one independent
   assert.ok(html.includes('id="sheetSpecialColor"'));
   for (const label of ['الماليات','الحركات اليومية','بنود التنفيذ','الصنايعية والموردين','التحصيلات','المصروفات']) assert.ok(html.includes('<option value="'+['الماليات','الحركات اليومية','بنود التنفيذ','الصنايعية والموردين','التحصيلات','المصروفات'].indexOf(label)+'">'+label+'</option>'));
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.match(sw, /wathiq-shell-v24/);
+  assert.match(sw, /wathiq-shell-v25/);
 });
 
 
@@ -861,4 +861,32 @@ test('olive theme migration only touches untouched built-in themes and never the
   assert.equal(preservedPalette.sheetBaseColor, '#202020');
   assert.equal(preservedPalette.sheetSpecialIndex, '4');
   assert.equal(preservedPalette.sheetSpecialColor, '#b45c32');
+});
+
+test('quick-entry amounts understand the Arabic decimal mark and prefer the largest number', () => {
+  const app = createApp();
+  assert.equal(app.parseAmountFromText('دفعت ١٢٫٥ جنيه'), 12.5);
+  assert.equal(app.parseAmountFromText('دفعت 2000 لعامل 3 ايام'), 2000);
+});
+
+test('editing a site log cannot save an empty description that would make the backup unrestorable', () => {
+  const app = createApp();
+  const s = app.getState();
+  s.siteLogs.push({ id: 'l1', projectId: s.current, date: '2026-01-01', itemId: '', item: '', quantity: null, unit: '', crew: '', type: 'note', note: 'x' });
+  app.setPromptAnswers(['2026-01-01', '', '']);
+  app.editTransaction('siteLog', 'l1');
+  assert.equal(s.siteLogs[0].note, 'x');
+});
+
+test('duplicate-movement scan stays fast with many movements', () => {
+  const app = createApp();
+  const s = app.getState();
+  for (let i = 0; i < 20; i++) s.contractors.push({ id: 'c' + i, projectId: s.current, name: 'مقاول ' + i, aliases: [] });
+  for (let i = 0; i < 900; i++) s.expenses.push({ id: 'e' + i, projectId: s.current, itemId: '', item: '', type: 'other', amount: i + 1, payee: 'مقاول ' + (i % 20), payeeId: '', date: '2026-01-01' });
+  const t0 = Date.now();
+  const found = app.withDupCache(() => s.expenses.filter(x => app.findDuplicateMovement({ itemId: x.itemId, item: x.item, type: x.type, amount: x.amount, date: x.date, personId: x.payeeId, personName: x.payee, ignoreId: x.id })).length);
+  assert.equal(found, 0);
+  assert.ok(Date.now() - t0 < 1500, 'duplicate scan took ' + (Date.now() - t0) + 'ms');
+  s.expenses.push({ id: 'dup', projectId: s.current, itemId: '', item: '', type: 'other', amount: 5, payee: 'مقاول 4', payeeId: '', date: '2026-01-01' });
+  assert.ok(app.withDupCache(() => app.findDuplicateMovement({ type: 'other', amount: 5, date: '2026-01-01', personName: 'مقاول 4', ignoreId: 'dup' })));
 });
