@@ -430,6 +430,9 @@ function migrateAppearanceOlive(){
   const saved=JSON.parse(raw);if(!saved||typeof saved!=='object'||Array.isArray(saved)||Number(saved.appearanceVersion)>=3)return;
   const preset=APPEARANCE_PRESETS[saved.theme||'sage'];
   if(!preset||saved.accent!==preset.accent||saved.background!==preset.background)return;
+  // Do not replace a palette the user has already customised, even when the main theme colours are untouched.
+  const hasCustomSheetPalette=!!saved.sheetBaseColor||(saved.sheetSpecialIndex!=null&&saved.sheetSpecialIndex!=='none'&&Number(saved.sheetSpecialIndex)!==-1)||(saved.sheetSpecialColor&&saved.sheetSpecialColor!=='#c47b45');
+  if(hasCustomSheetPalette)return;
   localStorage.setItem(APPEARANCE_KEY,JSON.stringify({...saved,...APPEARANCE_PRESETS.olive,theme:'olive',sheetBaseColor:'',appearanceVersion:3}));
  }catch(error){console.warn('Wathiq olive theme migration skipped:',error)}
 }
