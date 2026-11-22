@@ -854,4 +854,11 @@ test('olive theme migration only touches untouched built-in themes and never the
   assert.equal(kept.theme, 'ocean');
   assert.equal(kept.accent, '#112233');
   assert.equal(kept.appearanceVersion, 2);
+
+  const customPalette = createApp({ 'em:appearance': JSON.stringify({ theme: 'sage', accent: '#8cab99', background: '#e7eeea', appearanceVersion: 2, sheetBaseColor: '#202020', sheetSpecialIndex: '4', sheetSpecialColor: '#b45c32' }) });
+  const preservedPalette = JSON.parse(customPalette.storage.get('em:appearance'));
+  assert.equal(preservedPalette.theme, 'sage');
+  assert.equal(preservedPalette.sheetBaseColor, '#202020');
+  assert.equal(preservedPalette.sheetSpecialIndex, '4');
+  assert.equal(preservedPalette.sheetSpecialColor, '#b45c32');
 });
