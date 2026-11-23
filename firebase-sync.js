@@ -27,7 +27,10 @@
       node.dataset.state = kind;
     }
     const label = $('cloudUserLabel');
+    const displayName = user ? (user.displayName || (user.email ? user.email.split('@')[0] : 'مستخدم')) : 'المستخدم';
     if (label) label.textContent = user ? (user.displayName || user.email || 'حساب Google متصل') : 'لم يتم تسجيل الدخول';
+    const sidebarName = $('sidebarUserName');
+    if (sidebarName) { sidebarName.textContent = displayName; sidebarName.title = user ? (user.displayName || user.email || displayName) : 'لم يتم تسجيل الدخول'; }
     const signIn = $('cloudSignIn');
     const signOut = $('cloudSignOut');
     const syncNow = $('cloudSyncNow');
