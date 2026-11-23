@@ -85,7 +85,8 @@
 
   async function writeState(state, expectedRevision, force = false) {
     if (!workspaceRef || !user) throw new Error('يجب تسجيل الدخول أولاً');
-    if (stateSizeBytes(state) > 900 * 1024) throw new Error('حجم البيانات أكبر من الحد الآمن لمستند Firestore. نحتاج تقسيم البيانات إلى مستندات متعددة قبل المزامنة.');
+    const cloudState = JSON.parse(JSON.stringify(state));
+    if (stateSizeBytes(cloudState) > 900 * 1024) throw new Error('حجم البيانات أكبر من الحد الآمن لمستند Firestore. نحتاج تقسيم البيانات إلى مستندات متعددة قبل المزامنة.');
     let writtenRevision = 0;
     await db.runTransaction(async transaction => {
       const snapshot = await transaction.get(workspaceRef);
@@ -294,6 +295,9 @@
       $('cloudOverwriteRemote')?.addEventListener('click', overwriteRemoteVersion);
       auth.getRedirectResult().catch(error => {
         if (error) setStatus('تعذر إكمال تسجيل الدخول: ' + (error.message || error.code), 'error');
+      });
+      window.addEventListener('online', () => {
+        if (user && ready && !conflict) syncNow();
       });
       auth.onAuthStateChanged(async nextUser => {
         if (unsubscribe) { unsubscribe(); unsubscribe = null; }
