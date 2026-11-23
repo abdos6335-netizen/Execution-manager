@@ -163,7 +163,9 @@
       const data = snapshot.data() || {};
       const revision = Number(data.revision || 0);
       if (revision <= lastRevision) return;
-      if (pendingLocal) {
+      const active = document.activeElement;
+      const editing = !!active && /^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName || '');
+      if (pendingLocal || editing) {
         conflict = true;
         conflictRevision = revision;
         latestRemoteState = data.state || null;
@@ -260,7 +262,13 @@
   }
 
   async function syncNow() {
-    if (!user || !ready) return;
+    if (!user) return;
+    if (!ready) {
+      setStatus('جاري إعادة محاولة تجهيز المزامنة…', 'info');
+      try { await initializeWorkspace(); }
+      catch (error) { setStatus('تعذرت إعادة المحاولة: ' + (error.message || error.code), 'error'); }
+      return;
+    }
     if (conflict) {
       setStatus('اختر أولاً: استخدام نسخة السحابة أو رفع نسخة هذا الجهاز.', 'warning');
       return;
