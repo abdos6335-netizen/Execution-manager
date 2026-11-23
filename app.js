@@ -488,7 +488,7 @@ function migrateAppearanceOlive(){
   const legacyBuiltins={sage:['#8cab99','#e7eeea'],sunset:['#af9688','#efeae7'],earth:['#ac9c8b','#eeebe7'],ocean:['#8aa5ad','#e7ecee'],berry:['#ab8c9c','#eee7eb'],slate:['#909ca7','#e8ebed'],glass:['#9a96a2','#eae9ec'],soft:['#9998a0','#eaeaeb'],sand:['#aaa08d','#eeebe8'],rose:['#aa8d92','#eee8e9']};
   const builtIn=legacyBuiltins[saved.theme],isBuiltIn=!!builtIn&&saved.accent===builtIn[0]&&saved.background===builtIn[1];
   const migrated={...saved,theme:valid?saved.theme:'olive'};
-  if(!valid&&(isBuiltIn||!saved.accent||!saved.background))Object.assign(migrated,APPEARANCE_PRESETS.olive);
+  if(!valid&&(isBuiltIn||!saved.accent||!saved.background)){const hasCustomSheet=!!saved.sheetBaseColor||(saved.sheetSpecialIndex!=null&&saved.sheetSpecialIndex!=='none'&&Number(saved.sheetSpecialIndex)!==0)||(saved.sheetSpecialColor&&saved.sheetSpecialColor!=='#dec956');Object.assign(migrated,{accent:APPEARANCE_PRESETS.olive.accent,background:APPEARANCE_PRESETS.olive.background,text:APPEARANCE_PRESETS.olive.text,surface:'same'});if(!hasCustomSheet)Object.assign(migrated,{sheetBaseColor:'',sheetSpecialIndex:'0',sheetSpecialColor:'#dec956'});}
   migrated.glass=false;migrated.blur=0;migrated.dimBlur=0;migrated.appearanceVersion=5;
   localStorage.setItem(APPEARANCE_KEY,JSON.stringify(migrated));
  }catch(error){console.warn('Wathiq appearance migration skipped:',error)}
