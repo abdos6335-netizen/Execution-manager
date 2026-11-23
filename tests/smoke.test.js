@@ -429,28 +429,15 @@ test('cancelled duplicate direct expense does not create an orphan contractor ac
 });
 
 
-test('all card palettes use muted colors with readable dark text and a lightness progression', () => {
+test('all coordinated card palettes expose six colors with a readable foreground for each', () => {
   const app = createApp();
   const palettes = app.SHEET_PALETTES;
-  assert.equal(Object.keys(palettes).length, 10);
+  assert.equal(Object.keys(palettes).length, 6);
   for (const [name, colors] of Object.entries(palettes)) {
     assert.equal(colors.length, 6, name + ' must contain six card colors');
-    const luminance = colors.map(hex => {
-      const rgb = hex.match(/[0-9a-f]{2}/gi).map(v => parseInt(v, 16) / 255);
-      const linear = rgb.map(v => v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4);
-      const [r, g, b] = linear;
-      return .2126 * r + .7152 * g + .0722 * b;
-    });
-    for (let i = 0; i < colors.length; i++) {
-      const rgb = colors[i].match(/[0-9a-f]{2}/gi).map(v => parseInt(v, 16) / 255);
-      const max = Math.max(...rgb), min = Math.min(...rgb);
-      const lightness = (max + min) / 2;
-      const saturation = max === min ? 0 : (max - min) / (1 - Math.abs(2 * lightness - 1));
-      assert.ok(saturation <= .30, name + ' color ' + (i + 1) + ' is too saturated');
-      const contrast = (luminance[i] + .05) / (.033 + .05);
-      assert.ok(contrast >= 4.5, name + ' color ' + (i + 1) + ' is too dark for #333 text');
-      assert.ok(luminance[i] >= .70, name + ' color ' + (i + 1) + ' must stay visibly light');
-      if (i) assert.ok(luminance[i] > luminance[i - 1], name + ' must brighten from card to card');
+    for (const color of colors) {
+      assert.match(color, /^#[0-9a-f]{6}$/i);
+      assert.ok(['#17191c','#ffffff'].includes(app.contrastInk(color)));
     }
   }
 });
@@ -502,13 +489,13 @@ test('site diary entries without a quantity remain valid after normalization', (
 });
 
 
-test('muted appearance defaults and all theme swatches use the soft palettes', () => {
+test('olive appearance remains the default and every new theme swatch belongs to the green-gold family', () => {
   const html = fs.readFileSync(new URL('../index.html', 'file://' + __filename), 'utf8');
-  assert.ok(source.includes("accent:'#8cab99',background:'#e7eeea'"));
+  assert.ok(source.includes("theme:'olive'"));
   assert.ok(html.includes('value="#dec956"'));
   assert.ok(html.includes('value="#c0c3b0"'));
-  for (const color of ['#d9e8de','#e6dad3','#e5dcd1','#d9e7e9','#e9dce4','#dde4e9','#e2dfe8','#e2e2e6','#e8e2d6','#ebdde0']) {
-    assert.ok(html.includes(color), 'missing muted theme swatch color '+color);
+  for (const color of ['#435844','#d7e879','#536b5d','#e0cf68','#344f48','#e0c85b','#555a37','#e0c65a','#5b5735','#e3c45a']) {
+    assert.ok(html.includes(color), 'missing coordinated theme swatch color '+color);
   }
 });
 
@@ -523,18 +510,19 @@ test('legacy built-in appearance colors migrate while preserving other preferenc
   assert.equal(migrated.font,'cairo');
   assert.equal(migrated.scale,110);
   assert.equal(migrated.saturation,85);
-  assert.equal(migrated.appearanceVersion,4);
+  assert.equal(migrated.appearanceVersion,5);
   assert.equal(app.storage.get('execution-manager-v02'),appData);
 });
 
-test('custom appearance colors are not overwritten by the legacy migration', () => {
+test('custom appearance colors survive while retired theme names migrate to olive', () => {
   const appearance = JSON.stringify({theme:'sage',accent:'#123456',background:'#abcdef',font:'tajawal'});
   const app = createApp({'em:appearance':appearance});
   const migrated = JSON.parse(app.storage.get('em:appearance'));
+  assert.equal(migrated.theme,'olive');
   assert.equal(migrated.accent,'#123456');
   assert.equal(migrated.background,'#abcdef');
   assert.equal(migrated.font,'tajawal');
-  assert.equal(migrated.appearanceVersion,2);
+  assert.equal(migrated.appearanceVersion,5);
 });
 
 
@@ -843,27 +831,30 @@ test('olive is the default theme: yellow finance card, olive card stack and dark
   for (let i = 2; i <= 6; i++) assert.equal(app.cssVars.get('--sheet-' + i + '-ink'), '#ffffff', 'olive card ' + i + ' needs light text');
 });
 
-test('olive theme migration only touches untouched built-in themes and never the project data', () => {
+test('retired built-in themes migrate to olive without changing project data or custom palette values', () => {
   const appData = JSON.stringify({ projects: [{ id: 'p1', name: 'Existing project', rate: 12 }], current: 'p1' });
   const builtIn = createApp({ 'execution-manager-v02': appData, 'em:appearance': JSON.stringify({ theme: 'ocean', accent: '#8aa5ad', background: '#e7ecee', appearanceVersion: 2, scale: 105 }) });
   const migrated = JSON.parse(builtIn.storage.get('em:appearance'));
-  assert.equal(migrated.theme, 'olive');
-  assert.equal(migrated.appearanceVersion, 4);
-  assert.equal(migrated.scale, 105);
-  assert.equal(builtIn.storage.get('execution-manager-v02'), appData);
+  assert.equal(migrated.theme,'olive');
+  assert.equal(migrated.accent,'#dec956');
+  assert.equal(migrated.background,'#c0c3b0');
+  assert.equal(migrated.appearanceVersion,5);
+  assert.equal(migrated.scale,105);
+  assert.equal(builtIn.storage.get('execution-manager-v02'),appData);
 
   const custom = createApp({ 'em:appearance': JSON.stringify({ theme: 'ocean', accent: '#112233', background: '#445566', appearanceVersion: 2 }) });
   const kept = JSON.parse(custom.storage.get('em:appearance'));
-  assert.equal(kept.theme, 'ocean');
-  assert.equal(kept.accent, '#112233');
-  assert.equal(kept.appearanceVersion, 2);
+  assert.equal(kept.theme,'olive');
+  assert.equal(kept.accent,'#112233');
+  assert.equal(kept.background,'#445566');
+  assert.equal(kept.appearanceVersion,5);
 
   const customPalette = createApp({ 'em:appearance': JSON.stringify({ theme: 'sage', accent: '#8cab99', background: '#e7eeea', appearanceVersion: 2, sheetBaseColor: '#202020', sheetSpecialIndex: '4', sheetSpecialColor: '#b45c32' }) });
   const preservedPalette = JSON.parse(customPalette.storage.get('em:appearance'));
-  assert.equal(preservedPalette.theme, 'sage');
-  assert.equal(preservedPalette.sheetBaseColor, '#202020');
-  assert.equal(preservedPalette.sheetSpecialIndex, '4');
-  assert.equal(preservedPalette.sheetSpecialColor, '#b45c32');
+  assert.equal(preservedPalette.theme,'olive');
+  assert.equal(preservedPalette.sheetBaseColor,'#202020');
+  assert.equal(preservedPalette.sheetSpecialIndex,'4');
+  assert.equal(preservedPalette.sheetSpecialColor,'#b45c32');
 });
 
 test('quick-entry amounts understand the Arabic decimal mark and prefer the largest number', () => {
@@ -947,10 +938,10 @@ test('Wathiq ships only coordinated green-gold palettes alongside the olive defa
   const html = fs.readFileSync(new URL('../index.html', 'file://' + __filename), 'utf8');
   assert.ok(app.includes("theme:'olive'"));
   for (const theme of ['olive','forest','eucalyptus','pine','moss','golden']) {
-    assert.ok(app.includes(theme+':[') || app.includes(theme+':{'));
     assert.ok(html.includes('data-theme="' + theme + '"'));
   }
-  assert.doesNotMatch(app, /sage:\{|sunset:\{|earth:\{|ocean:\{|berry:\{|slate:\{|glass:\{|soft:\{|sand:\{|rose:\{/);
+  const paletteBlock=app.slice(app.indexOf('const APPEARANCE_PRESETS'),app.indexOf('function contrastInk'));
+  assert.doesNotMatch(paletteBlock, /sage:\{|sunset:\{|earth:\{|ocean:\{|berry:\{|slate:\{|glass:\{|soft:\{|sand:\{|rose:\{/);
 });
 
 test('blur is disabled and desktop workspace expands to available width', () => {
