@@ -323,19 +323,22 @@ test('input fields are tinted one shade lighter from each actual card color, not
 
 test('Android PWA cache version is bumped for the new mobile card styles', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v28"'));
+  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v29"'));
 });
 
 test('appearance preferences expose WeeklyPlanner-style controls and persist line spacing', () => {
   const html = fs.readFileSync(new URL('../index.html', 'file://' + __filename), 'utf8');
   const app = fs.readFileSync(new URL('../app.js', 'file://' + __filename), 'utf8');
   const css = fs.readFileSync(new URL('../styles.css', 'file://' + __filename), 'utf8');
-  for (const id of ['appearanceMode','appearanceAccent','appearanceBackground','appearanceText','appearanceFont','appearanceScale','appearanceSaturation','appearanceSurface','appearanceGlass','appearanceBlur','appearanceIconStyle','appearanceLineHeight','appearanceHeading','appearanceSubheading','appearanceItem','appearanceMotionStyle','appearanceMotionSpeed','appearanceDoneColor']) {
+  for (const id of ['appearanceMode','appearanceAccent','appearanceBackground','appearanceText','appearanceFont','appearanceScale','appearanceSaturation','appearanceSurface','appearanceIconStyle','appearanceLineHeight','appearanceHeading','appearanceSubheading','appearanceItem','appearanceMotionStyle','appearanceMotionSpeed','appearanceDoneColor']) {
     assert.ok(html.includes('id="' + id + '"'), 'missing appearance control: ' + id);
   }
   assert.ok(app.includes("lineHeight:1.4"));
   assert.ok(app.includes("['#ffffff','#333333','#000000','#121606']"));
   assert.doesNotMatch(html, /appearanceTextAuto/);
+  assert.doesNotMatch(html, /appearanceGlass|appearanceBlur|appearanceDimBlur/);
+  for (const theme of ['olive','forest','eucalyptus','pine','moss','golden']) assert.ok(html.includes('data-theme=\"' + theme + '\"'));
+  assert.doesNotMatch(html, /data-theme=\"sage\"|data-theme=\"sunset\"|data-theme=\"earth\"|data-theme=\"ocean\"|data-theme=\"berry\"|data-theme=\"slate\"|data-theme=\"glass\"|data-theme=\"soft\"|data-theme=\"sand\"|data-theme=\"rose\"/);
   assert.ok(app.includes("'--line-height':String(Math.min(1.8,Math.max(1.2,Number(a.lineHeight)||1.4)))"));
   assert.ok(css.includes('body{line-height:var(--line-height,1.4)}'));
   assert.ok(html.includes('id="workspaceSettingsButton"'));
@@ -343,7 +346,7 @@ test('appearance preferences expose WeeklyPlanner-style controls and persist lin
 });
 test('Android PWA cache is refreshed for expanded appearance settings', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v28"'));
+  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v29"'));
 });
 
 test('workspace settings shortcut remains visible in the full-width six-card layout', () => {
@@ -552,7 +555,7 @@ test('appearance palette writes the exact legacy sheet variables consumed by car
 
 test('service worker cache is bumped when appearance assets change', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.match(sw, /wathiq-shell-v28/);
+  assert.match(sw, /wathiq-shell-v29/);
 });
 
 
@@ -566,7 +569,7 @@ test('only the selected workspace card is pulled forward and tilted while the re
   assert.match(css, /#projectSheets \.project-sheet:nth-child\(2\)\{--sheet-stack-order:2;z-index:2\}/);
   assert.match(css, /@media\(max-width:720px\)[\s\S]*?rotate\(-2\.5deg\)/);
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.match(sw, /wathiq-shell-v28/);
+  assert.match(sw, /wathiq-shell-v29/);
 });
 
 test('workspace card palette supports six coordinated shades and one independently chosen standout card', () => {
@@ -580,7 +583,7 @@ test('workspace card palette supports six coordinated shades and one independent
   assert.ok(html.includes('id="sheetSpecialColor"'));
   for (const label of ['الماليات','الحركات اليومية','بنود التنفيذ','الصنايعية والموردين','التحصيلات','المصروفات']) assert.ok(html.includes('<option value="'+['الماليات','الحركات اليومية','بنود التنفيذ','الصنايعية والموردين','التحصيلات','المصروفات'].indexOf(label)+'">'+label+'</option>'));
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.match(sw, /wathiq-shell-v28/);
+  assert.match(sw, /wathiq-shell-v29/);
 });
 
 
@@ -936,4 +939,29 @@ test('a materials payment to a supplier with open invoices asks before being cou
   assert.equal(app.confirmUnlinkedSupplierPayment('s1', 'materials', 100), false);
   assert.equal(asked, 1);
   assert.equal(app.confirmUnlinkedSupplierPayment('s1', 'labor', 100), true);
+});
+
+
+test('Wathiq ships only coordinated green-gold palettes alongside the olive default', () => {
+  const app = fs.readFileSync(new URL('../app.js', 'file://' + __filename), 'utf8');
+  const html = fs.readFileSync(new URL('../index.html', 'file://' + __filename), 'utf8');
+  assert.ok(app.includes("theme:'olive'"));
+  for (const theme of ['olive','forest','eucalyptus','pine','moss','golden']) {
+    assert.ok(app.includes(theme+':[') || app.includes(theme+':{'));
+    assert.ok(html.includes('data-theme="' + theme + '"'));
+  }
+  assert.doesNotMatch(app, /sage:\{|sunset:\{|earth:\{|ocean:\{|berry:\{|slate:\{|glass:\{|soft:\{|sand:\{|rose:\{/);
+});
+
+test('blur is disabled and desktop workspace expands to available width', () => {
+  const app = fs.readFileSync(new URL('../app.js', 'file://' + __filename), 'utf8');
+  const html = fs.readFileSync(new URL('../index.html', 'file://' + __filename), 'utf8');
+  const css = fs.readFileSync(new URL('../styles.css', 'file://' + __filename), 'utf8');
+  assert.ok(app.includes("'--glass-blur':'0px','--glass-opacity':'0'"));
+  assert.ok(app.includes("root.style.setProperty('--dim-blur','0px')"));
+  assert.doesNotMatch(html, /appearanceGlass|appearanceBlur|appearanceDimBlur/);
+  assert.ok(css.includes('backdrop-filter:none!important'));
+  assert.ok(css.includes('width:calc(100% - 252px)!important'));
+  assert.ok(css.includes('grid-template-columns:repeat(2,minmax(0,1fr))!important'));
+  assert.ok(css.includes('color:var(--accent-ink,#17191c)!important'));
 });
