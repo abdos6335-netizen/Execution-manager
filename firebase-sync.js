@@ -397,7 +397,7 @@
     }
   }
 
-  window.WathiqCloudSync = { init, localChanged, syncNow, mergeStates, hasLocalData, stateFingerprint, hasLocalChangesSinceSync };
+  window.WathiqCloudSync = { init, localChanged, syncNow, mergeStates, hasLocalData, stateFingerprint, hasLocalChangesSinceSync, saveSyncBaseline, loadSyncBaseline };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
   else init();
 })();
