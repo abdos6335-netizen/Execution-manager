@@ -289,7 +289,7 @@ $('importData').onchange=async e=>{
   let recoveryKey='';try{recoveryKey=KEY+'.recovery.'+Date.now();localStorage.setItem(recoveryKey,JSON.stringify(state))}catch{recoveryKey=''}
   try{localStorage.setItem(KEY,serialized)}catch(writeError){if(recoveryKey){try{localStorage.removeItem(recoveryKey)}catch{}}throw writeError}
   try{if(typeof localStorage.key==='function'){const old=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith(KEY+'.recovery.'))old.push(k)}old.sort().slice(0,-5).forEach(k=>localStorage.removeItem(k))}}catch{}
-  state=next;closePanels();render();renderQuickLists();renderReports();
+  state=next;window.WathiqCloudSync?.localChanged?.(state);closePanels();render();renderQuickLists();renderReports();
   alert('تم استيراد النسخة الاحتياطية بنجاح');
  }catch(err){console.error('Backup import rejected:',err);alert('تعذر استيراد النسخة الاحتياطية. لم يتم تغيير بياناتك الحالية. تأكد من سلامة الملف وإصداره وتوفر مساحة تخزين كافية.');}
  finally{e.target.value=''}
