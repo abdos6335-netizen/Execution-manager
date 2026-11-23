@@ -3,7 +3,7 @@
   'use strict';
 
   const firebaseConfig = {
-    apiKey: "AIzaSyCqoP1UI7YtObg1BLTnPNjI7GF_ONhLOUQ",
+    apiKey: "AIzaSyCqoP1UI7YtObg1BLTnPNjI7GF_0NhlOUQ",
     authDomain: "execution-manager-7a22f.firebaseapp.com",
     projectId: "execution-manager-7a22f",
     storageBucket: "execution-manager-7a22f.firebasestorage.app",
