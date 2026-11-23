@@ -777,3 +777,33 @@ html[data-theme="olive"] #projectSheets .project-sheet:first-child .project-shee
 html[data-theme="olive"] .app-shell[data-hub]{padding:0!important;gap:0}
 @media(max-width:520px){html[data-theme="olive"] .app-shell[data-hub] .main-wrap{border-radius:0;border:0;min-height:100dvh}}
 html[data-theme="olive"] #projectSheets .project-sheet.expanded,html[data-theme="olive"] #projectSheets .project-sheet.expanded.selected{transform:none!important;box-shadow:none!important}
+
+/* ===== Desktop vs phone, tilt on press only, adjustable blur on the other bands ===== */
+/* the heavy phone frame is gone: phone = full bleed, tablet = centred column, desktop = wide workspace */
+@media(min-width:521px){
+ html[data-theme="olive"] .app-shell[data-hub] .main-wrap{max-width:680px;margin:20px auto;min-height:calc(100vh - 40px);border:1px solid rgba(18,22,6,.22);border-radius:28px;overflow:hidden}
+}
+@media(min-width:900px){
+ html[data-theme="olive"] .app-shell[data-hub] .main-wrap{--u:1.8px;max-width:1080px;margin:28px auto;min-height:calc(100vh - 56px);border-radius:32px}
+ html[data-theme="olive"] .ref-bar{padding-inline:calc(var(--u) * 28)}
+ html[data-theme="olive"] .hub-heading,html[data-theme="olive"] .project-cover{padding-inline:calc(var(--u) * 28)}
+ html[data-theme="olive"] #projectSheets .project-sheet-trigger,
+ html[data-theme="olive"] #projectSheets .project-sheet:first-child .project-sheet-trigger,
+ html[data-theme="olive"] .project-tile{padding-inline:calc(var(--u) * 28)!important}
+ html[data-theme="olive"] #projectSheets .project-sheet .sheet-copy strong{font-size:calc(var(--u) * 10)}
+ html[data-theme="olive"] #projectSheets .project-sheet .sheet-amt{font-size:calc(var(--u) * 11.5)}
+ html[data-theme="olive"] #projectSheets .project-sheet:not(:first-child) .project-sheet-trigger{min-height:calc(var(--u) * 46)}
+ html[data-theme="olive"] #projectSheets .project-sheet:first-child .project-sheet-trigger{min-height:calc(var(--u) * 130)!important}
+ html[data-theme="olive"] .sheet-plus{width:calc(var(--u) * 40)!important;height:calc(var(--u) * 40)!important}
+ html[data-theme="olive"] #projectSheets .sheet-inline-content{padding:clamp(20px,2.6vw,36px) calc(var(--u) * 28)}
+}
+/* tilt only while a band is selected (pressed); an opened band lies flat */
+html[data-theme="olive"] #projectSheets .project-sheet{transition:transform .32s cubic-bezier(.2,.8,.2,1),filter .32s,box-shadow .32s!important}
+/* light blur on every other band while one is selected or opened; strength comes from Settings */
+html[data-theme="olive"] #projectSheets .project-sheet-grid.has-selection .project-sheet:not(.selected):not(.expanded),
+html[data-theme="olive"] #projectSheets .project-sheet-grid.has-expanded .project-sheet:not(.expanded){filter:blur(var(--dim-blur,2px))!important}
+@media(min-width:900px){html[data-theme="olive"] #projectSheets .project-sheet.selected:not(.expanded){transform:rotate(-.6deg) translateY(-5px)!important}}
+/* an opened band and its content lie perfectly flat (no counter-tilt left over from the old stack) */
+@keyframes oliveReveal{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+html[data-theme="olive"] #projectSheets .project-sheet.expanded .sheet-inline-content{transform:none!important;clip-path:none!important;animation:oliveReveal .35s ease-out both!important}
+html[data-theme="olive"] #projectSheets .project-sheet.expanded,html[data-theme="olive"] #projectSheets .project-sheet.expanded.selected{transform:none!important}
