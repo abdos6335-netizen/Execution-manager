@@ -57,7 +57,7 @@ function createApp(initialStorage = {}) {
   });
   vm.runInContext(source + `
     globalThis.__appTest = {
-      getState: () => state, normalizeState, parseQuickText, deriveSheetShades, getAppearance, saveAppearance, applyAppearance, toggleInvoiceSelector,
+      getState: () => state, normalizeState, parseQuickText, deriveSheetShades, getAppearance, saveAppearance, applyAppearance, contrastInk, toggleInvoiceSelector,
       contractorTotals, answerReportQuestion, today, spentForProject, SHEET_PALETTES, invoiceTotals, supplierLedgerTotals, laborTotalsForContractor, executionCostForProject, cashOutflowForProject, validateDailyLog, validateBackupFile, validateImportedState,
       itemCard, itemMovements, paidForItem, findDuplicateMovement, parseAmountFromText, withDupCache, relinkRenamedItem, relinkRenamedContractor, confirmUnlinkedSupplierPayment, setConfirm(fn) { globalThis.confirm = fn; }, save, editTransaction, elements: null, storage: null,
       setPromptAnswers(answers) { const queue = [...answers]; window.prompt = () => queue.shift(); },
@@ -828,7 +828,10 @@ test('olive is the default theme: yellow finance card, olive card stack and dark
   assert.equal(app.cssVars.get('--canvas'), '#c0c3b0');
   assert.equal(app.cssVars.get('--sheet-1'), '#dec956');
   assert.equal(app.cssVars.get('--sheet-1-ink'), '#121606');
-  for (let i = 2; i <= 6; i++) assert.equal(app.cssVars.get('--sheet-' + i + '-ink'), '#ffffff', 'olive card ' + i + ' needs light text');
+  for (let i = 1; i <= 6; i++) {
+    const expected = app.contrastInk(app.cssVars.get('--sheet-' + i));
+    assert.equal(app.cssVars.get('--sheet-' + i + '-ink'), expected === '#17191c' ? '#121606' : '#ffffff', 'olive card ' + i + ' needs a contrasting foreground');
+  }
 });
 
 test('retired built-in themes migrate to olive without changing project data or custom palette values', () => {
