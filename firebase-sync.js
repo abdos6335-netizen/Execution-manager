@@ -74,6 +74,57 @@
     return merged;
   }
 
+  const baselineKey = uid => 'wathiq:cloud-sync-baseline:' + uid + ':main';
+
+  function stableStateString(value) {
+    if (Array.isArray(value)) return '[' + value.map(stableStateString).join(',') + ']';
+    if (value && typeof value === 'object') {
+      return '{' + Object.keys(value).sort().map(key => JSON.stringify(key) + ':' + stableStateString(value[key])).join(',') + '}';
+    }
+    return JSON.stringify(value);
+  }
+
+  function stateFingerprint(state) {
+    const value = stableStateString(state);
+    let first = 0x811c9dc5, second = 0x9e3779b9;
+    for (let i = 0; i < value.length; i++) {
+      const code = value.charCodeAt(i);
+      first = Math.imul(first ^ code, 0x01000193);
+      second = Math.imul(second ^ code, 0x85ebca6b);
+    }
+    return (first >>> 0).toString(16).padStart(8, '0') + (second >>> 0).toString(16).padStart(8, '0');
+  }
+
+  function loadSyncBaseline(uid = user?.uid) {
+    if (!uid || !window.localStorage) return null;
+    try {
+      const raw = window.localStorage.getItem(baselineKey(uid));
+      const value = raw ? JSON.parse(raw) : null;
+      return value && typeof value.hash === 'string' ? value : null;
+    } catch (error) {
+      console.warn('Could not read cloud sync baseline:', error);
+      return null;
+    }
+  }
+
+  function saveSyncBaseline(state, revision = lastRevision, uid = user?.uid) {
+    if (!uid || !window.localStorage) return;
+    try {
+      window.localStorage.setItem(baselineKey(uid), JSON.stringify({
+        hash: stateFingerprint(state),
+        revision: Number(revision || 0),
+        savedAt: Date.now()
+      }));
+    } catch (error) {
+      console.warn('Could not save cloud sync baseline:', error);
+    }
+  }
+
+  function hasLocalChangesSinceSync(localState, uid = user?.uid) {
+    const baseline = loadSyncBaseline(uid);
+    return !!baseline && stateFingerprint(localState) !== baseline.hash;
+  }
+
   function stateSizeBytes(state) {
     return new TextEncoder().encode(JSON.stringify(state)).length;
   }
@@ -106,6 +157,7 @@
       });
     });
     lastRevision = writtenRevision;
+    saveSyncBaseline(cloudState, writtenRevision);
     pendingLocal = false;
     conflict = false;
     latestRemoteState = null;
@@ -130,21 +182,32 @@
       if (!remoteState || typeof remoteState !== 'object') throw new Error('مستند السحابة لا يحتوي على نسخة بيانات صالحة.');
       lastRevision = Number(remote.revision || 1);
 
-      if (hasLocalData(localState)) {
+      const baseline = loadSyncBaseline(user.uid);
+      const localHasData = hasLocalData(localState);
+      const localMatchesCloud = stateFingerprint(localState) === stateFingerprint(remoteState);
+      const localChangedSinceSync = baseline
+        ? stateFingerprint(localState) !== baseline.hash
+        : localHasData && !localMatchesCloud;
+
+      if (localChangedSinceSync && !baseline) {
         const merge = window.confirm(
-          'وجدنا بيانات محفوظة على هذا الجهاز وبيانات أخرى في السحابة.\n\n' +
-          'اضغط موافق لدمج السجلات غير المتكررة. عند وجود نفس معرّف السجل في النسختين سنحتفظ بنسخة السحابة.\n' +
+          'وجدنا بيانات محفوظة على هذا الجهاز وبيانات أخرى في السحابة.\\n\\n' +
+          'اضغط موافق لدمج السجلات غير المتكررة. عند وجود نفس معرّف السجل في النسختين سنحتفظ بنسخة السحابة.\\n' +
           'اضغط إلغاء لإيقاف الربط الآن دون تغيير أي بيانات.'
         );
         if (!merge) {
           setStatus('المزامنة متوقفة لحماية البيانات المحلية. لم يتم استبدال أي بيانات.', 'warning');
           return;
         }
+      }
+
+      if (localChangedSinceSync) {
         const combined = mergeStates(localState, remoteState);
         applyRemoteState(combined);
         await writeState(combined, lastRevision, false);
       } else {
         applyRemoteState(remoteState);
+        saveSyncBaseline(remoteState, lastRevision);
         setStatus('تم تحميل بيانات حسابك من السحابة', 'success');
       }
     }
@@ -225,6 +288,7 @@
     pendingLocal = false;
     conflict = false;
     latestRemoteState = null;
+    saveSyncBaseline(latestRemoteState, lastRevision);
     setStatus('تم اعتماد نسخة السحابة على هذا الجهاز', 'success');
   }
 
@@ -333,7 +397,7 @@
     }
   }
 
-  window.WathiqCloudSync = { init, localChanged, syncNow, mergeStates, hasLocalData };
+  window.WathiqCloudSync = { init, localChanged, syncNow, mergeStates, hasLocalData, stateFingerprint, hasLocalChangesSinceSync };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
   else init();
 })();
