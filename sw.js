@@ -1,9 +1,9 @@
-const CACHE_NAME = "wathiq-shell-v26";
+const CACHE_NAME = "wathiq-shell-v27";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./styles.css",
-  "./app.js",
+  "./app.js",\n  "./firebase-sync.js",
   "./manifest.webmanifest",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
