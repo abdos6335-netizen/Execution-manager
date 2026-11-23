@@ -40,7 +40,7 @@ test('cloud state merge prefers cloud copy when the same record id exists', () =
 
 test('empty starter workspace is not treated as existing local user data', () => {
   const cloud = helpers();
-  assert.equal(cloud.hasLocalData({ projects: [{ id: 'p1', name: 'المشروع الأول' }], collections: [], expenses: [] }), false);
+  assert.equal(cloud.hasLocalData({ projects: [{ id: 'p1', name: 'المشروع الأول', rate: 10 }], collections: [], expenses: [] }), false);
 });
 
 test('real project records are detected before first cloud connection', () => {
