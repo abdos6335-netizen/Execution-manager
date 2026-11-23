@@ -323,7 +323,7 @@ test('input fields are tinted one shade lighter from each actual card color, not
 
 test('Android PWA cache version is bumped for the new mobile card styles', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v31"'));
+  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v32"'));
 });
 
 test('appearance preferences expose WeeklyPlanner-style controls and persist line spacing', () => {
@@ -337,7 +337,7 @@ test('appearance preferences expose WeeklyPlanner-style controls and persist lin
   assert.ok(app.includes("['#ffffff','#333333','#000000','#121606']"));
   assert.doesNotMatch(html, /appearanceTextAuto/);
   assert.doesNotMatch(html, /appearanceGlass|appearanceBlur|appearanceDimBlur/);
-  for (const theme of ['olive','forest','eucalyptus','pine','moss','golden','petrol','navyred','bluegold']) assert.ok(html.includes('data-theme=\"' + theme + '\"'));
+  for (const theme of ['olive','navyred','petrol','bluegold','burgundy']) assert.ok(html.includes('data-theme=\"' + theme + '\"'));
   assert.doesNotMatch(html, /data-theme=\"sage\"|data-theme=\"sunset\"|data-theme=\"earth\"|data-theme=\"ocean\"|data-theme=\"berry\"|data-theme=\"slate\"|data-theme=\"glass\"|data-theme=\"soft\"|data-theme=\"sand\"|data-theme=\"rose\"/);
   assert.ok(app.includes("'--line-height':String(Math.min(1.8,Math.max(1.2,Number(a.lineHeight)||1.4)))"));
   assert.ok(css.includes('body{line-height:var(--line-height,1.4)}'));
@@ -346,7 +346,7 @@ test('appearance preferences expose WeeklyPlanner-style controls and persist lin
 });
 test('Android PWA cache is refreshed for expanded appearance settings', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v31"'));
+  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v32"'));
 });
 
 test('workspace settings shortcut remains visible in the full-width six-card layout', () => {
@@ -429,11 +429,11 @@ test('cancelled duplicate direct expense does not create an orphan contractor ac
 });
 
 
-test('all nine coordinated card palettes expose six colors with a readable foreground for each', () => {
+test('all five coordinated card palettes expose six colors with a readable foreground for each', () => {
   const app = createApp();
   const palettes = app.SHEET_PALETTES;
-  assert.equal(Object.keys(palettes).length, 9);
-  for (const name of ['petrol','navyred','bluegold']) assert.ok(palettes[name], 'missing high-contrast palette: ' + name);
+  assert.equal(Object.keys(palettes).length, 5);
+  for (const name of ['petrol','navyred','bluegold','burgundy']) assert.ok(palettes[name], 'missing high-contrast palette: ' + name);
   for (const [name, colors] of Object.entries(palettes)) {
     assert.equal(colors.length, 6, name + ' must contain six card colors');
     for (const color of colors) {
@@ -490,12 +490,12 @@ test('site diary entries without a quantity remain valid after normalization', (
 });
 
 
-test('olive appearance remains the default and every new theme swatch belongs to the green-gold family', () => {
+test('olive remains the default and five theme swatches show genuinely different color families', () => {
   const html = fs.readFileSync(new URL('../index.html', 'file://' + __filename), 'utf8');
   assert.ok(source.includes("theme:'olive'"));
   assert.ok(html.includes('value="#dec956"'));
   assert.ok(html.includes('value="#c0c3b0"'));
-  for (const color of ['#435844','#d7e879','#536b5d','#e0cf68','#344f48','#e0c85b','#555a37','#e0c65a','#5b5735','#e3c45a']) {
+  for (const color of ['#192d45','#d96559','#153e46','#e5c84f','#1d385c','#e7c34b','#593342','#d8bd91']) {
     assert.ok(html.includes(color), 'missing coordinated theme swatch color '+color);
   }
 });
@@ -511,7 +511,7 @@ test('legacy built-in appearance colors migrate while preserving other preferenc
   assert.equal(migrated.font,'cairo');
   assert.equal(migrated.scale,110);
   assert.equal(migrated.saturation,85);
-  assert.equal(migrated.appearanceVersion,5);
+  assert.equal(migrated.appearanceVersion,6);
   assert.equal(app.storage.get('execution-manager-v02'),appData);
 });
 
@@ -523,7 +523,7 @@ test('custom appearance colors survive while retired theme names migrate to oliv
   assert.equal(migrated.accent,'#123456');
   assert.equal(migrated.background,'#abcdef');
   assert.equal(migrated.font,'tajawal');
-  assert.equal(migrated.appearanceVersion,5);
+  assert.equal(migrated.appearanceVersion,6);
 });
 
 
@@ -544,7 +544,7 @@ test('appearance palette writes the exact legacy sheet variables consumed by car
 
 test('service worker cache is bumped when appearance assets change', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.match(sw, /wathiq-shell-v31/);
+  assert.match(sw, /wathiq-shell-v32/);
 });
 
 
@@ -558,7 +558,7 @@ test('only the selected workspace card is pulled forward and tilted while the re
   assert.match(css, /#projectSheets \.project-sheet:nth-child\(2\)\{--sheet-stack-order:2;z-index:2\}/);
   assert.match(css, /@media\(max-width:720px\)[\s\S]*?rotate\(-2\.5deg\)/);
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.match(sw, /wathiq-shell-v31/);
+  assert.match(sw, /wathiq-shell-v32/);
 });
 
 test('workspace card palette supports six coordinated shades and one independently chosen standout card', () => {
@@ -572,7 +572,7 @@ test('workspace card palette supports six coordinated shades and one independent
   assert.ok(html.includes('id="sheetSpecialColor"'));
   for (const label of ['الماليات','الحركات اليومية','بنود التنفيذ','الصنايعية والموردين','التحصيلات','المصروفات']) assert.ok(html.includes('<option value="'+['الماليات','الحركات اليومية','بنود التنفيذ','الصنايعية والموردين','التحصيلات','المصروفات'].indexOf(label)+'">'+label+'</option>'));
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.match(sw, /wathiq-shell-v31/);
+  assert.match(sw, /wathiq-shell-v32/);
 });
 
 
@@ -791,10 +791,10 @@ test('desktop sidebar shows the account name, named tabs and a persistent collap
  assert.match(css,/\.side-nav \.nav-text\{display:inline!important/);
  assert.match(css,/\.main-wrap\{border-radius:0!important/);
 });
-test('high contrast petrol, navy-red and blue-gold themes each define matching backgrounds and six card colors',()=>{
+test('petrol, navy-red, blue-gold and burgundy themes define matching backgrounds and six card colors',()=>{
  const app=fs.readFileSync(new URL('../app.js','file://' + __filename),'utf8');
  const html=fs.readFileSync(new URL('../index.html','file://' + __filename),'utf8');
- for(const theme of ['petrol','navyred','bluegold']){
+ for(const theme of ['petrol','navyred','bluegold','burgundy']){
   assert.ok(app.includes(theme+':{accent:'));
   assert.ok(app.includes(theme+':['));
   assert.ok(html.includes('data-theme="'+theme+'"'));
@@ -864,7 +864,7 @@ test('retired built-in themes migrate to olive without changing project data or 
   assert.equal(migrated.theme,'olive');
   assert.equal(migrated.accent,'#dec956');
   assert.equal(migrated.background,'#c0c3b0');
-  assert.equal(migrated.appearanceVersion,5);
+  assert.equal(migrated.appearanceVersion,6);
   assert.equal(migrated.scale,105);
   assert.equal(builtIn.storage.get('execution-manager-v02'),appData);
 
@@ -959,15 +959,15 @@ test('a materials payment to a supplier with open invoices asks before being cou
 });
 
 
-test('Wathiq ships only coordinated green-gold palettes alongside the olive default', () => {
+test('Wathiq ships exactly five distinct coordinated themes alongside the olive default', () => {
   const app = fs.readFileSync(new URL('../app.js', 'file://' + __filename), 'utf8');
   const html = fs.readFileSync(new URL('../index.html', 'file://' + __filename), 'utf8');
   assert.ok(app.includes("theme:'olive'"));
-  for (const theme of ['olive','forest','eucalyptus','pine','moss','golden']) {
+  for (const theme of ['olive','navyred','petrol','bluegold','burgundy']) {
     assert.ok(html.includes('data-theme="' + theme + '"'));
   }
   const paletteBlock=app.slice(app.indexOf('const APPEARANCE_PRESETS'),app.indexOf('function contrastInk'));
-  assert.doesNotMatch(paletteBlock, /sage:\{|sunset:\{|earth:\{|ocean:\{|berry:\{|slate:\{|glass:\{|soft:\{|sand:\{|rose:\{/);
+  assert.doesNotMatch(paletteBlock, /forest:\{|eucalyptus:\{|pine:\{|moss:\{|golden:\{|sage:\{|sunset:\{|earth:\{|ocean:\{|berry:\{|slate:\{|glass:\{|soft:\{|sand:\{|rose:\{/);
 });
 
 test('blur is disabled and desktop workspace expands to available width', () => {
