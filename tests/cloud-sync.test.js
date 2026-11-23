@@ -6,7 +6,13 @@ const vm = require('node:vm');
 const source = fs.readFileSync(new URL('../firebase-sync.js', 'file://' + __filename), 'utf8');
 
 function helpers() {
-  const window = {};
+  const storage = new Map();
+  const window = {
+    localStorage: {
+      getItem(key) { return storage.has(key) ? storage.get(key) : null; },
+      setItem(key, value) { storage.set(key, String(value)); }
+    }
+  };
   const document = { readyState: 'loading', addEventListener() {} };
   const context = vm.createContext({ window, document, console, TextEncoder, setTimeout, clearTimeout });
   vm.runInContext(source, context);
@@ -46,4 +52,28 @@ test('empty starter workspace is not treated as existing local user data', () =>
 test('real project records are detected before first cloud connection', () => {
   const cloud = helpers();
   assert.equal(cloud.hasLocalData({ projects: [{ id: 'p1' }], collections: [{ id: 'c1', amount: 250 }] }), true);
+});
+
+
+test('synced device baseline recognizes unchanged local data after refresh', () => {
+  const cloud = helpers();
+  const state = { projects: [{ id: 'p1', name: 'Project' }], expenses: [{ id: 'e1', amount: 50 }] };
+  cloud.saveSyncBaseline(state, 7, 'user-1');
+  assert.equal(cloud.hasLocalChangesSinceSync(state, 'user-1'), false);
+  assert.equal(cloud.hasLocalChangesSinceSync({ expenses: state.expenses, projects: state.projects }, 'user-1'), false);
+  assert.equal(cloud.loadSyncBaseline('user-1').revision, 7);
+});
+
+test('synced device baseline detects offline local changes but ignores other accounts', () => {
+  const cloud = helpers();
+  const synced = { projects: [{ id: 'p1', name: 'Project' }], expenses: [] };
+  cloud.saveSyncBaseline(synced, 3, 'user-1');
+  assert.equal(cloud.hasLocalChangesSinceSync({ projects: [{ id: 'p1', name: 'Edited locally' }], expenses: [] }, 'user-1'), true);
+  assert.equal(cloud.hasLocalChangesSinceSync(synced, 'user-2'), false);
+});
+
+test('sync fingerprint ignores object key order while preserving record array order', () => {
+  const cloud = helpers();
+  assert.equal(cloud.stateFingerprint({ a: 1, b: { c: 2, d: 3 } }), cloud.stateFingerprint({ b: { d: 3, c: 2 }, a: 1 }));
+  assert.notEqual(cloud.stateFingerprint({ rows: [{ id: 'a' }, { id: 'b' }] }), cloud.stateFingerprint({ rows: [{ id: 'b' }, { id: 'a' }] }));
 });
