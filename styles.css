@@ -874,9 +874,9 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
  html[data-theme] .brand>div:last-child{display:block!important;min-width:0!important}
  html[data-theme] .brand strong{display:block!important}
  html[data-theme] .brand small{display:block!important}
- html[data-theme] .sidebar-toggle{width:100%;display:flex;align-items:center;justify-content:flex-start;gap:10px;padding:10px 12px;margin:0 0 16px;border:1px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);font:inherit;font-size:12px;font-weight:600}
+ html[data-theme] .sidebar-toggle{width:100%;display:flex;align-items:center;justify-content:flex-start;gap:10px;padding:10px 12px;margin:0 0 16px;border:1px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);font:inherit;font-size:calc(12px * var(--scale,1));font-weight:600}
  html[data-theme] .sidebar-toggle:hover{background:var(--nav2)}
- html[data-theme] .sidebar-toggle .toggle-icon{font-size:18px;line-height:1}
+ html[data-theme] .sidebar-toggle .toggle-icon{font-size:calc(18px * var(--scale,1));line-height:1}
  html[data-theme] .project-switch{width:100%;padding:12px!important;margin:0 0 18px!important}
  html[data-theme] .project-switch label,html[data-theme] .nav-label,html[data-theme] .sidebar-foot{display:block!important}
  html[data-theme] .project-switch select{font-size:13px!important;text-align:start!important}
