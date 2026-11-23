@@ -485,8 +485,8 @@ function migrateAppearanceOlive(){
   const raw=localStorage.getItem(APPEARANCE_KEY);if(!raw)return;
   const saved=JSON.parse(raw);if(!saved||typeof saved!=='object'||Array.isArray(saved)||Number(saved.appearanceVersion)>=5)return;
   const allowed=['olive','forest','eucalyptus','pine','moss','golden'],valid=allowed.includes(saved.theme);
-  const legacyBuiltins={sage:['#8cab99','#e7eeea'],sunset:['#af9688','#efeae7'],earth:['#ac9c8b','#eeebe7'],ocean:['#8aa5ad','#e7ecee'],berry:['#ab8c9c','#eee7eb'],slate:['#909ca7','#e8ebed'],glass:['#9a96a2','#eae9ec'],soft:['#9998a0','#eaeaeb'],sand:['#aaa08d','#eeebe8'],rose:['#aa8d92','#eee8e9']};
-  const builtIn=legacyBuiltins[saved.theme],isBuiltIn=!!builtIn&&saved.accent===builtIn[0]&&saved.background===builtIn[1];
+  const legacyBuiltins={sage:[['#8cab99','#e7eeea'],['#294438','#f1f0e8']],sunset:[['#af9688','#efeae7'],['#b94d31','#f5d78c']],earth:[['#ac9c8b','#eeebe7'],['#594332','#e6d4b8']],ocean:[['#8aa5ad','#e7ecee'],['#244b5b','#d4e4df']],berry:[['#ab8c9c','#eee7eb'],['#653b55','#ead5d9']],slate:[['#909ca7','#e8ebed'],['#394653','#e0e4e5']],glass:[['#9a96a2','#eae9ec'],['#302e32','#e3e3e4']],soft:[['#9998a0','#eaeaeb'],['#2c2c30','#e8e8ea']],sand:[['#aaa08d','#eeebe8'],['#6b5a43','#ebe4d8']],rose:[['#aa8d92','#eee8e9'],['#7a3b4f','#ede2e5']]};
+  const isBuiltIn=(legacyBuiltins[saved.theme]||[]).some(pair=>saved.accent===pair[0]&&saved.background===pair[1]);
   const migrated={...saved,theme:valid?saved.theme:'olive'};
   if(!valid&&(isBuiltIn||!saved.accent||!saved.background)){const hasCustomSheet=!!saved.sheetBaseColor||(saved.sheetSpecialIndex!=null&&saved.sheetSpecialIndex!=='none'&&Number(saved.sheetSpecialIndex)!==0)||(saved.sheetSpecialColor&&saved.sheetSpecialColor!=='#dec956');Object.assign(migrated,{accent:APPEARANCE_PRESETS.olive.accent,background:APPEARANCE_PRESETS.olive.background,text:APPEARANCE_PRESETS.olive.text,surface:'same'});if(!hasCustomSheet)Object.assign(migrated,{sheetBaseColor:'',sheetSpecialIndex:'0',sheetSpecialColor:'#dec956'});}
   migrated.glass=false;migrated.blur=0;migrated.dimBlur=0;migrated.appearanceVersion=5;
