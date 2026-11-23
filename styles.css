@@ -807,3 +807,14 @@ html[data-theme="olive"] #projectSheets .project-sheet-grid.has-expanded .projec
 @keyframes oliveReveal{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 html[data-theme="olive"] #projectSheets .project-sheet.expanded .sheet-inline-content{transform:none!important;clip-path:none!important;animation:oliveReveal .35s ease-out both!important}
 html[data-theme="olive"] #projectSheets .project-sheet.expanded,html[data-theme="olive"] #projectSheets .project-sheet.expanded.selected{transform:none!important}
+
+/* Firebase cloud sync controls */
+.cloud-sync-panel{position:relative;overflow:hidden}
+.cloud-sync-panel .cloud-mark{display:grid;place-items:center;width:42px;height:42px;border-radius:14px;background:var(--surface-soft,rgba(120,130,110,.12));font-size:1.45rem}
+.cloud-sync-status{margin:10px 0;padding:11px 13px;border-radius:12px;background:rgba(120,130,110,.09);font-size:.92rem;line-height:1.7}
+.cloud-sync-status[data-state="success"]{background:rgba(47,125,79,.11);color:#23613a}
+.cloud-sync-status[data-state="warning"]{background:rgba(185,125,35,.13);color:#81520e}
+.cloud-sync-status[data-state="error"]{background:rgba(180,55,55,.11);color:#9a2929}
+.cloud-sync-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.cloud-sync-actions .btn{min-height:42px}
+.cloud-sync-panel .hint{margin-top:12px}
