@@ -79,7 +79,7 @@ function enableWorkspaceSwipeBack(){
 enableWorkspaceSwipeBack();
 function project(){return state.projects.find(p=>p.id===state.current)||state.projects[0]}
 let storageWarned=false;
-function save(){try{localStorage.setItem(KEY,JSON.stringify(state));storageWarned=false}catch(err){if(!storageWarned){storageWarned=true;alert('تعذر حفظ البيانات على هذا الجهاز (المساحة ممتلئة أو التخزين غير متاح). التغييرات ظاهرة الآن فقط، فصدّر نسخة احتياطية قبل إغلاق الصفحة.')}}render();if(typeof renderReports==='function')renderReports();if(typeof refreshOpenDetails==='function')refreshOpenDetails()}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));storageWarned=false;window.WathiqCloudSync?.localChanged?.(state)}catch(err){if(!storageWarned){storageWarned=true;alert('تعذر حفظ البيانات على هذا الجهاز (المساحة ممتلئة أو التخزين غير متاح). التغييرات ظاهرة الآن فقط، فصدّر نسخة احتياطية قبل إغلاق الصفحة.')}}render();if(typeof renderReports==='function')renderReports();if(typeof refreshOpenDetails==='function')refreshOpenDetails()}
 function currentItems(){return state.items.filter(x=>x.projectId===state.current)}
 function currentContractors(){return state.contractors.filter(x=>x.projectId===state.current)}
 function itemById(id){return state.items.find(x=>x.id===id)}
@@ -289,7 +289,7 @@ $('importData').onchange=async e=>{
   let recoveryKey='';try{recoveryKey=KEY+'.recovery.'+Date.now();localStorage.setItem(recoveryKey,JSON.stringify(state))}catch{recoveryKey=''}
   try{localStorage.setItem(KEY,serialized)}catch(writeError){if(recoveryKey){try{localStorage.removeItem(recoveryKey)}catch{}}throw writeError}
   try{if(typeof localStorage.key==='function'){const old=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith(KEY+'.recovery.'))old.push(k)}old.sort().slice(0,-5).forEach(k=>localStorage.removeItem(k))}}catch{}
-  state=next;closePanels();render();renderQuickLists();renderReports();
+  state=next;window.WathiqCloudSync?.localChanged?.(state);closePanels();render();renderQuickLists();renderReports();
   alert('تم استيراد النسخة الاحتياطية بنجاح');
  }catch(err){console.error('Backup import rejected:',err);alert('تعذر استيراد النسخة الاحتياطية. لم يتم تغيير بياناتك الحالية. تأكد من سلامة الملف وإصداره وتوفر مساحة تخزين كافية.');}
  finally{e.target.value=''}
@@ -800,3 +800,22 @@ function refreshOpenDetails(){
 
 // Render the additive diary and accounting views on first load; no storage migration is performed.
 render();renderReports();
+
+// Stable bridge used by the optional Firebase layer. Remote writes update the
+// existing local key first, then refresh the current UI without triggering a cloud echo.
+window.WathiqAppBridge = {
+  getState: () => state,
+  applyRemoteState(raw) {
+    const next = normalizeState(raw);
+    const serialized = JSON.stringify(next);
+    if (!serialized || serialized.length > 30 * 1024 * 1024) throw new Error('نسخة البيانات غير صالحة أو أكبر من الحد المسموح.');
+    localStorage.setItem(KEY, serialized);
+    state = next;
+    closePanels();
+    render();
+    if (typeof renderReports === 'function') renderReports();
+    if (typeof renderQuickLists === 'function') renderQuickLists();
+    if (typeof renderProjectSheets === 'function') renderProjectSheets();
+    if (typeof refreshOpenDetails === 'function') refreshOpenDetails();
+  }
+};
