@@ -485,7 +485,10 @@ function migrateAppearanceOlive(){
   const raw=localStorage.getItem(APPEARANCE_KEY);if(!raw)return;
   const saved=JSON.parse(raw);if(!saved||typeof saved!=='object'||Array.isArray(saved)||Number(saved.appearanceVersion)>=5)return;
   const allowed=['olive','forest','eucalyptus','pine','moss','golden'],valid=allowed.includes(saved.theme);
-  const migrated=valid?{...saved}:{...saved,...APPEARANCE_PRESETS.olive,theme:'olive',sheetBaseColor:''};
+  const legacyBuiltins={sage:['#8cab99','#e7eeea'],sunset:['#af9688','#efeae7'],earth:['#ac9c8b','#eeebe7'],ocean:['#8aa5ad','#e7ecee'],berry:['#ab8c9c','#eee7eb'],slate:['#909ca7','#e8ebed'],glass:['#9a96a2','#eae9ec'],soft:['#9998a0','#eaeaeb'],sand:['#aaa08d','#eeebe8'],rose:['#aa8d92','#eee8e9']};
+  const builtIn=legacyBuiltins[saved.theme],isBuiltIn=!!builtIn&&saved.accent===builtIn[0]&&saved.background===builtIn[1];
+  const migrated={...saved,theme:valid?saved.theme:'olive'};
+  if(!valid&&(isBuiltIn||!saved.accent||!saved.background))Object.assign(migrated,APPEARANCE_PRESETS.olive);
   migrated.glass=false;migrated.blur=0;migrated.dimBlur=0;migrated.appearanceVersion=5;
   localStorage.setItem(APPEARANCE_KEY,JSON.stringify(migrated));
  }catch(error){console.warn('Wathiq appearance migration skipped:',error)}
