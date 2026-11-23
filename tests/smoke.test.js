@@ -778,6 +778,28 @@ test('failed backup storage write leaves both live state and stored app data unc
  assert.equal(app.storage.get('execution-manager-v02'),beforeStored);
  assert.equal(target.value,'');
 });
+test('desktop sidebar shows the account name, named tabs and a persistent collapse control',()=>{
+ const html=fs.readFileSync(new URL('../index.html','file://' + __filename),'utf8');
+ const app=fs.readFileSync(new URL('../app.js','file://' + __filename),'utf8');
+ const sync=fs.readFileSync(new URL('../firebase-sync.js','file://' + __filename),'utf8');
+ const css=fs.readFileSync(new URL('../styles.css','file://' + __filename),'utf8');
+ assert.ok(html.includes('id="sidebarUserName"'));
+ assert.ok(html.includes('id="sidebarToggle"'));
+ assert.ok(app.includes("wathiq:sidebar-expanded"));
+ assert.ok(sync.includes("user.displayName || (user.email ? user.email.split('@')[0] : 'مستخدم')"));
+ assert.match(css,/\.app-shell\[data-sidebar="collapsed"\] \.sidebar/);
+ assert.match(css,/\.side-nav \.nav-text\{display:inline!important/);
+ assert.match(css,/\.main-wrap\{border-radius:0!important/);
+});
+test('high contrast petrol, navy-red and blue-gold themes each define matching backgrounds and six card colors',()=>{
+ const app=fs.readFileSync(new URL('../app.js','file://' + __filename),'utf8');
+ const html=fs.readFileSync(new URL('../index.html','file://' + __filename),'utf8');
+ for(const theme of ['petrol','navyred','bluegold']){
+  assert.ok(app.includes(theme+':{accent:'));
+  assert.ok(app.includes(theme+':['));
+  assert.ok(html.includes('data-theme="'+theme+'"'));
+ }
+});
 test('font scaling covers fixed-pixel declarations and dark mode themes common legacy surfaces',()=>{
  const css=fs.readFileSync(new URL('../styles.css','file://'+__filename),'utf8');
  assert.doesNotMatch(css,/font-size:\s*\d+(?:\.\d+)?px\s*;/);
