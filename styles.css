@@ -818,3 +818,48 @@ html[data-theme="olive"] #projectSheets .project-sheet.expanded,html[data-theme=
 .cloud-sync-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .cloud-sync-actions .btn{min-height:42px}
 .cloud-sync-panel .hint{margin-top:12px}
+
+
+/* Wathiq visual refresh: remove every blur layer and keep interactive text readable. */
+*,*::before,*::after{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.project-sheet-grid:before,.project-sheet-grid:after{display:none!important;filter:none!important}
+.project-sheet-grid.has-selection .project-sheet:not(.selected),
+.project-sheet-grid.has-expanded .project-sheet:not(.expanded),
+.project-sheet{filter:none!important}
+.btn-primary,.hub-add{color:var(--accent-ink,#17191c)!important}
+.btn-primary:disabled,.btn-primary[disabled]{color:var(--accent-ink,#17191c)!important;opacity:.62}
+.btn-primary:hover,.hub-add:hover{color:var(--accent-ink,#17191c)!important}
+.project-tile{color:var(--sheet-1-ink,#17191c)}
+.project-tile small,.project-tile strong,.project-tile span{color:inherit}
+button:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+@media(min-width:1100px){
+ html[data-theme] .app-shell[data-hub]{display:flex!important;align-items:stretch;gap:0;min-height:100vh}
+ html[data-theme] .app-shell[data-hub] .sidebar{display:flex!important;width:252px;flex:0 0 252px;position:sticky;top:0;height:100vh;min-height:100vh}
+ html[data-theme] .app-shell[data-hub] .main-wrap{display:flex!important;flex:1 1 auto;width:calc(100% - 252px)!important;max-width:none!important;min-width:0;margin:0!important;min-height:100vh!important;height:auto!important;border:0!important;border-radius:0!important;overflow:visible!important;box-shadow:none!important}
+ html[data-theme] .app-shell[data-hub] main{width:100%;max-width:none!important;margin:0!important;padding:clamp(24px,3vw,48px)!important;min-width:0}
+ html[data-theme] .app-shell[data-hub] .hub-page{width:100%!important;max-width:none!important;margin:0!important;padding:0!important;min-height:calc(100vh - 60px);overflow:visible!important}
+ html[data-theme] .app-shell[data-hub] .ref-bar{padding:10px 0 0!important}
+ html[data-theme] .app-shell[data-hub] .hub-heading,html[data-theme] .app-shell[data-hub] .project-cover{padding:30px 0 24px!important}
+ html[data-theme] #projectHome .project-cards{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(320px,1fr))!important;gap:20px!important;padding:0!important;overflow:visible!important}
+ html[data-theme] #projectHome .project-tile{min-height:220px!important;border-radius:18px!important;padding:26px!important;overflow-wrap:anywhere}
+ html[data-theme] #projectHome .hub-add{width:auto!important;min-width:240px;min-height:54px!important;border-radius:12px!important;margin-top:22px!important}
+ html[data-theme] #projectSheets .project-sheet-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:18px!important;padding:0!important;margin:0!important;overflow:visible!important;max-width:none!important}
+ html[data-theme] #projectSheets .project-sheet{min-width:0!important;min-height:150px!important;height:auto!important;max-height:none!important;border-radius:16px!important;overflow:visible!important;transform:none!important;box-shadow:var(--shadow)!important}
+ html[data-theme] #projectSheets .project-sheet.expanded{grid-column:1/-1!important}
+ html[data-theme] #projectSheets .project-sheet-trigger,html[data-theme] #projectSheets .project-sheet:first-child .project-sheet-trigger{min-height:150px!important;height:auto!important;padding:24px!important;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:16px!important;overflow:visible!important}
+ html[data-theme] #projectSheets .project-sheet .sheet-copy{display:flex!important;flex-direction:column!important;gap:8px!important;min-width:0}
+ html[data-theme] #projectSheets .project-sheet strong{font-size:clamp(15px,1.25vw,20px)!important;line-height:1.4!important;white-space:normal!important}
+ html[data-theme] #projectSheets .project-sheet small{display:block!important;font-size:11px!important;opacity:.75}
+ html[data-theme] #projectSheets .project-sheet .sheet-hint{opacity:.75!important;max-height:none!important;font-size:12px!important}
+ html[data-theme] #projectSheets .project-sheet .sheet-amt{font-size:clamp(15px,1.4vw,22px)!important;white-space:normal!important;text-align:end!important}
+ html[data-theme] #projectSheets .project-sheet .sheet-arrow{display:block!important}
+ html[data-theme] #projectSheets .project-sheet:first-child .sheet-plus{display:none!important}
+ html[data-theme] #projectSheets .sheet-inline-content{padding:24px!important;overflow:visible!important;max-width:100%!important}
+ html[data-theme] .app-shell[data-hub] .surface,html[data-theme] .app-shell[data-hub] .table-wrap{max-width:100%;min-width:0}
+ html[data-theme] .app-shell[data-hub] .table-wrap{overflow-x:auto}
+ html[data-theme] .app-shell[data-hub] .form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(min-width:1500px){
+ html[data-theme] #projectSheets .project-sheet-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+ html[data-theme] #projectSheets .project-sheet.expanded{grid-column:1/-1!important}
+}
