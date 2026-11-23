@@ -100,7 +100,7 @@
       transaction.set(workspaceRef, {
         schemaVersion: 1,
         revision: writtenRevision,
-        state,
+        state: cloudState,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
         updatedBy: user.uid
       });
