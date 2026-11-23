@@ -8,7 +8,8 @@
 <body>
 <div class="app-shell" id="appShell">
 <aside class="sidebar">
-  <div class="brand"><div class="brand-mark">و</div><div><strong>وَثيق</strong><small>إدارة تنفيذ التشطيبات</small></div></div>
+  <div class="brand"><div class="brand-mark" id="sidebarUserName" title="اسم المستخدم">المستخدم</div><div><strong>وَثيق</strong><small>إدارة تنفيذ التشطيبات</small></div></div>
+  <button type="button" id="sidebarToggle" class="sidebar-toggle" aria-label="تصغير القائمة" aria-expanded="true" title="تصغير القائمة"><span class="toggle-icon">⇤</span><span class="toggle-label">تصغير القائمة</span></button>
   <div class="project-switch"><label for="projectSelect">المشروع الحالي</label><select id="projectSelect"></select></div>
   <div class="nav-label">مساحة العمل</div>
   <nav class="side-nav" aria-label="التنقل الرئيسي">
@@ -127,13 +128,16 @@
    </div>
    <p class="hint">تقدر تختار كارت واحد فقط بلون مستقل وتحدد لونه بنفسك. باقي الكروت تحتفظ باختلاف درجات واضح مع نفس عائلة اللون.</p>
   </div>
-  <div class="theme-gallery"><div class="theme-gallery-head"><strong>مجموعات الألوان</strong><small>باليتات جديدة بنفس هوية الأخضر والأصفر</small></div><div class="theme-options">
+  <div class="theme-gallery"><div class="theme-gallery-head"><strong>مجموعات الألوان</strong><small>اختر مجموعة متباينة، وتتغير معها الخلفية وألوان الواجهة تلقائياً</small></div><div class="theme-options">
 <button type="button" class="theme-option" data-theme="olive"><span class="theme-swatch" style="background:linear-gradient(110deg,#414b3d,#586551,#67775f 62%,#dec956 62%)"></span><strong>زيتوني · الافتراضي</strong></button>
 <button type="button" class="theme-option" data-theme="forest"><span class="theme-swatch" style="background:linear-gradient(110deg,#435844,#657c61,#8da084 70%,#d7e879 70%)"></span><strong>غابة</strong></button>
 <button type="button" class="theme-option" data-theme="eucalyptus"><span class="theme-swatch" style="background:linear-gradient(110deg,#536b5d,#748e7e,#9bb0a1 70%,#e0cf68 70%)"></span><strong>أوكالبتوس</strong></button>
 <button type="button" class="theme-option" data-theme="pine"><span class="theme-swatch" style="background:linear-gradient(110deg,#344f48,#58756b,#819b90 70%,#e0c85b 70%)"></span><strong>صنوبر</strong></button>
 <button type="button" class="theme-option" data-theme="moss"><span class="theme-swatch" style="background:linear-gradient(110deg,#555a37,#777d50,#9ba071 70%,#e0c65a 70%)"></span><strong>طحلب</strong></button>
 <button type="button" class="theme-option" data-theme="golden"><span class="theme-swatch" style="background:linear-gradient(110deg,#5b5735,#7c764b,#a09868 70%,#e3c45a 70%)"></span><strong>ذهبي طبيعي</strong></button>
+<button type="button" class="theme-option" data-theme="petrol"><span class="theme-swatch" style="background:linear-gradient(110deg,#153e46,#356b73,#68969a 70%,#e5c84f 70%)"></span><strong>بترولي · أصفر</strong></button>
+<button type="button" class="theme-option" data-theme="navyred"><span class="theme-swatch" style="background:linear-gradient(110deg,#192d45,#3a5674,#718ba2 70%,#d96559 70%)"></span><strong>كحلي · أحمر</strong></button>
+<button type="button" class="theme-option" data-theme="bluegold"><span class="theme-swatch" style="background:linear-gradient(110deg,#1d385c,#3d638d,#7897b8 70%,#e7c34b 70%)"></span><strong>أزرق · ذهبي</strong></button>
 </div></div>
  </section>
  <form id="settingsForm" class="surface form-grid"><label>اسم المشروع<input id="projectName" required></label><label>نسبة الربح المحجوزة %<input id="profitRate" type="number" min="0" max="100" step=".1" required></label><div class="form-actions"><button class="btn btn-primary">حفظ الإعدادات</button></div></form>
