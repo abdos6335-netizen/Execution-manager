@@ -59,7 +59,7 @@ function createApp(initialStorage = {}) {
     globalThis.__appTest = {
       getState: () => state, normalizeState, parseQuickText, deriveSheetShades, getAppearance, saveAppearance, applyAppearance, toggleInvoiceSelector,
       contractorTotals, answerReportQuestion, today, spentForProject, SHEET_PALETTES, invoiceTotals, supplierLedgerTotals, laborTotalsForContractor, executionCostForProject, cashOutflowForProject, validateDailyLog, validateBackupFile, validateImportedState,
-      itemCard, itemMovements, paidForItem, findDuplicateMovement, parseAmountFromText, withDupCache, save, editTransaction, elements: null, storage: null,
+      itemCard, itemMovements, paidForItem, findDuplicateMovement, parseAmountFromText, withDupCache, relinkRenamedItem, relinkRenamedContractor, confirmUnlinkedSupplierPayment, setConfirm(fn) { globalThis.confirm = fn; }, save, editTransaction, elements: null, storage: null,
       setPromptAnswers(answers) { const queue = [...answers]; window.prompt = () => queue.shift(); },
       failStorageWrites(value) { globalThis.__failWrites(value); }
     };
@@ -323,7 +323,7 @@ test('input fields are tinted one shade lighter from each actual card color, not
 
 test('Android PWA cache version is bumped for the new mobile card styles', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v25"'));
+  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v26"'));
 });
 
 test('appearance preferences expose WeeklyPlanner-style controls and persist line spacing', () => {
@@ -343,7 +343,7 @@ test('appearance preferences expose WeeklyPlanner-style controls and persist lin
 });
 test('Android PWA cache is refreshed for expanded appearance settings', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v25"'));
+  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v26"'));
 });
 
 test('workspace settings shortcut remains visible in the full-width six-card layout', () => {
@@ -552,7 +552,7 @@ test('appearance palette writes the exact legacy sheet variables consumed by car
 
 test('service worker cache is bumped when appearance assets change', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.match(sw, /wathiq-shell-v25/);
+  assert.match(sw, /wathiq-shell-v26/);
 });
 
 
@@ -566,7 +566,7 @@ test('only the selected workspace card is pulled forward and tilted while the re
   assert.match(css, /#projectSheets \.project-sheet:nth-child\(2\)\{--sheet-stack-order:2;z-index:2\}/);
   assert.match(css, /@media\(max-width:720px\)[\s\S]*?rotate\(-2\.5deg\)/);
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.match(sw, /wathiq-shell-v25/);
+  assert.match(sw, /wathiq-shell-v26/);
 });
 
 test('workspace card palette supports six coordinated shades and one independently chosen standout card', () => {
@@ -580,7 +580,7 @@ test('workspace card palette supports six coordinated shades and one independent
   assert.ok(html.includes('id="sheetSpecialColor"'));
   for (const label of ['الماليات','الحركات اليومية','بنود التنفيذ','الصنايعية والموردين','التحصيلات','المصروفات']) assert.ok(html.includes('<option value="'+['الماليات','الحركات اليومية','بنود التنفيذ','الصنايعية والموردين','التحصيلات','المصروفات'].indexOf(label)+'">'+label+'</option>'));
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.match(sw, /wathiq-shell-v25/);
+  assert.match(sw, /wathiq-shell-v26/);
 });
 
 
@@ -889,4 +889,51 @@ test('duplicate-movement scan stays fast with many movements', () => {
   assert.ok(Date.now() - t0 < 1500, 'duplicate scan took ' + (Date.now() - t0) + 'ms');
   s.expenses.push({ id: 'dup', projectId: s.current, itemId: '', item: '', type: 'other', amount: 5, payee: 'مقاول 4', payeeId: '', date: '2026-01-01' });
   assert.ok(app.withDupCache(() => app.findDuplicateMovement({ type: 'other', amount: 5, date: '2026-01-01', personName: 'مقاول 4', ignoreId: 'dup' })));
+});
+
+test('a labor payment without an approved entry counts as cost, advances do not', () => {
+  const app = createApp();
+  const s = app.getState();
+  const pid = s.current;
+  s.contractors.push({ id: 'c1', projectId: pid, name: 'علي' });
+  s.payments.push({ id: 'p1', projectId: pid, itemId: '', type: 'labor', contractorId: 'c1', amount: 500, date: '2026-01-01', purpose: 'labor_payment' });
+  assert.equal(app.executionCostForProject(), 500);
+  s.payments.push({ id: 'p2', projectId: pid, itemId: '', type: 'labor', contractorId: 'c1', amount: 300, date: '2026-01-02', purpose: 'advance' });
+  assert.equal(app.executionCostForProject(), 500);
+  s.laborEntries.push({ id: 'l1', projectId: pid, contractorId: 'c1', itemId: '', amount: 1000, date: '2026-01-03', status: 'approved' });
+  assert.equal(app.executionCostForProject(), 1000);
+});
+
+test('renaming an item or contractor keeps legacy name-only records linked', () => {
+  const app = createApp();
+  const s = app.getState();
+  const pid = s.current;
+  const item = { id: 'it1', projectId: pid, name: 'محارة', aliases: [] };
+  const con = { id: 'c1', projectId: pid, name: 'علي', aliases: [] };
+  s.items.push(item); s.contractors.push(con);
+  s.expenses.push({ id: 'e1', projectId: pid, itemId: '', item: 'محارة', type: 'materials', amount: 10, payee: 'علي', payeeId: '', date: '2026-01-01' });
+  s.purchases.push({ id: 'v1', projectId: pid, itemId: 'it1', item: 'محارة', supplierId: 'c1', supplier: 'علي', amount: 50, date: '2026-01-01' });
+  app.relinkRenamedItem(item, 'محارة الدور الأول');
+  app.relinkRenamedContractor(con, 'علي حسن');
+  assert.equal(s.expenses[0].itemId, 'it1');
+  assert.equal(s.expenses[0].payeeId, 'c1');
+  assert.equal(s.expenses[0].item, 'محارة الدور الأول');
+  assert.equal(s.expenses[0].payee, 'علي حسن');
+  assert.equal(s.purchases[0].supplier, 'علي حسن');
+  assert.equal(s.purchases[0].item, 'محارة الدور الأول');
+});
+
+test('a materials payment to a supplier with open invoices asks before being counted twice', () => {
+  const app = createApp();
+  const s = app.getState();
+  const pid = s.current;
+  s.contractors.push({ id: 's1', projectId: pid, name: 'مورد' });
+  let asked = 0;
+  app.setConfirm(() => { asked++; return false; });
+  assert.equal(app.confirmUnlinkedSupplierPayment('s1', 'materials', 100), true);
+  assert.equal(asked, 0);
+  s.purchases.push({ id: 'v1', projectId: pid, itemId: '', item: '', supplierId: 's1', supplier: 'مورد', amount: 1000, date: '2026-01-01' });
+  assert.equal(app.confirmUnlinkedSupplierPayment('s1', 'materials', 100), false);
+  assert.equal(asked, 1);
+  assert.equal(app.confirmUnlinkedSupplierPayment('s1', 'labor', 100), true);
 });

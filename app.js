@@ -79,7 +79,7 @@ function enableWorkspaceSwipeBack(){
 enableWorkspaceSwipeBack();
 function project(){return state.projects.find(p=>p.id===state.current)||state.projects[0]}
 let storageWarned=false;
-function save(){try{localStorage.setItem(KEY,JSON.stringify(state));storageWarned=false}catch(err){if(!storageWarned){storageWarned=true;alert('تعذر حفظ البيانات على هذا الجهاز (المساحة ممتلئة أو التخزين غير متاح). التغييرات ظاهرة الآن فقط، فصدّر نسخة احتياطية قبل إغلاق الصفحة.')}}render();if(typeof renderReports==='function')renderReports()}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));storageWarned=false}catch(err){if(!storageWarned){storageWarned=true;alert('تعذر حفظ البيانات على هذا الجهاز (المساحة ممتلئة أو التخزين غير متاح). التغييرات ظاهرة الآن فقط، فصدّر نسخة احتياطية قبل إغلاق الصفحة.')}}render();if(typeof renderReports==='function')renderReports();if(typeof refreshOpenDetails==='function')refreshOpenDetails()}
 function currentItems(){return state.items.filter(x=>x.projectId===state.current)}
 function currentContractors(){return state.contractors.filter(x=>x.projectId===state.current)}
 function itemById(id){return state.items.find(x=>x.id===id)}
@@ -119,6 +119,13 @@ function findDuplicateMovement({itemId='',item='',type,amount,date,personId='',p
   return (dupCache.index.get(movementKey({itemKey,personKey,type,date}))||[]).find(close)||null;
  }
  return duplicateCandidates().find(x=>x.itemKey===itemKey&&x.personKey===personKey&&x.type===type&&x.date===date&&close(x))||null;
+}
+function confirmUnlinkedSupplierPayment(personId,type,amount){
+ if(type!=='materials'||!personId)return true;
+ const p=contractorById(personId);if(!p)return true;
+ const open=supplierLedgerTotals(personId).outstanding;
+ if(!(open>0.005))return true;
+ return confirm('للمورد "'+p.name+'" فواتير مفتوحة متبقي منها '+money(open)+'. تسجيل هذه الدفعة كمصروف منفصل سيحسب التكلفة مرتين. اضغط "موافق" للمتابعة كمصروف مستقل، أو "إلغاء" ثم سجّلها من حساب المورد كسداد فاتورة.');
 }
 function confirmNoDuplicateMovement(data){
  const match=findDuplicateMovement(data);
@@ -223,7 +230,7 @@ function showItemDetail(id){
  d.querySelector('#paymentForm').onsubmit=e=>{
   e.preventDefault();const f=new FormData(e.target),type=f.get('type'),amount=Number(f.get('amount')),date=f.get('date'),contractorId=f.get('contractorId')||(type==='materials'?(i.materialsContractorId||i.contractorId):(i.laborContractorId||i.contractorId))||'';
   if(!Number.isFinite(amount)||amount<=0||!date)return;
-  if(!confirmNoDuplicateMovement({itemId:i.id,item:i.name,type,amount,date,personId:contractorId,personName:contractorById(contractorId)?.name||''}))return;
+  if(!confirmNoDuplicateMovement({itemId:i.id,item:i.name,type,amount,date,personId:contractorId,personName:contractorById(contractorId)?.name||''}))return;if(!confirmUnlinkedSupplierPayment(contractorId,type,amount))return;
   const remaining=agreement(i,type)-paidForItem(i.id,type);if(amount>remaining+0.005&&!confirm('الدفعة أكبر من المتبقي في هذا الحساب بمقدار '+money(amount-remaining)+'. هل تريد تسجيلها كسلفة / دفعة مقدمة؟'))return;
   if(contractorId){if(type==='materials'){if(!(i.materialsContractorId||i.contractorId))i.materialsContractorId=contractorId}else if(!(i.laborContractorId||i.contractorId))i.laborContractorId=contractorId}
   state.payments.push({id:uid('pay'),projectId:state.current,itemId:i.id,type,contractorId,amount,date,note:f.get('note')});save();showItemDetail(id)
@@ -243,11 +250,23 @@ $('itemsSearch').addEventListener('input',render);$('contractorsSearch').addEven
 $('newItemBtn').onclick=()=>openItemEditor(null);$('newContractorBtn').onclick=()=>{ $('contractorEditor').classList.remove('hidden');$('contractorForm').reset();$('contractorId').value='';$('contractorFormTitle').textContent='إضافة مقاول أو صنايعي';$('contractorEditor').scrollIntoView({behavior:'smooth'})};
 $('itemsList').addEventListener('click',e=>{const d=e.target.closest('[data-item-detail]'),ed=e.target.closest('[data-edit-item]');if(d)showItemDetail(d.dataset.itemDetail);if(ed)openItemEditor(itemById(ed.dataset.editItem))});
 $('contractorsList').addEventListener('click',e=>{const d=e.target.closest('[data-contractor-detail]');if(d)showContractorDetail(d.dataset.contractorDetail)});
-$('itemForm').onsubmit=e=>{e.preventDefault();const id=$('itemId').value,old=itemById(id);const data={id:id||uid('item'),projectId:state.current,name:$('itemName').value.trim(),aliases:$('itemAliases').value.split(/[,،\n]/).map(x=>x.trim()).filter(Boolean),category:$('itemCategory').value.trim(),qty:Number($('itemQty').value)||0,unit:$('itemUnit').value,method:$('itemMethod').value,materialsContractorId:$('itemMaterialsContractor').value,laborContractorId:$('itemLaborContractor').value,status:$('itemStatus').value,materialsAmount:Number($('itemMaterials').value)||0,supplier:$('itemSupplier').value.trim(),laborAmount:Number($('itemLabor').value)||0,notes:$('itemNotes').value.trim()};if(old)Object.assign(old,data);else state.items.push(data);$('itemEditor').classList.add('hidden');save()};
-$('contractorForm').onsubmit=e=>{e.preventDefault();const id=$('contractorId').value,old=contractorById(id),data={id:id||uid('con'),projectId:state.current,name:$('contractorName').value.trim(),aliases:$('contractorAliases').value.split(/[,،\n]/).map(x=>x.trim()).filter(Boolean),phone:$('contractorPhone').value.trim(),trade:$('contractorTrade').value.trim(),notes:$('contractorNotes').value.trim()};if(old)Object.assign(old,data);else state.contractors.push(data);$('contractorEditor').classList.add('hidden');e.target.reset();$('contractorId').value='';save()};
+function relinkRenamedItem(old,newName){
+ if(!old||!newName||old.name===newName)return;
+ const names=[old.name,...(old.aliases||[])].map(normArabic);
+ state.expenses.forEach(x=>{if(x.projectId===old.projectId&&!x.itemId&&x.item&&names.includes(normArabic(x.item)))x.itemId=old.id});
+ [state.expenses,state.purchases,state.siteLogs].forEach(list=>(list||[]).forEach(x=>{if(x.itemId===old.id)x.item=newName}));
+}
+function relinkRenamedContractor(old,newName){
+ if(!old||!newName||old.name===newName)return;
+ const names=[old.name,...(old.aliases||[])].map(normArabic);
+ state.expenses.forEach(x=>{if(x.projectId===old.projectId&&!x.payeeId&&x.payee&&names.includes(normArabic(x.payee)))x.payeeId=old.id;if(x.payeeId===old.id)x.payee=newName});
+ state.purchases.forEach(x=>{if(x.supplierId===old.id)x.supplier=newName});
+}
+$('itemForm').onsubmit=e=>{e.preventDefault();const id=$('itemId').value,old=itemById(id);const data={id:id||uid('item'),projectId:state.current,name:$('itemName').value.trim(),aliases:$('itemAliases').value.split(/[,،\n]/).map(x=>x.trim()).filter(Boolean),category:$('itemCategory').value.trim(),qty:Number($('itemQty').value)||0,unit:$('itemUnit').value,method:$('itemMethod').value,materialsContractorId:$('itemMaterialsContractor').value,laborContractorId:$('itemLaborContractor').value,status:$('itemStatus').value,materialsAmount:Number($('itemMaterials').value)||0,supplier:$('itemSupplier').value.trim(),laborAmount:Number($('itemLabor').value)||0,notes:$('itemNotes').value.trim()};if(old){relinkRenamedItem(old,data.name);Object.assign(old,data)}else state.items.push(data);$('itemEditor').classList.add('hidden');save()};
+$('contractorForm').onsubmit=e=>{e.preventDefault();const id=$('contractorId').value,old=contractorById(id),data={id:id||uid('con'),projectId:state.current,name:$('contractorName').value.trim(),aliases:$('contractorAliases').value.split(/[,،\n]/).map(x=>x.trim()).filter(Boolean),phone:$('contractorPhone').value.trim(),trade:$('contractorTrade').value.trim(),notes:$('contractorNotes').value.trim()};if(old){relinkRenamedContractor(old,data.name);Object.assign(old,data)}else state.contractors.push(data);$('contractorEditor').classList.add('hidden');e.target.reset();$('contractorId').value='';save()};
 $('collectionDate').value=today();$('expenseDate').value=today();
 $('collectionForm').onsubmit=e=>{e.preventDefault();const amount=Number($('collectionAmount').value),rate=Number(project().rate);state.collections.push({id:uid('col'),project:state.current,amount,rate,reserved:amount*rate/100,date:$('collectionDate').value,note:$('collectionNote').value});e.target.reset();$('collectionDate').value=today();save()};
-$('expenseForm').onsubmit=e=>{e.preventDefault();const payee=$('expensePayee').value.trim();let matchedPayee=findNamedRecord(currentContractors(),payee),createPayee=false;const itemId=$('expenseItem').value,itemName=itemById(itemId)?.name||'',type=$('expenseType').value,amount=Number($('expenseAmount').value),date=$('expenseDate').value;if(!Number.isFinite(amount)||amount<=0||!date)return;if(payee&&!matchedPayee){if(!confirm('المورد / الصنايعي "'+payee+'" غير مسجل. هل تريد إنشاء حساب وربط الحركة به؟'))return;createPayee=true}if(!confirmNoDuplicateMovement({itemId,item:itemName,type,amount,date,personId:matchedPayee?.id||'',personName:payee}))return;if(createPayee){matchedPayee={id:uid('con'),projectId:state.current,name:payee,aliases:[],phone:'',trade:type==='labor'?'صنايعي':'مورد',notes:''};state.contractors.push(matchedPayee)}const linkedItem=itemById(itemId);if(linkedItem&&matchedPayee&&type==='materials'&&!(linkedItem.materialsContractorId||linkedItem.contractorId))linkedItem.materialsContractorId=matchedPayee.id;if(linkedItem&&matchedPayee&&type==='labor'&&!(linkedItem.laborContractorId||linkedItem.contractorId))linkedItem.laborContractorId=matchedPayee.id;state.expenses.push({id:uid('ex'),projectId:state.current,itemId,item:itemName,type,amount,payee,payeeId:matchedPayee?.id||'',date,note:$('expenseNote').value,kind:'direct'});e.target.reset();$('expenseDate').value=today();save()};
+$('expenseForm').onsubmit=e=>{e.preventDefault();const payee=$('expensePayee').value.trim();let matchedPayee=findNamedRecord(currentContractors(),payee),createPayee=false;const itemId=$('expenseItem').value,itemName=itemById(itemId)?.name||'',type=$('expenseType').value,amount=Number($('expenseAmount').value),date=$('expenseDate').value;if(!Number.isFinite(amount)||amount<=0||!date)return;if(payee&&!matchedPayee){if(!confirm('المورد / الصنايعي "'+payee+'" غير مسجل. هل تريد إنشاء حساب وربط الحركة به؟'))return;createPayee=true}if(!confirmNoDuplicateMovement({itemId,item:itemName,type,amount,date,personId:matchedPayee?.id||'',personName:payee}))return;if(!confirmUnlinkedSupplierPayment(matchedPayee?.id||'',type,amount))return;if(createPayee){matchedPayee={id:uid('con'),projectId:state.current,name:payee,aliases:[],phone:'',trade:type==='labor'?'صنايعي':'مورد',notes:''};state.contractors.push(matchedPayee)}const linkedItem=itemById(itemId);if(linkedItem&&matchedPayee&&type==='materials'&&!(linkedItem.materialsContractorId||linkedItem.contractorId))linkedItem.materialsContractorId=matchedPayee.id;if(linkedItem&&matchedPayee&&type==='labor'&&!(linkedItem.laborContractorId||linkedItem.contractorId))linkedItem.laborContractorId=matchedPayee.id;state.expenses.push({id:uid('ex'),projectId:state.current,itemId,item:itemName,type,amount,payee,payeeId:matchedPayee?.id||'',date,note:$('expenseNote').value,kind:'direct'});e.target.reset();$('expenseDate').value=today();save()};
 $('collectionList').addEventListener('click',e=>{const btn=e.target.closest('[data-delete-collection]');if(!btn)return;const id=btn.dataset.deleteCollection,record=state.collections.find(x=>x.id===id&&x.project===state.current);if(!record||!confirm('حذف التحصيل بقيمة '+money(record.amount)+'؟ سيتم تحديث الربح المحجوز والمتاح للتنفيذ.'))return;state.collections=state.collections.filter(x=>x.id!==id);save()});
 $('expenseList').addEventListener('click',e=>{const btn=e.target.closest('[data-delete-expense]');if(!btn)return;const id=btn.dataset.deleteExpense;const record=state.expenses.find(x=>x.id===id&&x.projectId===state.current);if(!record)return;if(!confirm('هل أنت متأكد من حذف هذا المصروف بقيمة '+money(record.amount)+'؟ لا يمكن التراجع عن الحذف.'))return;state.expenses=state.expenses.filter(x=>x.id!==id);save()});
 $('settingsForm').onsubmit=e=>{e.preventDefault();const pName=$('projectName').value.trim(),pRate=Number($('profitRate').value);if(!pName||!Number.isFinite(pRate)||pRate<0||pRate>100){alert('تأكد من اسم المشروع ونسبة الربح (من 0 إلى 100).');return}project().name=pName;project().rate=pRate;save();alert('تم حفظ إعدادات المشروع')};
@@ -267,7 +286,9 @@ $('importData').onchange=async e=>{
   const next=validation.state,serialized=JSON.stringify(next);
   if(!serialized||serialized.length>30*1024*1024)throw Error('size');
   if(!confirm('تم فحص النسخة الاحتياطية. سيتم استبدال بيانات المشروع الحالية بها. يفضّل تصدير نسخة حالية أولاً. هل تريد المتابعة؟'))return;
-  localStorage.setItem(KEY,serialized);
+  let recoveryKey='';try{recoveryKey=KEY+'.recovery.'+Date.now();localStorage.setItem(recoveryKey,JSON.stringify(state))}catch{recoveryKey=''}
+  try{localStorage.setItem(KEY,serialized)}catch(writeError){if(recoveryKey){try{localStorage.removeItem(recoveryKey)}catch{}}throw writeError}
+  try{if(typeof localStorage.key==='function'){const old=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith(KEY+'.recovery.'))old.push(k)}old.sort().slice(0,-5).forEach(k=>localStorage.removeItem(k))}}catch{}
   state=next;closePanels();render();renderQuickLists();renderReports();
   alert('تم استيراد النسخة الاحتياطية بنجاح');
  }catch(err){console.error('Backup import rejected:',err);alert('تعذر استيراد النسخة الاحتياطية. لم يتم تغيير بياناتك الحالية. تأكد من سلامة الملف وإصداره وتوفر مساحة تخزين كافية.');}
@@ -565,7 +586,11 @@ function executionCostForProject(projectId=state.current){
  const direct=state.expenses.filter(x=>x.projectId===projectId).reduce((s,x)=>s+Number(x.amount||0),0);
  const legacyPayments=state.payments.filter(x=>x.projectId===projectId&&(!x.purpose||x.purpose==='legacy')).reduce((s,x)=>s+Number(x.amount||0),0);
  const invoices=state.purchases.filter(x=>x.projectId===projectId).reduce((s,x)=>s+Number(x.amount||0),0);
- const earned=projectLaborEntries(projectId).reduce((s,x)=>s+Number(x.amount||0),0);
+ const earnedBy=new Map(),paidBy=new Map();
+ projectLaborEntries(projectId).forEach(x=>earnedBy.set(x.contractorId||'',(earnedBy.get(x.contractorId||'')||0)+Number(x.amount||0)));
+ state.payments.filter(x=>x.projectId===projectId&&x.type==='labor'&&x.purpose==='labor_payment').forEach(x=>paidBy.set(x.contractorId||'',(paidBy.get(x.contractorId||'')||0)+Number(x.amount||0)));
+ // a labor payment with no approved entry behind it is real cost; advances are not cost until work is approved
+ const earned=[...new Set([...earnedBy.keys(),...paidBy.keys()])].reduce((s,k)=>s+Math.max(earnedBy.get(k)||0,paidBy.get(k)||0),0);
  return direct+legacyPayments+invoices+earned;
 }
 function cashOutflowForProject(projectId=state.current){
@@ -756,6 +781,22 @@ $('expenseList').addEventListener('click',e=>{const edit=e.target.closest('[data
 const baseRenderLists=render;
 
 
+
+// Keep an open item / contractor panel in step with the data after any save (no scroll jump, no recursion).
+let lastItemDetailId='',lastContractorDetailId='',detailRefreshing=false;
+const trackedShowItemDetail=showItemDetail;showItemDetail=function(id){lastItemDetailId=id;return trackedShowItemDetail(id)};
+const trackedShowContractorDetail=showContractorDetail;showContractorDetail=function(id){lastContractorDetailId=id;return trackedShowContractorDetail(id)};
+function refreshOpenDetails(){
+ if(detailRefreshing)return;detailRefreshing=true;
+ try{
+  [['itemDetail',lastItemDetailId,showItemDetail,itemById],['contractorDetail',lastContractorDetailId,showContractorDetail,contractorById]].forEach(([elId,id,fn,find])=>{
+   const el=$(elId);if(!el||!id||el.classList.contains('hidden'))return;
+   if(!find(id)){el.classList.add('hidden');return}
+   const keep=el.scrollIntoView;el.scrollIntoView=()=>{};
+   try{fn(id)}finally{el.scrollIntoView=keep}
+  });
+ }catch(error){console.warn('Detail refresh skipped:',error)}finally{detailRefreshing=false}
+}
 
 // Render the additive diary and accounting views on first load; no storage migration is performed.
 render();renderReports();
