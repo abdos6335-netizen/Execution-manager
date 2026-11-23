@@ -123,7 +123,7 @@
     const localState = bridge().getState();
 
     if (!snapshot.exists) {
-      await writeState(localState, 0, true);
+      await writeState(localState, 0, false);
     } else {
       const remote = snapshot.data() || {};
       const remoteState = remote.state;
