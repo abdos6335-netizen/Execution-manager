@@ -323,7 +323,7 @@ test('input fields are tinted one shade lighter from each actual card color, not
 
 test('Android PWA cache version is bumped for the new mobile card styles', () => {
   const sw = fs.readFileSync(new URL('../sw.js', 'file://' + __filename), 'utf8');
-  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v30"'));
+  assert.ok(sw.includes('const CACHE_NAME = "wathiq-shell-v31"'));
 });
 
 test('appearance preferences expose WeeklyPlanner-style controls and persist line spacing', () => {
@@ -337,7 +337,7 @@ test('appearance preferences expose WeeklyPlanner-style controls and persist lin
   assert.ok(app.includes("['#ffffff','#333333','#000000','#121606']"));
   assert.doesNotMatch(html, /appearanceTextAuto/);
   assert.doesNotMatch(html, /appearanceGlass|appearanceBlur|appearanceDimBlur/);
-  for (const theme of ['olive','forest','eucalyptus','pine','moss','golden']) assert.ok(html.includes('data-theme=\"' + theme + '\"'));
+  for (const theme of ['olive','forest','eucalyptus','pine','moss','golden','petrol','navyred','bluegold']) assert.ok(html.includes('data-theme=\"' + theme + '\"'));
   assert.doesNotMatch(html, /data-theme=\"sage\"|data-theme=\"sunset\"|data-theme=\"earth\"|data-theme=\"ocean\"|data-theme=\"berry\"|data-theme=\"slate\"|data-theme=\"glass\"|data-theme=\"soft\"|data-theme=\"sand\"|data-theme=\"rose\"/);
   assert.ok(app.includes("'--line-height':String(Math.min(1.8,Math.max(1.2,Number(a.lineHeight)||1.4)))"));
   assert.ok(css.includes('body{line-height:var(--line-height,1.4)}'));
@@ -429,10 +429,11 @@ test('cancelled duplicate direct expense does not create an orphan contractor ac
 });
 
 
-test('all coordinated card palettes expose six colors with a readable foreground for each', () => {
+test('all nine coordinated card palettes expose six colors with a readable foreground for each', () => {
   const app = createApp();
   const palettes = app.SHEET_PALETTES;
-  assert.equal(Object.keys(palettes).length, 6);
+  assert.equal(Object.keys(palettes).length, 9);
+  for (const name of ['petrol','navyred','bluegold']) assert.ok(palettes[name], 'missing high-contrast palette: ' + name);
   for (const [name, colors] of Object.entries(palettes)) {
     assert.equal(colors.length, 6, name + ' must contain six card colors');
     for (const color of colors) {
