@@ -873,7 +873,7 @@ test('retired built-in themes migrate to olive without changing project data or 
   assert.equal(kept.theme,'olive');
   assert.equal(kept.accent,'#112233');
   assert.equal(kept.background,'#445566');
-  assert.equal(kept.appearanceVersion,5);
+  assert.equal(kept.appearanceVersion,6);
 
   const customPalette = createApp({ 'em:appearance': JSON.stringify({ theme: 'sage', accent: '#8cab99', background: '#e7eeea', appearanceVersion: 2, sheetBaseColor: '#202020', sheetSpecialIndex: '4', sheetSpecialColor: '#b45c32' }) });
   const preservedPalette = JSON.parse(customPalette.storage.get('em:appearance'));
