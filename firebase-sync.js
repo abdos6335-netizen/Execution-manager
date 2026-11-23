@@ -42,9 +42,11 @@
 
   function hasLocalData(state) {
     if (!state || typeof state !== 'object') return false;
-    const arrays = Object.keys(state).filter(key => Array.isArray(state[key]));
+    const arrays = Object.keys(state).filter(key => key !== 'projects' && Array.isArray(state[key]));
     if (arrays.some(key => state[key].length > 0)) return true;
-    return Array.isArray(state.projects) && state.projects.some(p => p && p.id !== 'p1');
+    return Array.isArray(state.projects) && state.projects.some(p =>
+      p && (p.id !== 'p1' || p.name !== 'المشروع الأول' || Number(p.rate) !== 10)
+    );
   }
 
   function mergeStates(localState, remoteState) {
@@ -181,6 +183,15 @@
     });
   }
 
+  async function captureConflictSnapshot() {
+    if (!workspaceRef) return;
+    const snapshot = await workspaceRef.get();
+    if (!snapshot.exists) return;
+    const data = snapshot.data() || {};
+    conflictRevision = Number(data.revision || 0);
+    latestRemoteState = data.state || null;
+  }
+
   function localChanged(state) {
     if (!ready || !user || !workspaceRef) return;
     pendingLocal = true;
@@ -192,6 +203,7 @@
       } catch (error) {
         if (error.code === 'sync/conflict') {
           conflict = true;
+          try { await captureConflictSnapshot(); } catch (snapshotError) { console.warn('Could not load conflicting cloud version:', snapshotError); }
           setStatus('تعارض بين تعديلات الجهازين. لم نكتب فوق بيانات السحابة.', 'warning');
         } else {
           setStatus('تعذرت المزامنة: ' + (error.message || error.code || 'خطأ غير معروف'), 'error');
@@ -257,6 +269,7 @@
     } catch (error) {
       if (error.code === 'sync/conflict') {
         conflict = true;
+        try { await captureConflictSnapshot(); } catch (snapshotError) { console.warn('Could not load conflicting cloud version:', snapshotError); }
         setStatus('وجدنا تعديلاً أحدث في السحابة. لم نستبدل أي بيانات.', 'warning');
       } else setStatus('تعذرت المزامنة: ' + (error.message || error.code), 'error');
     }
